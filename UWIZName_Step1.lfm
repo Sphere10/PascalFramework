@@ -1,0 +1,64 @@
+object WIZName_Step1: TWIZName_Step1
+  Left = 39
+  Height = 300
+  Top = 142
+  Width = 244
+  Caption = 'WIZName_Step1'
+  ClientHeight = 300
+  ClientWidth = 244
+  OnResize = UpdateDimensionLabel
+  OnShow = UpdateDimensionLabel
+  LCLVersion = '1.6.4.0'
+  object FMustBeCheckedCheckBox: TCheckBox
+    Left = 16
+    Height = 19
+    Top = 64
+    Width = 110
+    Caption = 'Must be checked'
+    TabOrder = 0
+  end
+  object StaticText1: TStaticText
+    Left = 16
+    Height = 17
+    Top = 32
+    Width = 65
+    Caption = 'Enter Name'
+    TabOrder = 1
+  end
+  object FSomeButton: TBitBtn
+    Left = 121
+    Height = 30
+    Top = 259
+    Width = 115
+    Anchors = [akRight, akBottom]
+    Caption = 'Some Button'
+    TabOrder = 2
+  end
+  object FNameEdit: TEdit
+    Left = 88
+    Height = 23
+    Top = 26
+    Width = 143
+    Anchors = [akTop, akLeft, akRight]
+    OnEditingDone = FNameEditEditingDone
+    TabOrder = 3
+    TextHint = 'Enter your name'
+  end
+  object FDimensionLabel: TLabel
+    Left = 8
+    Height = 15
+    Top = 264
+    Width = 91
+    Anchors = [akLeft, akBottom]
+    Caption = 'FDimensionLabel'
+    ParentColor = False
+  end
+  object Label1: TLabel
+    Left = 401
+    Height = 15
+    Top = 112
+    Width = 34
+    Caption = 'Label1'
+    ParentColor = False
+  end
+end

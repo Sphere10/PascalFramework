@@ -26,6 +26,15 @@
 #*.obj
 #
 
+# FPC
+*.lps
+
+# FPC Lib folder
+lib/
+
+# FPC Backup
+backup/
+
 # Delphi compiler-generated binaries (safe to delete)
 *.exe
 *.dll
