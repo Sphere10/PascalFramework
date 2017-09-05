@@ -14,6 +14,7 @@ implementation
 
 procedure Register;
 begin
+  RegisterUnit('PF.VisualGrid', @PF.VisualGrid.Register);
 end;
 
 initialization

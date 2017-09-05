@@ -5,15 +5,20 @@ unit PF.VisualGrid;
 interface
 
 uses
-  Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, ComCtrls;
+  Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, ComCtrls
+  {$IFNDEF FPC}
+  ,Tabs
+  {$ENDIF};
 
 type
-  TCustomVisualGrid = class(TCustomPanel)
+  TCustomVisualGrid = class(TWinControl)
   protected
+    FSearchLabel: TCustomLabel;
     FSearchEdit: TCustomEdit;
     FTopPanel: TCustomPanel;
+    FBottomPanel: TCustomPanel;
     FDrawGrid: TCustomDrawGrid;
-    FTabs: TCustomTabControl;
+    FTabs: {$IFDEF FPC}TCustomTabControl{$ELSE}TTabSet{$ENDIF};
 
     procedure ClickTest(Sender: TOBject);
   public
@@ -21,8 +26,8 @@ type
   end;
 
   TVisualGrid = class(TCustomVisualGrid)
-  public
-
+  published
+    property Align;
   end;
 
 
@@ -52,12 +57,25 @@ begin
   FTopPanel.ControlStyle := FTopPanel.ControlStyle - [csAcceptsControls];
   FTopPanel.Parent := Self;
   FTopPanel.Align := alTop;
-  FTopPanel.Height := 100;
+  FTopPanel.Height := 50;
 
+  FBottomPanel := TCustomPanel.Create(Self);
+  FBottomPanel.ControlStyle := FBottomPanel.ControlStyle - [csAcceptsControls];
+  FBottomPanel.Parent := Self;
+  FBottomPanel.Align := alBottom;
+  FBottomPanel.Height := 50;
+
+  {$IFDEF FPC}
   FTabs := TCustomTabControl.Create(Self);
-  FTabs.ControlStyle := FTabs.ControlStyle - [csAcceptsControls];
-  FTabs.Parent := Self;
+  {$ELSE}
+  FTabs := TTabSet.Create(Self);
+  {$ENDIF}
+  FTabs.Parent := FBottomPanel;
   FTabs.Align := alClient;
+
+
+  FSearchLabel := TCustomLabel.Create(Self);
+  FSearchLabel.Parent := FTopPanel;
 
   FSearchEdit := TCustomEdit.Create(Self);
   FSearchEdit.Parent := FTopPanel;
@@ -66,7 +84,7 @@ begin
   FSearchEdit.Anchors := [akTop, akRight];
 
   FDrawGrid := TCustomDrawGrid.Create(Self);
-  FDrawGrid.Parent := FTabs;
+  FDrawGrid.Parent := Self;
   FDrawGrid.Align := alClient;
 
 

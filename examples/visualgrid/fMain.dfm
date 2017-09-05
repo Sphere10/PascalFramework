@@ -14,9 +14,12 @@ object Form1: TForm1
   PixelsPerInch = 96
   TextHeight = 13
   object VisualGrid1: TVisualGrid
-    Left = 25
-    Top = 48
-    Width = 489
-    Height = 345
+    Left = 0
+    Top = 0
+    Width = 599
+    Height = 474
+    Align = alClient
+    ExplicitLeft = -40
+    ExplicitTop = 8
   end
 end

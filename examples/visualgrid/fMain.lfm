@@ -1,0 +1,18 @@
+object Form1: TForm1
+  Left = 752
+  Height = 586
+  Top = 379
+  Width = 850
+  Caption = 'Form1'
+  ClientHeight = 586
+  ClientWidth = 850
+  DesignTimePPI = 144
+  LCLVersion = '1.7'
+  object VisualGrid1: TVisualGrid
+    Left = 0
+    Height = 586
+    Top = 0
+    Width = 850
+    Align = alClient
+  end
+end

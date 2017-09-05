@@ -1,11 +1,12 @@
 unit fMain;
 
+{$I pf.inc}
+
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.Grids, Vcl.StdCtrls,
-  PF.VisualGrid, Vcl.ComCtrls, Vcl.Tabs;
+  SysUtils, Classes, Forms, Controls, Graphics, Dialogs,
+  PF.VisualGrid;
 
 type
   TForm1 = class(TForm)
@@ -21,6 +22,10 @@ var
 
 implementation
 
+{$IFDEF FPC}
+{$R *.lfm}
+{$ELSE}
 {$R *.dfm}
+{$ENDIF}
 
 end.
