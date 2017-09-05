@@ -2,8 +2,8 @@ object Form1: TForm1
   Left = 0
   Top = 0
   Caption = 'Form1'
-  ClientHeight = 465
-  ClientWidth = 571
+  ClientHeight = 674
+  ClientWidth = 640
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -16,8 +16,8 @@ object Form1: TForm1
   object VisualGrid1: TVisualGrid
     Left = 0
     Top = 0
-    Width = 571
-    Height = 465
+    Width = 640
+    Height = 674
     Align = alClient
   end
 end
