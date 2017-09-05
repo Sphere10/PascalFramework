@@ -1,6 +1,6 @@
-unit UVisualGrid;
+unit PF.VisualGrid;
 
-{$mode objfpc}{$H+}
+{$I pf.inc}
 
 interface
 
