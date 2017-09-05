@@ -29,7 +29,8 @@ package PF_VisualGrid;
 {$IMPLICITBUILD ON}
 
 requires
-  rtl;
+  rtl,
+  vcl;
 
 contains
   PF.VisualGrid in '..\..\src\component\PF.VisualGrid.pas';
