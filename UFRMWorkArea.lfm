@@ -1,18 +1,18 @@
-object WorkAreaForm: TFRMWorkArea
-  Left = -1
+object FRMWorkArea: TFRMWorkArea
+  Left = 484
   Height = 545
-  Top = 350
-  Width = 506
+  Top = 144
+  Width = 473
   Caption = 'Form2'
   ClientHeight = 545
-  ClientWidth = 506
+  ClientWidth = 473
   OnCreate = FormCreate
   LCLVersion = '1.6.4.0'
   object ToolBar1: TToolBar
     Left = 0
     Height = 26
     Top = 0
-    Width = 506
+    Width = 473
     BorderWidth = 1
     Caption = 'ToolBar1'
     ParentColor = False
@@ -36,7 +36,7 @@ object WorkAreaForm: TFRMWorkArea
     OnClick = Label1Click
   end
   object FSomeButton: TBitBtn
-    Left = 121
+    Left = 88
     Height = 105
     Top = 405
     Width = 119
@@ -47,7 +47,7 @@ object WorkAreaForm: TFRMWorkArea
     TabOrder = 1
   end
   object FSomeButton1: TBitBtn
-    Left = 360
+    Left = 327
     Height = 105
     Top = 405
     Width = 119
@@ -58,7 +58,7 @@ object WorkAreaForm: TFRMWorkArea
     TabOrder = 2
   end
   object FSomeButton2: TBitBtn
-    Left = 72
+    Left = 39
     Height = 83
     Top = 304
     Width = 360
@@ -70,7 +70,7 @@ object WorkAreaForm: TFRMWorkArea
     TabOrder = 3
   end
   object FSomeButton3: TBitBtn
-    Left = 112
+    Left = 79
     Height = 24
     Top = 248
     Width = 24
@@ -81,7 +81,7 @@ object WorkAreaForm: TFRMWorkArea
     TabOrder = 4
   end
   object FSomeButton4: TBitBtn
-    Left = 264
+    Left = 231
     Height = 24
     Top = 192
     Width = 24
@@ -116,7 +116,7 @@ object WorkAreaForm: TFRMWorkArea
     TabOrder = 5
   end
   object FSomeButton5: TBitBtn
-    Left = 121
+    Left = 88
     Height = 24
     Top = 192
     Width = 24
@@ -151,7 +151,7 @@ object WorkAreaForm: TFRMWorkArea
     TabOrder = 6
   end
   object FSomeButton6: TBitBtn
-    Left = 288
+    Left = 255
     Height = 24
     Top = 192
     Width = 24
@@ -186,7 +186,7 @@ object WorkAreaForm: TFRMWorkArea
     TabOrder = 7
   end
   object FSomeButton7: TBitBtn
-    Left = 96
+    Left = 63
     Height = 24
     Top = 192
     Width = 24

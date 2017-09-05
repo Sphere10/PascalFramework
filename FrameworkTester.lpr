@@ -7,7 +7,7 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, UFRMMain, UWizard, UFRMWorkArea, UPagedGrid;
+  Forms, UFRMMain, UWizard, UFRMWorkArea, UFRMNotifyManyTest;
 
 {$R *.res}
 
@@ -15,7 +15,6 @@ begin
   RequireDerivedFormResource:=True;
   Application.Initialize;
   Application.CreateForm(TFRMMain, MainForm);
-  Application.CreateForm(TFRMWorkArea, WorkAreaForm);
   Application.Run;
 end.
 

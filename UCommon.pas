@@ -22,7 +22,7 @@ unit UCommon;
 interface
 
 uses
-  Classes, SysUtils, Controls, FGL;
+  Classes, SysUtils, Controls, FGL, Generics.Collections, Generics.Defaults;
 
 { GLOBAL FUNCTIONS }
 
@@ -41,6 +41,10 @@ function IIF(const ACondition: Boolean; const ATrueResult, AFalseResult: Double)
 function IIF(const ACondition: Boolean; const ATrueResult, AFalseResult: string): string; overload;
 function IIF(const ACondition: Boolean; const ATrueResult, AFalseResult: TObject): TObject; overload;
 function IIF(const ACondition: Boolean; const ATrueResult, AFalseResult: variant): variant; overload;
+
+{ DateTime functions }
+function TimeStamp : AnsiString;
+function UtcTimeStamp : AnsiString;
 
 type
   { TBox - a generic wrapper class for wrappying any type, mainly strings and primtives }
@@ -61,25 +65,22 @@ type
   { A TObject-wrapped string }
   TStringObject = TBox<AnsiString>;
 
-  { TDictionary }
-  TDictionary<TKey, TData> = class(specialize TFPGMap<TKey, TData>)
-    property At[AKey : TKey] : TData read GetKeyData write PutKeyData;
-    procedure AddOrSetValue(const AKey : TKey; AData : TData);
-    function TryGetValue(const AKey : TKey; var AValue : TData) : Boolean;
-    function GetOrDefault(const AKey : TKey) : TData;
-    function ContainsKey(const AKey : TKey) : Boolean;
-    function ContainsValue(AValue : TData) : Boolean;
-  end;
-
-  { Tool for manipulating arrays }
+  { TArrayTool }
   TArrayTool<T> = class
-  public
-    class procedure Append(var arr : TArray<T>; item : T); static;
-    class function Remove(var arr : TArray<T>; item : T) : Integer; static;
-    class procedure RemoveAt(var arr: TArray<T>; const index: Cardinal); static;
-    class function Concat(const arrays: array of TArray<T>) : TArray<T>; static;
-    class function Create(const a : T; const b : T) : TArray<T>; static;
-  end;
+    public
+      class function Contains(const Values: TArray<T>; const Item: T; const Comparer: IEqualityComparer<T>; out ItemIndex: SizeInt): Boolean; overload; static;
+      class function Contains(const Values: TArray<T>; const Item: T; out ItemIndex: SizeInt): Boolean; overload; static;
+      class function Contains(const Values: TArray<T>; const Item: T) : Boolean; overload; static;
+      class function IndexOf(const Values: TArray<T>; const Item: T; const Comparer: IEqualityComparer<T>): SizeInt; overload; static;
+      class function IndexOf(const Values: TArray<T>; const Item: T): SizeInt; overload; static;
+      class procedure Add(var Values: TArray<T>; const AValue : T); static;
+      class procedure Remove(var Values : TArray<T>; const Item : T; const Comparer : IEqualityComparer<T>); overload; static;
+      class procedure Remove(var Values : TArray<T>; const Item : T); overload; static;
+      class procedure RemoveAt(var Values : TArray<T>; ItemIndex : SizeInt); static;
+      class function Concat(const Arrays: array of TArray<T>): TArray<T>; static;
+      class function Create(const a : T; const b : T) : TArray<T>; static;
+      class function ToArray(Enumerable: TEnumerable<T>; Count: SizeInt): TArray<T>; static;
+    end;
 
   { TNotifyManyEvent - support for multiple listeners }
   TNotifyManyEvent = TArray<TNotifyEvent>;
@@ -98,7 +99,7 @@ type
 
 implementation
 
-{% Global functions %}
+{%region Global functions %}
 
 function String2Hex(const Buffer: AnsiString): AnsiString;
 var
@@ -199,6 +200,18 @@ begin
   else
     Result := AFalseResult;
 end;
+
+{ DateTime functions }
+function TimeStamp : AnsiString;
+begin
+  Result := FormatDateTime('yyy-mm-dd hh:nn:ss', Now);
+end;
+
+function UtcTimeStamp : AnsiString;
+begin
+  raise Exception.Create('Not implemented');
+end;
+
 {%endregion}
 
 {%region TBox }
@@ -226,92 +239,88 @@ begin
   // No op
 end;
 
-{%endregion
-
-{%region TDictionary }
-
-procedure TDictionary<TKey, TData>.AddOrSetValue(const AKey : TKey; AData : TData);
-begin
-    if ContainsKey(AKey) then
-        KeyData[AKey] := AData
-    else
-        Add(AKey, AData);
-end;
-
-function TDictionary<TKey, TData>.TryGetValue(const AKey : TKey; var AValue : TData) : Boolean;
-begin
-    Result := False;
-    if ContainsKey(AKey) then
-    begin
-        AValue := KeyData[AKey];
-        Result := True;
-    end;
-end;
-
-function TDictionary<TKey, TData>.GetOrDefault(const AKey : TKey) : TData;
-begin
-  Result := Default(TData);
-  if self.ContainsKey(AKey) then
-    Result := self.At[AKey]
-end;
-
-function TDictionary<TKey, TData>.ContainsKey(const AKey : TKey) : Boolean;
-begin
-    Result := IndexOf(AKey) <> -1;
-end;
-
-function TDictionary<TKey, TData>.ContainsValue(AValue : TData) : Boolean;
-begin
-    Result := IndexOfData(AValue) <> - 1;
-end;
-
 {%endregion}
 
-{%region ArrayTool }
+{%region TArrayTool }
 
-class procedure TArrayTool<T>.Append(var arr : TArray<T>; item : T);
-begin
-  if arr = nil then exit;
-  SetLength(arr, Length(arr) + 1);
-  arr[High(arr)] := item;
-end;
-
-
-class function TArrayTool<T>.Remove(var arr : TArray<T>; item : T) : Integer;
-var index : Integer;
-begin
-end;
-
-class procedure TArrayTool<T>.RemoveAt(var arr: TArray<T>; const Index: Cardinal);
+class function TArrayTool<T>.Contains(const Values: TArray<T>; const Item: T; const Comparer: IEqualityComparer<T>; out ItemIndex: SizeInt): Boolean;
 var
-  ALength: Cardinal;
-  TailElements: Cardinal;
+  Index: SizeInt;
 begin
-  ALength := Length(arr);
-  Assert(ALength > 0);
-  Assert(Index < ALength);
-  Finalize(arr[Index]);
-  TailElements := ALength - Index;
-  if TailElements > 0 then
-    Move(arr[Index + 1], arr[Index], SizeOf(T) * TailElements);
-  Initialize(arr[ALength - 1]);
-  SetLength(arr, ALength - 1);
+  for Index := 0 to high(Values) do begin
+    if Comparer.Equals(Values[Index], Item) then begin
+      ItemIndex := Index;
+      Result := True;
+      exit;
+    end;
+  end;
+  ItemIndex := -1;
+  Result := False;
 end;
 
-class function TArrayTool<T>.Concat(const arrays: array of TArray<T>): TArray<T>;
+class function TArrayTool<T>.Contains(const Values: TArray<T>; const Item: T; out ItemIndex: SizeInt): Boolean;
+begin
+  Result := TArrayTool<T>.Contains(Values, Item, TEqualityComparer<T>.Default, ItemIndex);
+end;
+
+class function TArrayTool<T>.Contains(const Values: TArray<T>; const Item: T): Boolean;
+var
+  ItemIndex: SizeInt;
+begin
+  Result := TArrayTool<T>.Contains(Values, Item, ItemIndex);
+end;
+
+class function TArrayTool<T>.IndexOf(const Values: TArray<T>; const Item: T; const Comparer: IEqualityComparer<T>): SizeInt;
+begin
+  TArrayTool<T>.Contains(Values, Item, Comparer, Result);
+end;
+
+class function TArrayTool<T>.IndexOf(const Values: TArray<T>; const Item: T): SizeInt;
+begin
+  TArrayTool<T>.Contains(Values, Item, Result);
+end;
+
+class procedure TArrayTool<T>.Add(var Values: TArray<T>; const AValue : T);
+begin
+  SetLength(Values, SizeInt(Length(Values)) + 1);
+  Values[High(Values)] := AValue;
+end;
+
+class procedure TArrayTool<T>.Remove(var Values : TArray<T>; const Item : T; const Comparer : IEqualityComparer<T>);
+var index : SizeInt;
+begin
+  while TArrayTool<T>.Contains(Values, item, Comparer, index) do begin
+    TArrayTool<T>.RemoveAt(Values, index);
+  end;
+end;
+
+class procedure TArrayTool<T>.Remove(var Values : TArray<T>; const Item : T);
+begin
+  TArrayTool<T>.Remove(Values, Item, TEqualityComparer<T>.Default);
+end;
+
+class procedure TArrayTool<T>.RemoveAt(var Values : TArray<T>; ItemIndex : SizeInt);
+var i : Integer;
+begin
+  for i := ItemIndex + 1 to High(Values) do
+    Values[i - 1] := Values[i];
+  SetLength(Values, Length(Values) - 1);
+end;
+
+class function TArrayTool<T>.Concat(const Arrays: array of TArray<T>): TArray<T>;
 var
   i, k, LIndex, LLength: Integer;
 begin
   LLength := 0;
-  for i := 0 to High(arrays) do
-    Inc(LLength, Length(arrays[i]));
+  for i := 0 to High(Arrays) do
+    Inc(LLength, Length(Arrays[i]));
   SetLength(Result, LLength);
   LIndex := 0;
-  for i := 0 to High(arrays) do
+  for i := 0 to High(Arrays) do
   begin
-    for k := 0 to High(arrays[i]) do
+    for k := 0 to High(Arrays[i]) do
     begin
-      Result[LIndex] := arrays[i][k];
+      Result[LIndex] := Arrays[i][k];
       Inc(LIndex);
     end;
   end;
@@ -322,6 +331,42 @@ begin
   SetLength(result,2);
   result[0] := a;
   result[1] := b;
+end;
+
+class function TArrayTool<T>.ToArray(Enumerable: TEnumerable<T>; Count: SizeInt): TArray<T>;
+var
+  LItem: T;
+begin
+  SetLength(Result, Count);
+  Count := 0;
+  for LItem in Enumerable do
+  begin
+    Result[Count] := LItem;
+    Inc(Count);
+  end;
+end;
+
+{%endregion}
+
+{%region TNotifyManyEventHelper}
+
+procedure TNotifyManyEventHelper.Add(listener : TNotifyEvent);
+begin
+  if TArrayTool<TNotifyEvent>.IndexOf(self, listener) = -1 then begin
+    TArrayTool<TNotifyEvent>.Add(self, listener);
+  end;
+end;
+
+procedure TNotifyManyEventHelper.Remove(listener : TNotifyEvent);
+begin
+  TArrayTool<TNotifyEvent>.Remove(self, listener);
+end;
+
+procedure TNotifyManyEventHelper.Invoke(sender : TObject);
+var i : Integer;
+begin
+  for i := 0 to high(self) do
+    self[i](sender);
 end;
 
 {%endregion}
@@ -337,29 +382,6 @@ begin
     self.RemoveControl(control);
     if destroy then control.Destroy;
   end;
-end;
-
-{%endregion}
-
-{%region TNotifyManyEventHelper }
-
-procedure TNotifyManyEventHelper.Add(listener : TNotifyEvent);
-var x : TArray<AnsiString>;
-begin
- x.
- { if self = nil then
-    SetLength(self, 1);
-  self[0] := listener;}
-end;
-
-procedure TNotifyManyEventHelper.Remove(listener : TNotifyEvent);
-begin
-
-end;
-
-procedure TNotifyManyEventHelper.Invoke(sender : TObject);
-begin
-  if self = nil then exit;
 end;
 
 {%endregion}

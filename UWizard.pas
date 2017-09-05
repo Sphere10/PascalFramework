@@ -22,7 +22,7 @@ unit UWizard;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls, FGL, UCommon;
+  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls, UCommon, Generics.Collections;
 
 const
   CT_WIZARD_DEFAULT_NEXT : AnsiString = '&Next';
@@ -33,9 +33,7 @@ const
 
 type
   { Forward Declarations }
-  TWizard<T> = class;
   TWizardForm<T> = class;
-
 
   { TWizardHostForm - the host form that contains the wizard screens. }
   TWizardHostForm = class(TForm)
@@ -49,8 +47,8 @@ type
     type
       TWizardHostFormCloseQueryDelegate = function(out message : AnsiString) : boolean of object;
     protected
-      FNextEvent : TNotifyEvent;
-      FPreviousEvent : TNotifyEvent;
+      FNextEvent : TNotifyManyEvent;
+      FPreviousEvent : TNotifyManyEvent;
       FCloseQueryEvent : TWizardHostFormCloseQueryDelegate;
       procedure SetTitleText(title : AnsiString); virtual;
       function GetTitleText : AnsiString; virtual;
@@ -63,8 +61,8 @@ type
       procedure SetPreviousText(previousText : AnsiString); virtual;
       function GetPreviousText : AnsiString; virtual;
     public
-      property NextEvent : TNotifyEvent read FNextEvent write FNextEvent;
-      property PreviousEvent : TNotifyEvent read FPreviousEvent write FPreviousEvent;
+      property NextEvent : TNotifyManyEvent read FNextEvent write FNextEvent;
+      property PreviousEvent : TNotifyManyEvent read FPreviousEvent write FPreviousEvent;
       property CloseQueryEvent : TWizardHostFormCloseQueryDelegate read FCloseQueryEvent write FCloseQueryEvent;
       property HideNext : boolean read GetHideNext write SetHideNext;
       property HidePrevious : boolean read GetHidePrevious write SetHidePrevious;
@@ -96,7 +94,7 @@ type
   TWizard<T> = class
     type
       __TScreenType = TWizardForm<T>; // FPC Bug: doesn't support nested generics
-      TWizardFormList = TFPGList<__TScreenType>;
+      TWizardFormList = TList<__TScreenType>;
 
     private
         FHost : TWizardHostForm;
@@ -199,14 +197,12 @@ end;
 
 procedure TWizardHostForm.FPreviousButtonClick(Sender: TObject);
 begin
-  if Assigned(FPreviousEvent) then
-    FPreviousEvent(self);
+  FPreviousEvent.Invoke(self);
 end;
 
 procedure TWizardHostForm.FNextButtonClick(Sender: TObject);
 begin
-  if Assigned(FNextEvent) then
-    FNextEvent(self);
+  FNextEvent.Invoke(self);
 end;
 
 procedure TWizardHostForm.FormCloseQuery(Sender: TObject; var CanClose: boolean);
@@ -366,8 +362,8 @@ var
 begin
   CheckNotStarted;
   self.FHost := TWizardHostForm.Create(AOwner);
-  self.FHost.NextEvent := NextHandler;
-  self.FHost.PreviousEvent := PreviousHandler;
+  self.FHost.NextEvent.Add(NextHandler);
+  self.FHost.PreviousEvent.Add(PreviousHandler);
   self.FHost.CloseQueryEvent := CancelRequested;
   self.FHost.PreviousText := self.PreviousText;
   self.Fhost.NextText := self.NextText;

@@ -32,7 +32,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="8">
+    <Units Count="16">
       <Unit0>
         <Filename Value="FrameworkTester.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -73,13 +73,53 @@
       <Unit6>
         <Filename Value="UFRMWorkArea.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="Form2"/>
+        <ComponentName Value="FRMWorkArea"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit6>
       <Unit7>
-        <Filename Value="UPagedGrid.pas"/>
+        <Filename Value="util\generics.collections.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="Generics.Collections"/>
       </Unit7>
+      <Unit8>
+        <Filename Value="util\generics.defaults.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Generics.Defaults"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="util\generics.hashes.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Generics.Hashes"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="util\generics.helpers.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="util\generics.memoryexpanders.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="util\generics.strings.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Generics.Strings"/>
+      </Unit12>
+      <Unit13>
+        <Filename Value="util\generics.dictionaries.inc"/>
+        <IsPartOfProject Value="True"/>
+      </Unit13>
+      <Unit14>
+        <Filename Value="util\generics.dictionariesh.inc"/>
+        <IsPartOfProject Value="True"/>
+      </Unit14>
+      <Unit15>
+        <Filename Value="UFRMNotifyManyTest.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="FRMNotifyManyTest"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit15>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -89,7 +129,8 @@
       <Filename Value="FrameworkTester"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="$(ProjOutDir)"/>
+      <IncludeFiles Value="$(ProjOutDir);util"/>
+      <OtherUnitFiles Value="util"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <CodeGeneration>

@@ -1,7 +1,7 @@
 object FRMMain: TFRMMain
-  Left = -4
+  Left = -7
   Height = 240
-  Top = 64
+  Top = 46
   Width = 320
   Caption = 'MainForm'
   ClientHeight = 240
@@ -24,5 +24,14 @@ object FRMMain: TFRMMain
     Caption = 'Work Area'
     OnClick = FWorkAreaButtonClick
     TabOrder = 1
+  end
+  object btnNotifyTest: TButton
+    Left = 8
+    Height = 25
+    Top = 64
+    Width = 131
+    Caption = 'Notify Test'
+    OnClick = btnNotifyTestClick
+    TabOrder = 2
   end
 end

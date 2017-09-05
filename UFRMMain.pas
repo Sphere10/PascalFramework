@@ -9,15 +9,17 @@ unit UFRMMain;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls, UWizard, UWIZName_Step1, UWIZName_Step2, UFRMWorkArea, UCommon;
+  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls, UWizard, UWIZName_Step1, UWIZName_Step2, UFRMWorkArea, UFRMNotifyManyTest, UCommon;
 
 
 type
 
   { TFRMMain }
   TFRMMain = class(TForm)
+    btnNotifyTest: TButton;
     _wizardTestButton: TButton;
     FWorkAreaButton: TButton;
+    procedure btnNotifyTestClick(Sender: TObject);
     procedure FWorkAreaButtonClick(Sender: TObject);
     procedure _wizardTestButtonClick(Sender: TObject);
   private
@@ -46,7 +48,7 @@ begin
   propertyBag := TGenericWizardBag.Create;
   try
     // Pre-set property bag values when using TGenericWizardBag
-    propertyBag['Name'] := TStringObject.Create('');
+    propertyBag.Add('Name', TStringObject.Create(''));
     TTestWizard.Show(
       self,
       'My Test Action Wizard',
@@ -68,6 +70,18 @@ var
 begin
   try
     frm := TFRMWorkArea.Create(self);
+    frm.ShowModal;
+  finally
+    frm.Destroy;
+  end;
+end;
+
+procedure TFRMMain.btnNotifyTestClick(Sender: TObject);
+var
+  frm : TFRMNotifyManyTest;
+begin
+  try
+    frm := TFRMNotifyManyTest.Create(self);
     frm.ShowModal;
   finally
     frm.Destroy;
