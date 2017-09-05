@@ -6,7 +6,6 @@ object FRMNotifyManyTest: TFRMNotifyManyTest
   Caption = 'TNotifyManyTest'
   ClientHeight = 350
   ClientWidth = 498
-  OnCreate = FormCreate
   OnMouseMove = FormMouseMove
   LCLVersion = '1.6.4.0'
   object cbListener1: TCheckBox

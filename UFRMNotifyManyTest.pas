@@ -24,7 +24,6 @@ type
     procedure cbListener1Change(Sender: TObject);
     procedure cbListener2Change(Sender: TObject);
     procedure cbListener3Change(Sender: TObject);
-    procedure FormCreate(Sender: TObject);
     procedure FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
   private
     { private declarations }
@@ -90,14 +89,6 @@ begin
      FMouseMoveMulticastEvent.Add(Listener3Handler)
    else
      FMouseMoveMulticastEvent.Remove(Listener3Handler);
-end;
-
-procedure TFRMNotifyManyTest.FormCreate(Sender: TObject);
-begin
-   if cbListener3.Checked then
-     FMouseMoveMulticastEvent.Add(Listener1Handler)
-   else
-     FMouseMoveMulticastEvent.Remove(Listener1Handler);
 end;
 
 procedure TFRMNotifyManyTest.Button1Click(Sender: TObject);
