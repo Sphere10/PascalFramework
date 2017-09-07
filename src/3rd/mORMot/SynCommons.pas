@@ -841,7 +841,7 @@ type
   {$ifdef BSD}
   TThreadID = Cardinal;
   {$endif}
-
+  
 {$else FPC}
 
 type
@@ -2149,7 +2149,7 @@ function VariantToInt64Def(const V: Variant; DefaultValue: Int64): Int64;
 function VariantToDouble(const V: Variant; var Value: double): boolean;
 
 /// convert any numerical Variant into a floating point value
-function VariantToDoubleDef(const V: Variant; const default: double=0): double;
+function VariantToDoubleDef(const V: Variant; const default: double=0): double; 
 
 /// convert any numerical Variant into a fixed decimals floating point value
 function VariantToCurrency(const V: Variant; var Value: currency): boolean;
@@ -2892,7 +2892,7 @@ function ToCardinal(const text: RawUTF8; out value: cardinal; minimal: cardinal=
 
 /// get the signed 64-bit integer value stored in a RawUTF8 string
 // - returns TRUE if the supplied text was successfully converted into an Int64
-function ToInt64(const text: RawUTF8; out value: Int64): boolean;
+function ToInt64(const text: RawUTF8; out value: Int64): boolean; 
   {$ifdef HASINLINE}inline;{$endif}
 
 /// get the signed 64-bit integer value stored in a RawUTF8 string
@@ -3567,7 +3567,7 @@ procedure GetNextItem(var P: PUTF8Char; Sep: AnsiChar; var result: RawUTF8); ove
 // - P=nil after call when end of text is reached
 procedure GetNextItemTrimed(var P: PUTF8Char; Sep: AnsiChar; var result: RawUTF8);
 
-/// return next CRLF separated value string from P, ending #10 or #13#10 trimmed
+/// return next CRLF separated value string from P, ending #10 or #13#10 trimmed  
 // - any kind of line feed (CRLF or LF) will be handled, on all operating systems
 // - as used e.g. by TSynNameValue.InitFromCSV and TDocVariantData.InitCSV
 // - P=nil after call when end of text is reached
@@ -5130,7 +5130,7 @@ type
     /// load the dynamic array content from a memory buffer
     // - return nil if the Source buffer is incorrect (invalid type or internal
     // checksum e.g.), or return the memory buffer pointer just after the
-    // content, as written by TDynArray.SaveTo
+    // content, as written by TDynArray.SaveTo 
     // - this method will raise an ESynException for T*ObjArray types
     // - you can optionally call AfterEach callback for each row loaded
     // - if you don't want to allocate all items on memory, but just want to
@@ -5201,7 +5201,7 @@ type
     // - do nothing if index is out of range
     procedure ElemCopyAt(index: integer; var Dest);
       {$ifdef HASINLINE}inline;{$endif}
-    /// will copy one variable content into an indexed element
+    /// will copy one variable content into an indexed element 
     // - do nothing if index is out of range
     procedure ElemCopyFrom(const Source; index: integer);
       {$ifdef HASINLINE}inline;{$endif}
@@ -5299,7 +5299,7 @@ type
     /// how many items were saved in the TDynArray.SaveTo binary buffer
     Count: integer;
     /// the zero-based index of the current item pointed by next Step() call
-    // - is in range 0..Count-1 until Step() returns false
+    // - is in range 0..Count-1 until Step() returns false 
     Current: integer;
     /// current position in the TDynArray.SaveTo binary buffer
     // - after Step() returned false, points just after the binary buffer,
@@ -5319,7 +5319,7 @@ type
     // - returns true if Field was filled with one value, or false if all
     // items were read, and Position contains the end of the binary buffer
     // - could be called before Step(), to pre-allocate a new item instance,
-    // or update an existing instance
+    // or update an existing instance 
     function FirstField(out Field): boolean;
     /// after all items are read by Step(), validate the stored hash
     // - returns true if items hash is correct, false otherwise
@@ -6098,7 +6098,7 @@ type
     // - if aText occurs for the first time, add it to the internal string pool
     // - if aText does exist in the internal string pool, set the shared
     // instance (with its reference counter increased), to reduce memory usage
-    procedure UniqueText(var aText: RawUTF8);
+    procedure UniqueText(var aText: RawUTF8); 
     {$ifndef NOVARIANTS}
     /// return a variant containing a RawUTF8 stored within this class
     // - similar to RawUTF8ToVariant(), but with string interning
@@ -6389,7 +6389,7 @@ procedure ObjArrayClear(var aObjArray; aCount: integer); overload;
 // e.g. in the owner class destructor
 // - will also set the dynamic array length to 0, so could be used to re-use
 // an existing T*ObjArray
-procedure ObjArrayClear(var aObjArray; aContinueOnException: boolean); overload;
+procedure ObjArrayClear(var aObjArray; aContinueOnException: boolean); overload; 
 
 /// wrapper to release all items stored in an array of T*ObjArray dynamic array
 // - e.g. aObjArray may be defined as "array of array of TSynFilter"
@@ -6497,7 +6497,7 @@ procedure TypeInfoToQualifiedName(aTypeInfo: pointer; var result: RawUTF8;
 // is compatible accross executables, even between FPC and Delphi
 // - will ignore the type names, but will check the RTTI type kind and any
 // nested fields (for records or arrays) - for a record/object type, will use
-// TTextWriter.RegisterCustomJSONSerializerFromText definition, if available
+// TTextWriter.RegisterCustomJSONSerializerFromText definition, if available  
 function TypeInfoToHash(aTypeInfo: pointer): cardinal;
 
 /// retrieve the record size from its low-level RTTI
@@ -6641,7 +6641,7 @@ function RecordEquals(const RecA, RecB; TypeInfo: pointer;
 // - will use a proprietary binary format, with some variable-length encoding
 // of the string length - note that if you change the type definition, any
 // previously-serialized content will fail, maybe triggering unexpected GPF: you
-// may use TypeInfoToHash() if you share this binary data accross executables
+// may use TypeInfoToHash() if you share this binary data accross executables  
 // - warning: will encode generic string fields as AnsiString (one byte per char)
 // prior to Delphi 2009, and as UnicodeString (two bytes per char) since Delphi
 // 2009: if you want to use this function between UNICODE and NOT UNICODE
@@ -6657,7 +6657,7 @@ function RecordSave(const Rec; TypeInfo: pointer): RawByteString; overload;
 // - will use a proprietary binary format, with some variable-length encoding
 // of the string length - note that if you change the type definition, any
 // previously-serialized content will fail, maybe triggering unexpected GPF: you
-// may use TypeInfoToHash() if you share this binary data accross executables
+// may use TypeInfoToHash() if you share this binary data accross executables  
 // - warning: will encode generic string fields as AnsiString (one byte per char)
 // prior to Delphi 2009, and as UnicodeString (two bytes per char) since Delphi
 // 2009: if you want to use this function between UNICODE and NOT UNICODE
@@ -6673,7 +6673,7 @@ function RecordSave(const Rec; Dest: PAnsiChar; TypeInfo: pointer;
 // - will use a proprietary binary format, with some variable-length encoding
 // of the string length - note that if you change the type definition, any
 // previously-serialized content will fail, maybe triggering unexpected GPF: you
-// may use TypeInfoToHash() if you share this binary data accross executables
+// may use TypeInfoToHash() if you share this binary data accross executables  
 // - warning: will encode generic string fields as AnsiString (one byte per char)
 // prior to Delphi 2009, and as UnicodeString (two bytes per char) since Delphi
 // 2009: if you want to use this function between UNICODE and NOT UNICODE
@@ -6690,7 +6690,7 @@ function RecordSaveBase64(const Rec; TypeInfo: pointer; UriCompatible: boolean=f
 // using the RecordSave() function
 // - will return 0 in case of an invalid (not handled) record type (e.g. if
 // it contains an unknown variant)
-// - optional Len parameter will contain the Rec memory buffer length, in bytes
+// - optional Len parameter will contain the Rec memory buffer length, in bytes 
 function RecordSaveLength(const Rec; TypeInfo: pointer; Len: PInteger=nil): integer;
 
 /// save record into its JSON serialization as saved by TTextWriter.AddRecordJSON
@@ -7260,7 +7260,7 @@ type
   // some values in place (since VValue/VName and VCount won't match) - as such,
   // if you set this option, ensure that you use the content as read-only
   // - by default, all fields are persistented, unless soWriteIgnoreDefault is
-  // defined and void values (e.g. "" or 0) won't be written
+  // defined and void values (e.g. "" or 0) won't be written 
   // - you may use TTextWriter.RegisterCustomJSONSerializerSetOptions() class
   // method to customize the serialization for a given type
   TJSONCustomParserSerializationOptions = set of TJSONCustomParserSerializationOption;
@@ -7852,7 +7852,7 @@ type
     procedure AddDateTime(Value: PDateTime; FirstChar: AnsiChar='T'; QuoteChar: AnsiChar=#0;
       WithMS: boolean=false); overload;
     /// append a TDateTime value, expanded as Iso-8601 encoded text
-    // - use 'YYYY-MM-DDThh:mm:ss' format
+    // - use 'YYYY-MM-DDThh:mm:ss' format 
     // - if WithMS is TRUE, will append '.sss' for milliseconds resolution
     procedure AddDateTime(const Value: TDateTime;
       WithMS: boolean=false); overload;
@@ -9264,7 +9264,7 @@ type
     fTimeOuts: TDynArray;
     function InArray(const aKey,aArrayValue; aAction: TSynDictionaryInArray): boolean;
     procedure SetTimeouts;
-    function GetTimeOut: cardinal;
+    function GetTimeOut: cardinal; 
   public
     /// initialize the dictionary storage, for a given dynamic array value
     // - aKeyTypeInfo should be a dynamic array TypeInfo() RTTI pointer, which
@@ -10833,7 +10833,7 @@ type
   // "Year 2038" overflow issue
   // - use UnixTimeToDateTime/DateTimeToUnixTime functions to convert it to/from
   // a regular TDateTime
-  // - use UnixTimeUTC to return the current timestamp, using fast OS API calls
+  // - use UnixTimeUTC to return the current timestamp, using fast OS API calls 
   // - also one of the encodings supported by SQLite3 date/time functions
   TUnixTime = type Int64;
 
@@ -11031,6 +11031,10 @@ function HexToBin(Hex: PAnsiChar; Bin: PByte; BinBytes: Integer): boolean; overl
 function HexToCharValid(Hex: PAnsiChar): boolean;
   {$ifdef HASINLINE}inline;{$endif}
 
+/// fast check if the supplied Hex buffer is an hexadecimal representation
+// of a binary buffer of a given number of bytes  
+function IsHex(const Hex: RawByteString; BinBytes: integer): boolean;
+
 /// fast conversion from one hexa char pair into a 8 bit AnsiChar
 // - return false if any invalid (non hexa) char is found in Hex^
 // - similar to HexToBin(Hex,Bin,1) but with Bin<>nil
@@ -11097,7 +11101,7 @@ type
 function LogEscape(source: PAnsiChar; sourcelen: integer; var temp: TLogEscape;
   enabled: boolean=true): PAnsiChar;
   {$ifdef HASINLINE}inline;{$endif}
-
+  
 type
   /// used e.g. by PointerToHexShort/CardinalToHexShort/Int64ToHexShort
   // - such result type would avoid a string allocation on heap
@@ -12282,7 +12286,7 @@ procedure MultiEventMerge(var DestList; const ToBeAddedList);
 function EventEquals(const eventA,eventB): boolean;
   {$ifdef HASINLINE}inline;{$endif}
 
-
+  
 { ************ fast ISO-8601 types and conversion routines ***************** }
 
 type
@@ -13163,7 +13167,7 @@ var
   /// the current Operating System version, as retrieved for the current process
   OSVersion: TWindowsVersion;
   /// the current Operating System version, as retrieved for the current process
-  // - contains e.g. 'Windows Seven 64 SP1 (6.1.7601)' or
+  // - contains e.g. 'Windows Seven 64 SP1 (6.1.7601)' or 
   // 'Linux 3.13.0 110 generic#157 Ubuntu SMP Mon Feb 20 11:55:25 UTC 2017'
   OSVersionText: RawUTF8;
 
@@ -13303,8 +13307,8 @@ type
     /// some hash compression of this information
     // - the very same executable on the very same computer run by the very
     // same user will always have the same Hash value
-    // - is computed from the crc32c of this TExeVersion fields
-    // - may be used as an entropy seed
+    // - is computed from the crc32c of this TExeVersion fields 
+    // - may be used as an entropy seed 
     Hash: THash128Rec;
   end;
 
@@ -13328,7 +13332,7 @@ type
   /// identify an operating system folder
   TSystemPath = (
     spCommonData, spUserData, spCommonDocuments, spUserDocuments, spTempFolder);
-
+                             
 /// returns an operating system folder
 // - will return the full path of a given kind of private or shared folder,
 // depending on the underlying operating system
@@ -14682,7 +14686,7 @@ function VariantSaveLength(const Value: variant): integer;
 // - will handle standard Variant types and custom types (serialized as JSON)
 // - will return nil in case of an invalid (not handled) Variant type
 // - will use a proprietary binary format, with some variable-length encoding
-// of the string length
+// of the string length  
 // - warning: will encode generic string fields as within the variant type
 // itself: using this function between UNICODE and NOT UNICODE
 // versions of Delphi, will propably fail - you have been warned!
@@ -15611,7 +15615,7 @@ type
     // - will call VariantEquals() for value comparison
     function GetItemByProp(const aPropName,aPropValue: RawUTF8;
       aPropValueCaseSensitive: boolean; var Dest: variant; DestByRef: boolean=false): boolean;
-    /// retrieve a reference to a dvObject in the dvArray, from a property value
+    /// retrieve a reference to a dvObject in the dvArray, from a property value  
     // - {aPropName:aPropValue} will be searched within the stored array,
     // and the corresponding item will be copied into Dest, on match
     // - returns FALSE if no match is found, TRUE if found and copied by reference
@@ -17688,12 +17692,12 @@ type
     // - returns true on success, false if the supplied task was not registered
     function EnQueue(aOnProcess: TOnSynBackgroundTimerProcess;
       const aMsgFmt: RawUTF8; const Args: array of const; aExecuteNow: boolean=false): boolean; overload;
-    /// remove a message from the processing list
+    /// remove a message from the processing list 
     // - supplied message will be searched in the internal FIFO list associated
     // with aOnProcess, then removed from the list if found
     // - aOnProcess should have been registered by a previous call to Enable() method
     // - returns true on success, false if the supplied message was not registered
-    function DeQueue(aOnProcess: TOnSynBackgroundTimerProcess; const aMsg: RawUTF8): boolean;
+    function DeQueue(aOnProcess: TOnSynBackgroundTimerProcess; const aMsg: RawUTF8): boolean; 
     /// execute a task without waiting for the next aOnProcessSecs occurence
     // - aOnProcess should have been registered by a previous call to Enable() method
     // - returns true on success, false if the supplied task was not registered
@@ -17848,7 +17852,7 @@ type
     // - returns the sample values as an array, starting from the last to the oldest
     // - you can customize the maximum depth, with aDepth < HistoryDepth
     function HistoryData(aProcessID: integer=0; aDepth: integer=0): TSystemUseDataDynArray; overload;
-    /// if any unexisting (e.g. closed/killed) process should be unregistered
+    /// if any unexisting (e.g. closed/killed) process should be unregistered 
     // - e.g. if OpenProcess() API call fails
     property UnsubscribeProcessOnAccessError: boolean
       read fUnsubscribeProcessOnAccessError write fUnsubscribeProcessOnAccessError;
@@ -17961,7 +17965,7 @@ type
   {$endif}
   public
     /// the actual 64-bit storage value
-    // - in practice, only first 63 bits are used
+    // - in practice, only first 63 bits are used 
     Value: TSynUniqueIdentifier;
     /// 15-bit counter (0..32767), starting with a random value
     function Counter: word;
@@ -18081,7 +18085,7 @@ type
     /// some 32-bit value, derivated from aSharedObfuscationKey as supplied
     // to the class constructor
     // - FromObfuscated and ToObfuscated methods will validate their hexadecimal
-    // content with this value to secure the associated CRC
+    // content with this value to secure the associated CRC 
     // - may be used e.g. as system-depending salt
     property CryptoCRC: cardinal read fCryptoCRC;
     /// direct access to the associated mutex
@@ -20154,7 +20158,7 @@ begin
       for i := 1 to extra do
         if byte(source[s]) and $c0<>$80 then // reached #0 or invalid UTF-8
           exit else
-          inc(s);
+          inc(s); 
     end;
   end;
   result := true;
@@ -21854,7 +21858,7 @@ type
     );
     tkArray: (
       {$ifdef FPC}
-      // warning: in VER2_6, this is the element size, not full array size
+      // warning: in VER2_6, this is the element size, not full array size 
       arraySize: SizeInt;
       // product of lengths of all dimensions
       elCount: SizeInt;
@@ -21962,7 +21966,7 @@ begin
   result := GetEnumName(TypeInfo(TTypeKind),ord(k));
 end;
 
-function ToText(k: TDynArrayKind): PShortString; overload;
+function ToText(k: TDynArrayKind): PShortString; overload; 
 begin
   result := GetEnumName(TypeInfo(TDynArrayKind),ord(k));
 end;
@@ -22836,7 +22840,7 @@ begin
     P := GotoNextNotSpace(P);
     if P^='[' then begin
       P := GotoNextNotSpace(P+1);
-      if P^=']' then
+      if P^=']' then 
         inc(P) else
         repeat
           Text := GetJSONField(P,P,@wasString,@EndOfObject,@TextLen);
@@ -24487,7 +24491,7 @@ begin
     result := Buffer+L;
   end;
 end;
-
+ 
 function QuotedStr(const S: RawUTF8; Quote: AnsiChar): RawUTF8;
 begin
   QuotedStr(Pointer(S),Quote,result);
@@ -25662,7 +25666,7 @@ asm // warning: may read up to 15 bytes beyond the string itself
       movdqu    xmm0, dqword [edx]
       pcmpistri xmm0, dqword [edx + eax], EQUAL_EACH + NEGATIVE_POLARITY // result in ecx
       {$else}
-      db $F3,$0F,$6F,$02
+      db $F3,$0F,$6F,$02                          
       db $66,$0F,$3A,$63,$04,$10,EQUAL_EACH+NEGATIVE_POLARITY
       {$endif}
       ja        @1
@@ -27007,6 +27011,11 @@ begin
     if C>15 then exit;
   end;
   result := true; // conversion OK
+end;
+
+function IsHex(const Hex: RawByteString; BinBytes: integer): boolean;
+begin
+  result := (length(Hex)=BinBytes*2) and SynCommons.HexToBin(pointer(Hex),nil,BinBytes);
 end;
 
 function HexToCharValid(Hex: PAnsiChar): boolean;
@@ -29061,7 +29070,7 @@ begin // fast cross-platform implementation
   folder := GetSystemPath(spTempFolder);
   if TemporaryFileNameRandom=0 then
     TemporaryFileNameRandom := Random32;
-  repeat // thread-safe unique file name generation
+  repeat // thread-safe unique file name generation 
     result := format('%s%s_%s.tmp',[folder,ExeVersion.ProgramName,
       CardinalToHexShort(InterlockedIncrement(TemporaryFileNameRandom))]);
   until not FileExists(result);
@@ -34303,7 +34312,7 @@ const ISO8601_LEN: array[boolean,boolean] of integer = ((15,14),(19,18));
 var tmp: array[0..31] of AnsiChar;
 begin // D=0 is handled in DateTimeToIso8601Text()
   DateToIso8601PChar(D,tmp,Expanded);
-  if Expanded then
+  if Expanded then 
     TimeToIso8601PChar(D,@tmp[10],true,FirstChar,WithMS) else
     TimeToIso8601PChar(D,@tmp[8],false,FirstChar,WithMS);
   SetString(result,PAnsiChar(@tmp),ISO8601_LEN[Expanded,FirstChar=#0]+4*integer(WithMS));
@@ -34323,15 +34332,15 @@ begin
   DateToIso8601PChar(pointer(result),Expanded,Y,M,D);
 end;
 
-function TimeToIso8601(Time: TDateTime; Expanded: boolean; FirstChar: AnsiChar='T';
+function TimeToIso8601(Time: TDateTime; Expanded: boolean; FirstChar: AnsiChar='T'; 
   WithMS: boolean=false): RawUTF8;
-// use Thhmmss[.sss] / Thh:mm:ss[.sss] format
+// use Thhmmss[.sss] / Thh:mm:ss[.sss] format 
 begin
   FastNewRawUTF8(result,7+2*integer(Expanded)+4*integer(WithMS));
   TimeToIso8601PChar(Time,pointer(result),Expanded,FirstChar,WithMS);
 end;
 
-function DateTimeToIso8601Text(DT: TDateTime; FirstChar: AnsiChar;
+function DateTimeToIso8601Text(DT: TDateTime; FirstChar: AnsiChar; 
   WithMS: boolean): RawUTF8;
 begin
   DateTimeToIso8601TextVar(DT,FirstChar,result,WithMS);
@@ -35309,7 +35318,7 @@ begin
   GUIDToShort(guid,result);
 end;
 
-procedure GUIDToShort(const guid: TGUID; out dest: TGUIDShortString);
+procedure GUIDToShort(const guid: TGUID; out dest: TGUIDShortString); 
 begin
   dest[0] := #38;
   dest[1] := '{';
@@ -35419,7 +35428,7 @@ begin
     result := _Lecuyer.Next;
 end;
 
-function Random32(max: cardinal): cardinal;
+function Random32(max: cardinal): cardinal; 
 begin
   result := (QWord(Random32)*max)shr 32;
 end;
@@ -35448,7 +35457,7 @@ begin
       c := c xor lecuyer^.Next;
       Dest^[i] := Dest^[i] xor c;
     end;
-end;
+end;  
 
 function RandomGUID: TGUID;
 begin
@@ -37025,7 +37034,7 @@ begin
     end;
     result := _TempPath;
   end else begin
-    if _HomePath='' then // POSIX requires a value for $HOME
+    if _HomePath='' then // POSIX requires a value for $HOME 
       _HomePath := IncludeTrailingPathDelimiter(GetEnvironmentVariable('HOME'));
     result := _HomePath;
   end;
@@ -37630,7 +37639,7 @@ begin
       result := sizeof(TVarData);
     {$endif}
     tkArray:
-      {$ifdef VER2_6}
+      {$ifdef VER2_6} 
       with GetTypeInfo(typeInfo)^ do
         result := arraySize*elCount;
       {$else}
@@ -38112,7 +38121,7 @@ begin
 end;
 
 function RecordSave(const Rec; Dest: PAnsiChar; TypeInfo: pointer;
-  out Len: integer): PAnsiChar;
+  out Len: integer): PAnsiChar; 
 var info,fieldinfo: PTypeInfo;
     {$ifdef FPC_NEWRTTI}
     recInitData: PRecInitData;
@@ -44482,7 +44491,7 @@ end;
 function TDocVariantData.AddOrUpdateValue(const aName: RawUTF8;
   const aValue: variant; wasAdded: PBoolean; OnlyAddMissing: boolean): integer;
 begin
-  if dvoIsArray in VOptions then
+  if dvoIsArray in VOptions then 
     raise EDocVariant.CreateUTF8('AddOrUpdateValue("%") on an array',[aName]);
   result := GetValueIndex(aName);
   if result<0 then begin
@@ -46547,7 +46556,7 @@ var i, n: integer;
     P: PAnsiChar;
     Hash: PCardinalArray;
 begin
-  // check context
+  // check context 
   result := nil;
   if Source=nil then begin
     Clear;
@@ -53256,7 +53265,7 @@ begin
       if i>0 then
         raise ESynException.CreateUTF8('%.GetPassWordPlain unable to retrieve the '+
           'stored value: current user is "%", but password in % was encoded for "%"',
-          [self,ExeVersion.User,AppSecret,copy(fPassword,1,i-1)]);
+          [self,ExeVersion.User,AppSecret,copy(fPassword,1,i-1)]); 
     end;
   end;
   if result='' then begin
@@ -63007,7 +63016,7 @@ begin
     SetLength(VName,VCount);
     SetLength(VValue,VCount);
     for ndx := 0 to VCount-1 do begin
-      VName[ndx] := List[ndx].Name;
+      VName[ndx] := List[ndx].Name;      
       if ValueAsString or not GetNumericVariantFromJSON(pointer(List[ndx].Value),
           TVarData(VValue[ndx]),AllowVarDouble) then
         RawUTF8ToVariant(List[ndx].Value,VValue[ndx]);
@@ -63365,7 +63374,7 @@ begin
   // naive and would be broken easily with brute force - but point here is to
   // hide/obfuscate public values at end-user level (e.g. when publishing URIs),
   // not implement strong security, so it sounds good enough for our purpose
-end;
+end;              
 
 destructor TSynUniqueIdentifierGenerator.Destroy;
 begin
@@ -65073,4 +65082,3 @@ finalization
   DeleteCriticalSection(GlobalCriticalSection);
   //writeln('TDynArrayHashedCollisionCount=',TDynArrayHashedCollisionCount); readln;
 end.
-

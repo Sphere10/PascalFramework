@@ -25,7 +25,7 @@
 
   Contributor(s):
    Alfred Glaenzer (alf)
-
+  
   Alternatively, the contents of this file may be used under the terms of
   either the GNU General Public License Version 2 or later (the "GPL"), or
   the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -102,7 +102,7 @@
 // define this if you compile the unit within a Delphi package
 // - it will avoid error like "[DCC Error] E2201 Need imported data reference ($G)
 //   to access 'VarCopyProc' from unit 'SynCommons'"
-// - shall be set at the package options level, and left untouched by default
+// - shall be set at the package options level, and left untouched by default 
 
 {$define WITHLOG}
 // if defined, logging will be supported via the TSQLLog family
@@ -141,7 +141,7 @@
 
 {.$define WITH_ERMS}
 // you may define this to enable REP MOVSB/STOSB for Fillchar/Move if cfERMS
-// flag is available in Intel's CpuFeatures
+// flag is available in Intel's CpuFeatures 
 // -> disabled by default, since in practice it is much slower for small blocks
 
 {$ifdef LVCL}
@@ -219,7 +219,7 @@
   {$define FPC_OR_UNICODE}
   {$define FPC_ENUMHASINNER}
   {$ifdef VER3_1_1} // if FPC_FULLVERSION>30100 ... ifend is not Delphi 5 compatible :(
-    {$define FPC_NEWRTTI} // RTTI has been enhanced in latest trunk
+    {$define FPC_NEWRTTI} // RTTI has been enhanced in latest trunk 
   {$endif}
   {$ifdef FPC_NEWRTTI}
     {$define ISDELPHI2010_OR_FPC_NEWRTTI}
@@ -452,7 +452,7 @@
       {$define ISDELPHIXE5}
       {$define PUBLISHRECORD}
       // if defined, will handle RTTI available only since Delphi XE5 for
-      // record published properties
+      // record published properties 
     {$ifend}
     {$if CompilerVersion >= 27.0}
       {$define ISDELPHIXE6}
