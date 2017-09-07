@@ -11,8 +11,15 @@ uses
   {$ENDIF};
 
 type
+  TCRUDAction = (caCreate, caUpdate, caDelete);
+
+  IDataSource = interface
+  ['{EC5D7560-7D04-4AAD-BF39-8A86114EA138}']
+
+  end;
+
   TCustomVisualGrid = class(TWinControl)
-  protected
+  protected { component interface part }
     FSearchLabel: TLabel;
     FSearchEdit: TEdit;
     FTopPanel: TPanel;
@@ -34,16 +41,25 @@ type
     FAllRecordsCountLabel: TLabel;
 
     FDrawGrid: TDrawGrid;
-//    FTabs: {$IFDEF FPC}TCustomTabControl{$ELSE}TTabSet{$ENDIF};
+  private
+    procedure SetColumns(const Value: TStrings);
 
+  protected {  }
+    FColumns: TStrings;
+
+    procedure ReloadColumns;
+    procedure Loaded; override;
     procedure ClickTest(Sender: TOBject);
   public
     constructor Create(Owner: TComponent); override;
+    destructor Destroy; override;
+    property Columns: TStrings read FColumns write SetColumns;
   end;
 
   TVisualGrid = class(TCustomVisualGrid)
   published
     property Align;
+    property Columns;
   end;
 
 
@@ -66,7 +82,7 @@ end;
 constructor TCustomVisualGrid.Create(Owner: TComponent);
 begin
   inherited;
-
+  FColumns := TStringList.Create;
   ControlStyle := ControlStyle - [csAcceptsControls];
 
   FTopPanel := TPanel.Create(Self);
@@ -249,6 +265,29 @@ begin
     OnClick := ClickTest;
     Caption := 'Test';
   end;
+end;
+
+destructor TCustomVisualGrid.Destroy;
+begin
+  FColumns.Free;
+  inherited;
+end;
+
+procedure TCustomVisualGrid.Loaded;
+begin
+  inherited;
+  ReloadColumns;
+end;
+
+procedure TCustomVisualGrid.ReloadColumns;
+begin
+  FDrawGrid.ColCount := FColumns.Count;
+end;
+
+procedure TCustomVisualGrid.SetColumns(const Value: TStrings);
+begin
+  FColumns.Assign(Value);
+  ReloadColumns;
 end;
 
 end.

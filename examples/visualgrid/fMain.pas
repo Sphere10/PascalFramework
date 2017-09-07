@@ -5,8 +5,8 @@ unit fMain;
 interface
 
 uses
-  SysUtils, Classes, Forms, Controls, Graphics, Dialogs,
-  PF.VisualGrid;
+  SynSQLite3Static, SysUtils, Classes, Forms, Controls, Graphics, Dialogs,
+  PF.VisualGrid, SynCommons, mORMot, StdCtrls;
 
 type
   TForm1 = class(TForm)
