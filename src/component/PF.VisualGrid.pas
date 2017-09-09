@@ -5,18 +5,41 @@
 interface
 
 uses
-  Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, ComCtrls
+  Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, ComCtrls, Types
   {$IFNDEF FPC}
   ,Tabs
   {$ENDIF};
 
 type
-  TCRUDAction = (caCreate, caUpdate, caDelete);
+  TSortDirection = (sdNone, sdAscending, sdDescending);
+  TFilterType = (ftMatchTextExact, ftMatchTextBeginning, ftMatchTextEnd,
+    ftMatchTextAnywhere, ftNumericEQ, ftNumericLT, ftNumericLTE, ftNumericGT,
+    ftNumericGTE, ftNumericBetweenInclusive, ftNumericBetweenExclusive);
+
+  TColumnFilter = record
+    ColumnName: utf8string;
+    Sort: TSortDirection;
+    Filter: TFilterType;
+    FilterText: utf8string;
+    FilterNumeric1: Int64;
+    FilterNumeric2: Int64;
+  end;
+
+  TFilterCriteria = TArray<TColumnFilter>;
+
+  TDataTable = record
+  public
+    //Name : utf8string;
+    Columns: TArray<utf8string>;
+    Rows : TArray<Variant>;
+  end;
 
   IDataSource = interface
-  ['{EC5D7560-7D04-4AAD-BF39-8A86114EA138}']
-
+    function FetchPage(APageNumber, APageSize : Integer; out APageCount : Integer; AFilter: TFilterCriteria): TDataTable;
   end;
+
+  TDrawVisualCellEvent = procedure(Sender: TObject; ACol, ARow: Longint;
+    Rect: TRect; State: TGridDrawState; const RowData: Variant; var Handled: boolean) of object;
 
   TCustomVisualGrid = class(TWinControl)
   protected { component interface part }
@@ -42,24 +65,38 @@ type
 
     FDrawGrid: TDrawGrid;
   private
-    procedure SetColumns(const Value: TStrings);
-
-  protected {  }
-    FColumns: TStrings;
-
-    procedure ReloadColumns;
+    procedure ClickTest(Sender: TObject);
+  protected { TComponent }
     procedure Loaded; override;
-    procedure ClickTest(Sender: TOBject);
+  protected
+    FDataTable: TDataTable;
+    FDataSource: IDataSource;
+
+    FColumns: TStrings;
+    FOnDrawVisualCell: TDrawVisualCellEvent;
+
+    procedure SetColumns(const Value: TStrings);
+    procedure RefreshGrid;
+    procedure ReloadColumns;
+    procedure SetDataSource(ADataSource: IDataSource);
+    procedure StandardDrawCell(Sender: TObject; ACol, ARow: Longint;
+    Rect: TRect; State: TGridDrawState);
+    procedure DoDrawCell(Sender: TObject; ACol, ARow: Longint;
+      Rect: TRect; State: TGridDrawState; const RowData: Variant);
+
+    property OnDrawVisualCell: TDrawVisualCellEvent read FOnDrawVisualCell write FOnDrawVisualCell;
   public
     constructor Create(Owner: TComponent); override;
     destructor Destroy; override;
     property Columns: TStrings read FColumns write SetColumns;
+    property DataSource: IDataSource read FDataSource write SetDataSource;
   end;
 
   TVisualGrid = class(TCustomVisualGrid)
   published
     property Align;
     property Columns;
+    property OnDrawVisualCell;
   end;
 
 
@@ -245,17 +282,10 @@ begin
     end;
   end;
 
-//  {$IFDEF FPC}
-//  FTabs := TCustomTabControl.Create(Self);
-//  {$ELSE}
-//  FTabs := TTabSet.Create(Self);
-//  {$ENDIF}
-//  FTabs.Parent := FBottomPanel;
-//  FTabs.Align := alClient;
-
   FDrawGrid := TDrawGrid.Create(Self);
   FDrawGrid.Parent := Self;
   FDrawGrid.Align := alClient;
+  FDrawGrid.OnDrawCell := StandardDrawCell;
 
   with TButton.Create(Self) do
   begin
@@ -273,13 +303,30 @@ begin
   inherited;
 end;
 
+procedure TCustomVisualGrid.DoDrawCell(Sender: TObject; ACol, ARow: Integer;
+  Rect: TRect; State: TGridDrawState; const RowData: Variant);
+begin
+  if ARow = 0 then
+    FDrawGrid.Canvas.TextRect(Rect, Rect.Left+2, Rect.Top+2, FColumns[ACol])
+  else
+    FDrawGrid.Canvas.TextRect(Rect, Rect.Left+2, Rect.Top+2, RowData);
+
+end;
+
 procedure TCustomVisualGrid.Loaded;
 begin
   inherited;
   ReloadColumns;
 end;
 
+procedure TCustomVisualGrid.RefreshGrid;
+begin
+
+end;
+
 procedure TCustomVisualGrid.ReloadColumns;
+var
+  I: Integer;
 begin
   FDrawGrid.ColCount := FColumns.Count;
 end;
@@ -288,6 +335,42 @@ procedure TCustomVisualGrid.SetColumns(const Value: TStrings);
 begin
   FColumns.Assign(Value);
   ReloadColumns;
+end;
+
+procedure TCustomVisualGrid.SetDataSource(ADataSource: IDataSource);
+var
+  LPages: Integer;
+  LFilter: TFilterCriteria;
+  i: Integer;
+begin
+  if FDataSource = ADataSource then
+    Exit;
+
+  FDataSource := ADataSource;
+  FDataTable := FDataSource.FetchPage(1, 100, LPages, LFilter);
+
+  FColumns.Clear;
+  for i := 0 to High(FDataTable.Columns) do
+    FColumns.Add(FDataTable.Columns[i]);
+  ReloadColumns;
+
+  FDrawGrid.RowCount := 100;
+end;
+
+procedure TCustomVisualGrid.StandardDrawCell(Sender: TObject; ACol,
+  ARow: Integer; Rect: TRect; State: TGridDrawState);
+var
+  LHandled: boolean;
+  LCellData: Variant;
+begin
+  LHandled := False;
+  if (ARow > 0) and Assigned(FDataSource) then
+    LCellData := FDataTable.Rows[ARow]._(ACol);
+
+  if Assigned(FOnDrawVisualCell) then
+    FOnDrawVisualCell(Self, ACol, ARow, Rect, State, LCellData, LHandled);
+  if not LHandled then
+    DoDrawCell(Self, ACol, ARow, Rect, State, LCellData);
 end;
 
 end.
