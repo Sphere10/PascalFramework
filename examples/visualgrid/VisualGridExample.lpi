@@ -50,7 +50,9 @@
       <Filename Value="VisualGridExample"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="$(ProjOutDir);..\..\src"/>
+      <IncludeFiles Value="$(ProjOutDir);..\..\src;..\..\src\3rd\mORMot"/>
+      <Libraries Value="..\..\src\3rd\mORMot\fpc-win32"/>
+      <OtherUnitFiles Value="..\..\src\3rd\mORMot;..\..\src\3rd\mORMot\SQLite3"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>

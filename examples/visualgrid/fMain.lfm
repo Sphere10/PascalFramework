@@ -7,6 +7,8 @@ object Form1: TForm1
   ClientHeight = 499
   ClientWidth = 757
   DesignTimePPI = 144
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
   LCLVersion = '1.7'
   object VisualGrid1: TVisualGrid
     Left = 0

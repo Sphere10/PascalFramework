@@ -18,6 +18,8 @@ type
     property foo: Integer read fFoo write fFoo;
   end;
 
+  { TForm1 }
+
   TForm1 = class(TForm, IDataSource)
     VisualGrid1: TVisualGrid;
     procedure FormCreate(Sender: TObject);
@@ -28,7 +30,7 @@ type
     FServer: TSQLRestServerDB;
     FProp: TSQLDBConnectionProperties;
 
-    function FetchPage(APageNumber, APageSize : Integer; out APageCount : Integer; AFilter: TFilterCriteria): TDataTable;
+    function FetchPage(APageIndex, APageSize : Integer; out APageCount : Integer; AFilter: TFilterCriteria): TDataTable;
   public
     { Public declarations }
   end;
@@ -44,11 +46,12 @@ implementation
 {$R *.dfm}
 {$ENDIF}
 
-function TForm1.FetchPage(APageNumber, APageSize: Integer;
+function TForm1.FetchPage(APageIndex, APageSize: Integer;
   out APageCount: Integer; AFilter: TFilterCriteria): TDataTable;
 var
   LColumnFilter: TColumnFilter;
   LOrderBy: utf8string;
+  LRecordsCount, LModulo: integer;
   i: integer;
 begin
   if Length(AFilter) > 0 then
@@ -67,19 +70,30 @@ begin
     SetLength(LOrderBy, Length(LOrderBy)-1);
   end;
 
+  // APageIndex = -1 is acceptable as initial value
+  if APageIndex < -1 then
+    raise Exception.CreateFmt('Wrong value for APageNumber (%d)', [APageIndex]);
+  APageIndex := ifthen(APageIndex=-1,0,APageIndex);
+
   // rather bad approach, but for demo purposes is ok
   // https://stackoverflow.com/questions/14468586/efficient-paging-in-sqlite-with-millions-of-records
-  APageCount := FServer.TableRowCount(TSampleData) div APageSize;
-  APageCount := ifthen(APageCount = 0, 1, APageCount);
+  LRecordsCount := FServer.TableRowCount(TSampleData);
+  APageCount := LRecordsCount div APageSize;
+  LModulo := LRecordsCount mod APageSize;
+  if LModulo > 0 then
+    Inc(APageCount);
 
   with FProp.Execute('select * from SampleData' + LOrderBy +
-    ' LIMIT ?, ?', [APageSize, APageSize*APageNumber]) do
+    ' LIMIT ? OFFSET ?', [APageSize, APageSize*APageIndex]) do
   begin
     SetLength(Result.Columns, ColumnCount);
     for i := 0 to ColumnCount - 1 do
       Result.Columns[i] := ColumnName(i);
 
-    SetLength(Result.Rows, APageSize);
+    if (Succ(APageIndex)=APageCount) and (LModulo<>0) then
+      SetLength(Result.Rows, LModulo)
+    else
+      SetLength(Result.Rows, APageSize);
     i := 0;
     while Step do
     begin

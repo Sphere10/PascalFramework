@@ -21,8 +21,5 @@ object Form1: TForm1
     Width = 640
     Height = 674
     Align = alClient
-    Columns.Strings = (
-      'Name'
-      'Foo')
   end
 end
