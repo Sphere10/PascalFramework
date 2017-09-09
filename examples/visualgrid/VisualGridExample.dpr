@@ -1,5 +1,7 @@
 program VisualGridExample;
 
+{$APPTYPE CONSOLE}
+
 uses
   Vcl.Forms,
   fMain in 'fMain.pas' {Form1};
