@@ -438,8 +438,6 @@ begin
 end;
 
 procedure TCustomVisualGrid.ReloadColumns;
-var
-  I: Integer;
 begin
   FDrawGrid.ColCount := FColumns.Count;
 end;
