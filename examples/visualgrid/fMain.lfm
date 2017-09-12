@@ -1,18 +1,19 @@
 object Form1: TForm1
-  Left = 752
-  Height = 499
-  Top = 379
-  Width = 757
+  Left = 439
+  Height = 471
+  Top = 210
+  Width = 722
   Caption = 'Form1'
-  ClientHeight = 499
-  ClientWidth = 757
+  ClientHeight = 471
+  ClientWidth = 722
   OnCreate = FormCreate
   LCLVersion = '1.6.4.0'
   object VisualGrid1: TVisualGrid
     Left = 0
-    Height = 499
+    Height = 471
     Top = 0
-    Width = 757
+    Width = 722
     Align = alClient
+    OnDrawVisualCell = VisualGrid1DrawVisualCell
   end
 end

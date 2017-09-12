@@ -6,7 +6,7 @@
 interface
 
 uses
-  Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, ComCtrls, Types;
+  Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, Types, Graphics;
 
 type
   TSortDirection = (sdNone, sdAscending, sdDescending);
@@ -92,6 +92,7 @@ type
     procedure PageSizeEditChange(Sender: TObject);
     procedure PageNavigationClick(Sender: TObject);
   private
+    function GetCanvas: TCanvas;
 {$IFDEF VISUALGRID_DEBUG}
     procedure ClickTest(Sender: TObject);
 {$ENDIF}
@@ -127,6 +128,7 @@ type
     property DataSource: IDataSource read FDataSource write SetDataSource;
     property PageSize: Integer read FPageSize write SetPageSize default 100;
     property PageIndex: Integer read FPageIndex write SetPageIndex default -1;
+    property Canvas: TCanvas read GetCanvas;
 
     property OnDrawVisualCell: TDrawVisualCellEvent read FOnDrawVisualCell write FOnDrawVisualCell;
   end;
@@ -449,6 +451,11 @@ begin
     PAGE_NAVIGATION_NEXT: PageIndex := PageIndex + 1;
     PAGE_NAVIGATION_LAST: PageIndex := FPageCount - 1;
   end;
+end;
+
+function TCustomVisualGrid.GetCanvas: TCanvas;
+begin
+  Result := FDrawGrid.Canvas;
 end;
 
 procedure TCustomVisualGrid.RefreshGrid;

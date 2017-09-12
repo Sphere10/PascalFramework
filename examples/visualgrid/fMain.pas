@@ -15,6 +15,9 @@ type
   TForm1 = class(TForm, IDataSource)
     VisualGrid1: TVisualGrid;
     procedure FormCreate(Sender: TObject);
+    procedure VisualGrid1DrawVisualCell(Sender: TObject; ACol, ARow: Longint;
+      Rect: TRect; State: TGridDrawState; const RowData: Variant;
+      var Handled: boolean);
   private
     { Private declarations }
     function FetchPage(constref AParams: TPageFetchParams; var ADataTable: TDataTable): TPageFetchResult;
@@ -69,6 +72,24 @@ end;
 procedure TForm1.FormCreate(Sender: TObject);
 begin
   VisualGrid1.DataSource := Self;
+end;
+
+procedure TForm1.VisualGrid1DrawVisualCell(Sender: TObject; ACol,
+  ARow: Longint; Rect: TRect; State: TGridDrawState; const RowData: Variant;
+  var Handled: boolean);
+var
+  LTextStyle: TTextStyle;
+begin
+  Handled := (ACol = 2) and (ARow > 0);
+  if Handled then
+  begin
+    VisualGrid1.Canvas.Font.Color:=clRed;
+    VisualGrid1.Canvas.Font.Style:=[fsBold];
+    LTextStyle := VisualGrid1.Canvas.TextStyle;
+    LTextStyle.Alignment:=taCenter;
+    VisualGrid1.Canvas.TextStyle:=LTextStyle;
+    VisualGrid1.Canvas.TextRect(Rect, Rect.Left+2, Rect.Top+2, RowData, LTextStyle);
+  end;
 end;
 
 end.
