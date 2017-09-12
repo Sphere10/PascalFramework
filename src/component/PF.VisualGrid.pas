@@ -27,13 +27,27 @@ type
 
   TDataTable = record
   public
-    //Name : utf8string;
     Columns: TArray<utf8string>;
     Rows : TArray<Variant>;
   end;
 
+  { TPageFetchParams }
+
+  TPageFetchParams = record
+    PageIndex: Integer;
+    PageSize: Integer;
+    Filter: TFilterCriteria;
+    constructor Create(AIndex: Integer; ASize: Integer; AFilter: TFilterCriteria);
+  end;
+
+  TPageFetchResult = record
+    PageIndex: Integer;
+    PageCount: Integer;
+    TotalDataCount: Integer;
+  end;
+
   IDataSource = interface
-    function FetchPage(APageIndex, APageSize : Integer; out APageCount : Integer; AFilter: TFilterCriteria): TDataTable;
+    function FetchPage(constref AParams: TPageFetchParams; var ADataTable: TDataTable): TPageFetchResult;
   end;
 
   TDrawVisualCellEvent = procedure(Sender: TObject; ACol, ARow: Longint;
@@ -134,6 +148,16 @@ implementation
 procedure Register;
 begin
   RegisterComponents('Pascal Framework', [TVisualGrid]);
+end;
+
+{ TPageFetchParams }
+
+constructor TPageFetchParams.Create(AIndex: Integer; ASize: Integer;
+  AFilter: TFilterCriteria);
+begin
+  PageIndex:= AIndex;
+  PageSize:=ASize;
+  Filter:=AFilter;
 end;
 
 { TCustomVisualGrid }
@@ -402,7 +426,7 @@ begin
   if updPageSize in FGUIUpdates then
     Exit;
   LPageSize:=StrToIntDef(FPageSizeEdit.Text, FPageSize);
-  if LPageSize < 0 then
+  if LPageSize <= 0 then
   begin
     LPageSize:=FPageSize;
     SetPageSizeEditText(IntToStr(FPageSize));
@@ -434,18 +458,23 @@ end;
 
 procedure TCustomVisualGrid.RefreshPageIndexData(ARefreshColumns: boolean);
 var
-  LFilter: TFilterCriteria;
   i: Integer;
+  LResult: TPageFetchResult;
 begin
   if Assigned(FDataSource) then
   begin
     if FPageIndex >= FPageCount then
       FPageIndex := FPageCount - 1;
 
-    FDataTable := FDataSource.FetchPage(FPageIndex, FPageSize, FPageCount, LFilter);
+    LResult := FDataSource.FetchPage(
+      TPageFetchParams.Create(FPageIndex, FPageSize, nil), FDataTable);
 
-    if (FPageIndex = -1) and (Length(FDataTable.Rows) > 0) then
-      FPageIndex := 0;
+    FPageCount:=LResult.PageCount;
+
+    FAllRecordsCountLabel.Visible := LResult.TotalDataCount >= 0;
+    FAllRecordsCountLabel.Caption:=IntToStr(LResult.TotalDataCount);
+
+    FPageIndex := LResult.PageIndex;
 
     if ARefreshColumns then
     begin
