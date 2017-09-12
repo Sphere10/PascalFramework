@@ -1,14 +1,12 @@
 ﻿unit PF.VisualGrid;
 
 {$I pf.inc}
+{.$DEFINE VISUALGRID_DEBUG}
 
 interface
 
 uses
-  Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, ComCtrls, Types
-  {$IFNDEF FPC}
-  ,Tabs
-  {$ENDIF};
+  Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, ComCtrls, Types;
 
 type
   TSortDirection = (sdNone, sdAscending, sdDescending);
@@ -24,8 +22,6 @@ type
     FilterNumeric1: Int64;
     FilterNumeric2: Int64;
   end;
-
-  TArray<T> = array of T;
 
   TFilterCriteria = TArray<TColumnFilter>;
 
@@ -43,7 +39,11 @@ type
   TDrawVisualCellEvent = procedure(Sender: TObject; ACol, ARow: Longint;
     Rect: TRect; State: TGridDrawState; const RowData: Variant; var Handled: boolean) of object;
 
+  { TCustomVisualGrid }
+
   TCustomVisualGrid = class(TWinControl)
+  protected type
+    TUpdateOfVisualGridGUI = set of (updPageIndex, updPageSize);
   protected const
     PAGE_NAVIGATION_FIRST    = 1;
     PAGE_NAVIGATION_PREVIOUS = 2;
@@ -75,15 +75,18 @@ type
     procedure StandardDrawCell(Sender: TObject; ACol, ARow: Longint;
       Rect: TRect; State: TGridDrawState);
     procedure PageIndexEditChange(Sender: TObject);
+    procedure PageSizeEditChange(Sender: TObject);
     procedure PageNavigationClick(Sender: TObject);
   private
+{$IFDEF VISUALGRID_DEBUG}
     procedure ClickTest(Sender: TObject);
+{$ENDIF}
     procedure SetPageIndex(const Value: Integer);
     procedure SetPageSize(const Value: Integer);
   protected { TComponent }
     procedure Loaded; override;
   protected
-    FPageIndexUpdate: boolean;
+    FGUIUpdates: TUpdateOfVisualGridGUI;
     FDataTable: TDataTable;
     FDataSource: IDataSource;
     FPageSize: Integer;
@@ -102,6 +105,7 @@ type
     procedure RefreshPageIndexInterface;
     procedure RefreshPageIndexData(ARefreshColumns: boolean);
     procedure SetPageIndexEditText(const AStr: utf8string);
+    procedure SetPageSizeEditText(const AStr: utf8string);
   public
     constructor Create(Owner: TComponent); override;
     destructor Destroy; override;
@@ -134,10 +138,12 @@ end;
 
 { TCustomVisualGrid }
 
+{$IFDEF VISUALGRID_DEBUG}
 procedure TCustomVisualGrid.ClickTest(Sender: TOBject);
 begin
   TButton(Sender).Caption := Format('%dx%d', [FSearchEdit.Left,FSearchEdit.Top]);
 end;
+{$ENDIF}
 
 constructor TCustomVisualGrid.Create(Owner: TComponent);
 begin
@@ -312,6 +318,7 @@ begin
         Top := 10;
         Width := 52;
         Height := 21;
+        OnChange:=PageSizeEditChange;
       end;
     end;
   end;
@@ -324,9 +331,10 @@ begin
   { default values for properties }
 
   FColumns := TStringList.Create;
-  FPageSize := 100;
+  PageSize := 100;
   PageIndex := -1;
 
+  {$IFDEF VISUALGRID_DEBUG}
   with TButton.Create(Self) do
   begin
     Left := 0;
@@ -335,6 +343,7 @@ begin
     OnClick := ClickTest;
     Caption := 'Test';
   end;
+  {$ENDIF}
 end;
 
 destructor TCustomVisualGrid.Destroy;
@@ -343,7 +352,7 @@ begin
   inherited;
 end;
 
-procedure TCustomVisualGrid.DoDrawCell(Sender: TObject; ACol, ARow: Integer;
+procedure TCustomVisualGrid.DoDrawCell(Sender: TObject; ACol, ARow: Longint;
   Rect: TRect; State: TGridDrawState; const RowData: Variant);
 var
   LText: utf8string;
@@ -368,7 +377,7 @@ procedure TCustomVisualGrid.PageIndexEditChange(Sender: TObject);
 var
   LPageIndex: Integer;
 begin
-  if FPageIndexUpdate then
+  if updPageIndex in FGUIUpdates then
     Exit;
   // value in edit has increased value by 1 (more readable for end user)
   LPageIndex := Pred(StrToIntDef(FPageIndexEdit.Text, Succ(FPageIndex)));
@@ -384,6 +393,26 @@ begin
   end;
 
   PageIndex := LPageIndex;
+end;
+
+procedure TCustomVisualGrid.PageSizeEditChange(Sender: TObject);
+var
+  LPageSize: Integer;
+begin
+  if updPageSize in FGUIUpdates then
+    Exit;
+  LPageSize:=StrToIntDef(FPageSizeEdit.Text, FPageSize);
+  if LPageSize < 0 then
+  begin
+    LPageSize:=FPageSize;
+    SetPageSizeEditText(IntToStr(FPageSize));
+  end
+  else if LPageSize > 1000000 then
+  begin
+    LPageSize:=1000000;
+    SetPageSizeEditText('1000000');
+  end;
+  PageSize:=LPageSize;
 end;
 
 procedure TCustomVisualGrid.PageNavigationClick(Sender: TObject);
@@ -470,18 +499,30 @@ end;
 
 procedure TCustomVisualGrid.SetPageIndexEditText(const AStr: utf8string);
 begin
-  FPageIndexUpdate := True;
+  Include(FGUIUpdates, updPageIndex);
   FPageIndexEdit.Text := AStr;
-  FPageIndexUpdate := false;
+  Exclude(FGUIUpdates, updPageIndex);
+end;
+
+procedure TCustomVisualGrid.SetPageSizeEditText(const AStr: utf8string);
+begin
+  Include(FGUIUpdates, updPageSize);
+  FPageSizeEdit.Text := AStr;
+  Exclude(FGUIUpdates, updPageSize);
 end;
 
 procedure TCustomVisualGrid.SetPageSize(const Value: Integer);
 begin
+  if FPageSize = Value then
+    Exit;
+
   FPageSize := Value;
+  SetPageSizeEditText(IntToStr(FPageSize));
+  RefreshPageIndexData(false);
 end;
 
 procedure TCustomVisualGrid.StandardDrawCell(Sender: TObject; ACol,
-  ARow: Integer; Rect: TRect; State: TGridDrawState);
+  ARow: Longint; Rect: TRect; State: TGridDrawState);
 var
   LHandled: boolean;
   LCellData: Variant;
