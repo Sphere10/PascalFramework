@@ -329,7 +329,7 @@ begin
       FPageSizeLabel.Parent := FBottomCenterPanel;
       with FPageSizeLabel do
       begin
-        Left := 126;
+        Left := 116;
         Top := 13;
         Width := 31;
         Height := 13;
