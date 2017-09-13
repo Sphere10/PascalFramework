@@ -1343,6 +1343,6 @@ begin
   Result := inherited Pop;
 end;
 
-{$I generics.dictionaries.inc}
+{$I inc\generics.dictionaries.inc}
 
 end.

@@ -129,8 +129,8 @@
       <Filename Value="FrameworkTester"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="$(ProjOutDir);util"/>
-      <OtherUnitFiles Value="util"/>
+      <IncludeFiles Value="$(ProjOutDir);..\src\util\generics"/>
+      <OtherUnitFiles Value="..\src\util;..\src\util\generics;..\src\form"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <CodeGeneration>
