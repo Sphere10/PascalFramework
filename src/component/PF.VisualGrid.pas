@@ -142,7 +142,6 @@ type
     property OnDrawVisualCell;
   end;
 
-
 procedure Register;
 
 implementation
@@ -267,7 +266,7 @@ begin
         Top := 8;
         Width := 25;
         Height := 25;
-        Caption := #9198;
+        Caption := '|<';
         OnClick := PageNavigationClick;
         Tag := PAGE_NAVIGATION_FIRST;
       end;
@@ -279,7 +278,7 @@ begin
         Top := 8;
         Width := 25;
         Height := 25;
-        Caption := #9204;
+        Caption := '<';
         OnClick := PageNavigationClick;
         Tag := PAGE_NAVIGATION_PREVIOUS;
       end;
@@ -291,7 +290,7 @@ begin
         Top := 8;
         Width := 25;
         Height := 25;
-        Caption := #9205;
+        Caption := '>';
         OnClick := PageNavigationClick;
         Tag := PAGE_NAVIGATION_NEXT;
       end;
@@ -303,7 +302,7 @@ begin
         Top := 8;
         Width := 25;
         Height := 25;
-        Caption := #9197;
+        Caption := '>|';
         OnClick := PageNavigationClick;
         Tag := PAGE_NAVIGATION_LAST;
       end;
@@ -479,7 +478,7 @@ begin
     FPageCount:=LResult.PageCount;
 
     FAllRecordsCountLabel.Visible := LResult.TotalDataCount >= 0;
-    FAllRecordsCountLabel.Caption:=IntToStr(LResult.TotalDataCount);
+    FAllRecordsCountLabel.Caption:=Format('Total: %d', [LResult.TotalDataCount]);
 
     FPageIndex := LResult.PageIndex;
 
