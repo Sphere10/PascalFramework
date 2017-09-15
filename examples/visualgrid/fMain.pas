@@ -6,7 +6,7 @@ interface
 
 uses
   SysUtils, Classes, Forms, Controls, Graphics, Dialogs, Math,
-  UVisualGrid, StdCtrls, Menus, SynCommons, Types, Grids, ExtCtrls, UCommon;
+  UVisualGrid, StdCtrls, Menus, Types, Grids, ExtCtrls, UCommon;
 
 type
 
@@ -30,6 +30,7 @@ type
       Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
       var Handled: boolean);
   private
+    FColumns: TTableColumns;
     FVisualGrid: TVisualGrid;
     { Private declarations }
     function GetCapabilities : TArray<TSearchCapability>;
@@ -81,12 +82,12 @@ begin
     LCount := AParams.PageSize;
 
   // test data
-  ADataTable.Columns := TArray<utf8string>.Create('ID', 'Name', 'Foo');
+  ADataTable.Columns := FColumns;
   SetLength(ADataTable.Rows, LCount);
 
   for i := 0 to LCount - 1 do
   begin
-    ADataTable.Rows[i] := TDocVariant.New([dvoReturnNullForUnknownProperty,dvoValueCopiedByReference]);
+    ADataTable.Rows[i] := TTableRow.New(@FColumns);
     ADataTable.Rows[i].ID := i + delta;
     ADataTable.Rows[i].Name := 'name'+inttostr(i + delta);
     ADataTable.Rows[i].Foo := i + delta + 1;
@@ -95,6 +96,7 @@ end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
+  FColumns := TTableColumns.Create('ID', 'Name', 'Foo');
   FVisualGrid := TVisualGrid.Create(Self);
   FVisualGrid.DataSource := Self;
   GridPanel.AddDockCenter(FVisualGrid);

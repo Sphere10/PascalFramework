@@ -10,7 +10,7 @@
   historical operations.
 
   Additional Credits:
-    <contributors add yourselves here>
+    Maciej Izak (hnb)
 }
 
 unit UCommon;
@@ -22,7 +22,8 @@ unit UCommon;
 interface
 
 uses
-  Classes, SysUtils, Controls, FGL, Generics.Collections, Generics.Defaults;
+  Classes, SysUtils, Controls, FGL, Generics.Collections, Generics.Defaults,
+  Variants;
 
 { GLOBAL FUNCTIONS }
 
@@ -98,7 +99,51 @@ type
     procedure AddDockCenter(constref AControl: TWinControl);
   end;
 
+  TTableColumns = TArray<utf8string>;
+  PTableColumns = ^TTableColumns;
+  ETableRow = class(Exception);
+
+  { TTableRow }
+
+  TTableRow = class(TInvokeableVariantType)
+  private
+    class constructor Create;
+    class destructor Destroy;
+  protected type
+    TColumnMapToIndex = TDictionary<utf8string, Integer>;
+    TColumnsDictionary = TObjectDictionary<PTableColumns, TColumnMapToIndex>;
+  protected class var
+    FColumns: TColumnsDictionary;
+  protected
+    class function MapColumns(AColumns: PTableColumns): TColumnMapToIndex;
+  public
+    function GetProperty(var Dest: TVarData; const V: TVarData;
+      const Name: string): Boolean; override;
+    function SetProperty(var V: TVarData; const Name: string;
+      const Value: TVarData): Boolean; override;
+    procedure Clear(var V: TVarData); override;
+    procedure Copy(var Dest: TVarData; const Source: TVarData; const Indirect: Boolean); override;
+    function DoFunction(var Dest: TVarData; const V: TVarData;
+      const Name: string; const Arguments: TVarDataArray): Boolean; override;
+
+    class function New(AColumns: PTableColumns): Variant;
+  end;
+
+  TTableRowData = packed record
+  public
+    vtype: tvartype;
+  private
+    vfiller1 : word;
+    vfiller2: Pointer;
+  public
+    vcolumnmap: TTableRow.TColumnMapToIndex;
+    vvalues: TArray<Variant>;
+  end;
+
 implementation
+
+var
+  TableRowType: TTableRow = nil;
 
 {%region Global functions %}
 
@@ -349,6 +394,97 @@ end;
 
 {%endregion}
 
+{ TTableRow }
+
+class constructor TTableRow.Create;
+begin
+  FColumns := TColumnsDictionary.Create([doOwnsValues]);
+end;
+
+class destructor TTableRow.Destroy;
+begin
+  FColumns.Free;
+end;
+
+class function TTableRow.MapColumns(AColumns: PTableColumns): TColumnMapToIndex;
+var
+  i: Integer;
+begin
+  Result := TColumnMapToIndex.Create;
+  for i := 0 to High(AColumns^) do
+    Result.Add(AColumns^[i], i);
+  FColumns.Add(AColumns, Result);
+end;
+
+function TTableRow.GetProperty(var Dest: TVarData;
+  const V: TVarData; const Name: string): Boolean;
+var
+  LRow: TTableRowData absolute V;
+begin
+  Variant(Dest) := LRow.vvalues[LRow.vcolumnmap[Name]];
+  Result := true;
+end;
+
+function TTableRow.SetProperty(var V: TVarData; const Name: string;
+  const Value: TVarData): Boolean;
+var
+  LRow: TTableRowData absolute V;
+begin
+  LRow.vvalues[LRow.vcolumnmap[Name]] := Variant(Value);
+  Result := true;
+end;
+
+procedure TTableRow.Clear(var V: TVarData);
+begin
+  Finalize(TTableRowData(V));
+  FillChar(V, SizeOf(V), #0);
+end;
+
+procedure TTableRow.Copy(var Dest: TVarData; const Source: TVarData;
+  const Indirect: Boolean);
+var
+  LDestRow: TTableRowData absolute Dest;
+  LSourceRow: TTableRowData absolute Source;
+begin
+  if Indirect then
+    SimplisticCopy(Dest,Source,true)
+  else
+  begin
+    VarClear(variant(Dest));
+    LDestRow.vtype := LSourceRow.vtype;
+    LDestRow.vcolumnmap := LSourceRow.vcolumnmap;
+    LDestRow.vvalues := system.copy(TTableRowData(LSourceRow).vvalues);
+  end;
+end;
+
+function TTableRow.DoFunction(var Dest: TVarData; const V: TVarData;
+  const Name: string; const Arguments: TVarDataArray): Boolean;
+var
+  LRow: TTableRowData absolute V;
+begin
+  Result := (Name = '_') and (Length(Arguments)=1);
+  if Result then
+    Variant(Dest) := LRow.vvalues[Variant(Arguments[0])];
+end;
+
+class function TTableRow.New(AColumns: PTableColumns): Variant;
+var
+  LColumnMap: TColumnMapToIndex;
+begin
+  if not Assigned(AColumns) then
+    raise ETableRow.Create('AColumns can''t be nil!');
+
+  VarClear(Result);
+  FillChar(Result, SizeOf(Result), #0);
+  TTableRowData(Result).vtype:=TableRowType.VarType;
+
+  if not FColumns.TryGetValue(AColumns, LColumnMap) then
+    LColumnMap := MapColumns(AColumns);
+
+  TTableRowData(Result).vcolumnmap:=LColumnMap;
+  SetLength(TTableRowData(Result).vvalues, Length(AColumns^));
+end;
+
 {%region TNotifyManyEventHelper}
 
 procedure TNotifyManyEventHelper.Add(listener : TNotifyEvent);
@@ -396,6 +532,9 @@ end;
 
 {%endregion}
 
-
+initialization
+  TableRowType := TTableRow.Create;
+finalization
+  TableRowType.Free;
 end.
 

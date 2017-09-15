@@ -6,7 +6,8 @@
 interface
 
 uses
-  Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, Types, Graphics;
+  Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, Types, Graphics,
+  UCommon;
 
 
 
@@ -37,7 +38,7 @@ type
 
   TDataTable = record
   public
-    Columns: TArray<utf8string>;
+    Columns: TTableColumns;
     Rows : TArray<Variant>;
   end;
 
