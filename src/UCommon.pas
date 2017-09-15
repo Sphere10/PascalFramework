@@ -95,6 +95,7 @@ type
   { Controls Helpers }
   TWinControlHelper = class helper for TWinControl
     procedure RemoveAllControls(destroy : boolean);
+    procedure AddDockCenter(constref AControl: TWinControl);
   end;
 
 implementation
@@ -381,6 +382,15 @@ begin
     control := self.Controls[0];
     self.RemoveControl(control);
     if destroy then control.Destroy;
+  end;
+end;
+
+
+procedure TWinControlHelper.AddDockCenter(constref AControl: TWinControl);
+begin
+  with AControl do begin
+     Align := alClient;
+     Parent := self;
   end;
 end;
 

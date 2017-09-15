@@ -6,14 +6,27 @@ interface
 
 uses
   SysUtils, Classes, Forms, Controls, Graphics, Dialogs, Math,
-  UVisualGrid, StdCtrls, Menus, SynCommons, Types, Grids;
+  UVisualGrid, StdCtrls, Menus, SynCommons, Types, Grids, ExtCtrls, UCommon;
 
 type
 
   { TForm1 }
 
   TForm1 = class(TForm, IDataSource)
+    CanPageCheckBox: TCheckBox;
+    CanSearchCheckBox: TCheckBox;
+    AlignCheckBox: TCheckBox;
+    CanSelectCheckBox: TCheckBox;
+    AddDelayCheckBox: TCheckBox;
+    GridPanel: TPanel;
+    UserPageSizeRadioButton: TRadioButton;
+    AutoPageSizeRadioButton: TRadioButton;
+    FullPageSizeRadioButton: TRadioButton;
+    CellSelectRadioButton: TRadioButton;
+    SingleSelectRadioButton: TRadioButton;
+    MultiRowSelectRadioButton: TRadioButton;
     VisualGrid1: TVisualGrid;
+    procedure CanSelectCheckBoxChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure VisualGrid1DrawVisualCell(Sender: TObject; ACol, ARow: Longint;
       constref Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
@@ -73,16 +86,8 @@ end;
 procedure TForm1.FormCreate(Sender: TObject);
 begin
   VisualGrid1 := TVisualGrid.Create(Self);
-  with VisualGrid1 do begin
-    Left := 0;
-    Height := 471;
-    Top := 0;
-    Width := 722;
-    Align := alClient;
-    OnDrawVisualCell := VisualGrid1DrawVisualCell;
-  end;
-  InsertControl(VisualGrid1);
   VisualGrid1.DataSource := Self;
+  GridPanel.AddDockCenter(VisualGrid1);
 end;
 
 procedure TForm1.VisualGrid1DrawVisualCell(Sender: TObject; ACol,

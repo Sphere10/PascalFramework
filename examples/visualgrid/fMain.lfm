@@ -8,4 +8,105 @@ object Form1: TForm1
   ClientWidth = 722
   OnCreate = FormCreate
   LCLVersion = '1.6.4.0'
+  object GridPanel: TPanel
+    Left = 208
+    Height = 384
+    Top = 56
+    Width = 490
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BevelOuter = bvNone
+    BorderWidth = 1
+    BorderStyle = bsSingle
+    ParentColor = False
+    TabOrder = 0
+  end
+  object CanPageCheckBox: TCheckBox
+    Left = 32
+    Height = 19
+    Top = 56
+    Width = 70
+    Caption = 'Can Page'
+    TabOrder = 1
+  end
+  object CanSearchCheckBox: TCheckBox
+    Left = 32
+    Height = 19
+    Top = 264
+    Width = 79
+    Caption = 'Can Search'
+    TabOrder = 2
+  end
+  object UserPageSizeRadioButton: TRadioButton
+    Left = 48
+    Height = 19
+    Top = 80
+    Width = 139
+    Caption = 'User editable page size'
+    TabOrder = 3
+  end
+  object AutoPageSizeRadioButton: TRadioButton
+    Left = 48
+    Height = 19
+    Top = 104
+    Width = 97
+    Caption = 'Auto page size'
+    TabOrder = 4
+  end
+  object FullPageSizeRadioButton: TRadioButton
+    Left = 48
+    Height = 19
+    Top = 128
+    Width = 90
+    Caption = 'Full page size'
+    TabOrder = 5
+  end
+  object CanSelectCheckBox: TCheckBox
+    Left = 32
+    Height = 19
+    Top = 160
+    Width = 75
+    Caption = 'Can Select'
+    OnChange = CanSelectCheckBoxChange
+    TabOrder = 6
+  end
+  object CellSelectRadioButton: TRadioButton
+    Left = 48
+    Height = 19
+    Top = 184
+    Width = 72
+    Caption = 'Select cell'
+    TabOrder = 7
+  end
+  object SingleSelectRadioButton: TRadioButton
+    Left = 48
+    Height = 19
+    Top = 208
+    Width = 108
+    Caption = 'Select single row'
+    TabOrder = 8
+  end
+  object MultiRowSelectRadioButton: TRadioButton
+    Left = 48
+    Height = 19
+    Top = 236
+    Width = 107
+    Caption = 'Select multi-row'
+    TabOrder = 9
+  end
+  object AddDelayCheckBox: TCheckBox
+    Left = 32
+    Height = 19
+    Top = 312
+    Width = 106
+    Caption = 'Add Fetch Delay'
+    TabOrder = 10
+  end
+  object AlignCheckBox: TCheckBox
+    Left = 32
+    Height = 19
+    Top = 288
+    Width = 115
+    Caption = 'Align Horizontally'
+    TabOrder = 11
+  end
 end
