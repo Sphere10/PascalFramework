@@ -63,7 +63,7 @@ type
   TSearchCapability = record
     ColumnName : utf8string;
     SupportedFilters : TVisualGridFilters;
-    class function From(AName : utf8string; AFilterType : TVisualGridFilters) : TSearchCapability; static;
+    class function From(const AName : utf8string; AFilterType : TVisualGridFilters) : TSearchCapability; static;
   end;
 
   { IDataSource }
@@ -186,7 +186,7 @@ end;
 
 { TSearchCapability }
 
-class function TSearchCapability.From(AName : utf8string; AFilterType : TVisualGridFilters) : TSearchCapability;
+class function TSearchCapability.From(const AName : utf8string; AFilterType : TVisualGridFilters) : TSearchCapability;
 begin
   Result.ColumnName := AName;
   Result.SupportedFilters := AFilterType;
