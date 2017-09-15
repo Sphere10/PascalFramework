@@ -8,12 +8,12 @@ interface
 uses
   Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, Types, Graphics;
 
+
 type
   TSortDirection = (sdNone, sdAscending, sdDescending);
   TFilterType = (ftMatchTextExact, ftMatchTextBeginning, ftMatchTextEnd,
     ftMatchTextAnywhere, ftNumericEQ, ftNumericLT, ftNumericLTE, ftNumericGT,
     ftNumericGTE, ftNumericBetweenInclusive, ftNumericBetweenExclusive);
-
   TColumnFilter = record
     ColumnName: utf8string;
     Sort: TSortDirection;
@@ -51,7 +51,7 @@ type
   end;
 
   TDrawVisualCellEvent = procedure(Sender: TObject; ACol, ARow: Longint;
-    Rect: TRect; State: TGridDrawState; const RowData: Variant; var Handled: boolean) of object;
+    constref Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant; var Handled: boolean) of object;
 
   { TCustomVisualGrid }
 
@@ -567,7 +567,7 @@ begin
     LCellData := FDataTable.Rows[ARow-1]._(ACol);
 
   if Assigned(FOnDrawVisualCell) then
-    FOnDrawVisualCell(Self, ACol, ARow, Rect, State, LCellData, LHandled);
+    FOnDrawVisualCell(Self, ACol, ARow, Canvas, Rect, State, LCellData, LHandled);
   if not LHandled then
     DoDrawCell(Self, ACol, ARow, Rect, State, LCellData);
 end;

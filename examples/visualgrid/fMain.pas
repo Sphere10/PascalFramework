@@ -16,7 +16,7 @@ type
     VisualGrid1: TVisualGrid;
     procedure FormCreate(Sender: TObject);
     procedure VisualGrid1DrawVisualCell(Sender: TObject; ACol, ARow: Longint;
-      Rect: TRect; State: TGridDrawState; const RowData: Variant;
+      constref Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
       var Handled: boolean);
   private
     { Private declarations }
@@ -75,7 +75,7 @@ begin
 end;
 
 procedure TForm1.VisualGrid1DrawVisualCell(Sender: TObject; ACol,
-  ARow: Longint; Rect: TRect; State: TGridDrawState; const RowData: Variant;
+  ARow: Longint; constref Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
   var Handled: boolean);
 var
   LTextStyle: TTextStyle;
@@ -83,12 +83,12 @@ begin
   Handled := (ACol = 2) and (ARow > 0);
   if Handled then
   begin
-    VisualGrid1.Canvas.Font.Color:=clRed;
-    VisualGrid1.Canvas.Font.Style:=[fsBold];
-    LTextStyle := VisualGrid1.Canvas.TextStyle;
+    Canvas.Font.Color:=clRed;
+    Canvas.Font.Style:=[fsBold];
+    LTextStyle := Canvas.TextStyle;
     LTextStyle.Alignment:=taCenter;
-    VisualGrid1.Canvas.TextStyle:=LTextStyle;
-    VisualGrid1.Canvas.TextRect(Rect, Rect.Left+2, Rect.Top+2, RowData, LTextStyle);
+    Canvas.TextStyle:=LTextStyle;
+    Canvas.TextRect(Rect, Rect.Left+2, Rect.Top+2, RowData, LTextStyle);
   end;
 end;
 
