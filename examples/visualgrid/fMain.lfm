@@ -22,89 +22,89 @@ object Form1: TForm1
   end
   object CanPageCheckBox: TCheckBox
     Left = 32
-    Height = 19
+    Height = 29
     Top = 56
-    Width = 70
+    Width = 104
     Caption = 'Can Page'
     TabOrder = 1
   end
   object CanSearchCheckBox: TCheckBox
     Left = 32
-    Height = 19
+    Height = 29
     Top = 264
-    Width = 79
+    Width = 117
     Caption = 'Can Search'
     TabOrder = 2
   end
   object UserPageSizeRadioButton: TRadioButton
     Left = 48
-    Height = 19
+    Height = 29
     Top = 80
-    Width = 139
+    Width = 212
     Caption = 'User editable page size'
     TabOrder = 3
   end
   object AutoPageSizeRadioButton: TRadioButton
     Left = 48
-    Height = 19
+    Height = 29
     Top = 104
-    Width = 97
+    Width = 148
     Caption = 'Auto page size'
     TabOrder = 4
   end
   object FullPageSizeRadioButton: TRadioButton
     Left = 48
-    Height = 19
+    Height = 29
     Top = 128
-    Width = 90
+    Width = 136
     Caption = 'Full page size'
     TabOrder = 5
   end
   object CanSelectCheckBox: TCheckBox
     Left = 32
-    Height = 19
+    Height = 29
     Top = 160
-    Width = 75
+    Width = 111
     Caption = 'Can Select'
     TabOrder = 6
   end
   object CellSelectRadioButton: TRadioButton
     Left = 48
-    Height = 19
+    Height = 29
     Top = 184
-    Width = 72
+    Width = 106
     Caption = 'Select cell'
     TabOrder = 7
   end
   object SingleSelectRadioButton: TRadioButton
     Left = 48
-    Height = 19
+    Height = 29
     Top = 208
-    Width = 108
+    Width = 162
     Caption = 'Select single row'
     TabOrder = 8
   end
   object MultiRowSelectRadioButton: TRadioButton
     Left = 48
-    Height = 19
+    Height = 29
     Top = 236
-    Width = 107
+    Width = 158
     Caption = 'Select multi-row'
     TabOrder = 9
   end
   object AddDelayCheckBox: TCheckBox
     Left = 32
-    Height = 19
+    Height = 29
     Top = 312
-    Width = 106
+    Width = 160
     Caption = 'Add Fetch Delay'
     TabOrder = 10
   end
   object AlignCheckBox: TCheckBox
     Left = 32
-    Height = 19
+    Height = 29
     Top = 288
-    Width = 115
+    Width = 171
     Caption = 'Align Horizontally'
     TabOrder = 11
   end

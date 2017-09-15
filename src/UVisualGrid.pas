@@ -9,31 +9,25 @@ uses
   Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, Types, Graphics;
 
 
-const
-    ftMatchTextExact = 1 SHL 0;
-    ftMatchTextBeginning = 1 SHL 1;
-    ftMatchTextEnd = 1 SHL 2;
-    ftMatchTextAnywhere = 1 SHL 3;
-    ftNumericEQ = 1 SHL 4;
-    ftNumericLT = 1 SHL 5;
-    ftNumericLTE = 1 SHL 6;
-    ftNumericGT = 1 SHL 7;
-    ftNumericGTE = 1 SHL 8;
-    ftNumericBetweenInclusive = 1 SHL 9;
-    ftNumericBetweenExclusive = 1 SHL 10;
-    ftSortable = 1 SHL 11;
-    ftText = ftMatchTextExact OR ftMatchTextBeginning OR ftMatchTextEnd OR ftMatchTextAnywhere;
-    ftNumeric = ftNumericEQ OR ftNumericLT OR ftNumericLTE OR ftNumericGT OR ftNumericGTE OR ftNumericBetweenInclusive OR ftNumericBetweenExclusive;
-    ftSortableText = ftMatchTextExact OR ftMatchTextBeginning OR ftMatchTextEnd OR ftMatchTextAnywhere OR ftSortable;
-    ftSortableNumeric = ftNumericEQ OR ftNumericLT OR ftNumericLTE OR ftNumericGT OR ftNumericGTE OR ftNumericBetweenInclusive OR ftNumericBetweenExclusive OR ftSortable;
 
 type
   TSortDirection = (sdNone, sdAscending, sdDescending);
-  TFilterType  = DWord;
+  TVisualGridFilter = (vgfMatchTextExact, vgfMatchTextBeginning, vgfMatchTextEnd,
+    vgfMatchTextAnywhere, vgfNumericEQ, vgfNumericLT, vgfNumericLTE, vgfNumericGT,
+    vgfNumericGTE, vgfNumericBetweenInclusive, vgfNumericBetweenExclusive, vgfSortable);
+  TVisualGridFilters = set of TVisualGridFilter;
+
+const
+  TEXT_FILTER = [vgfMatchTextExact, vgfMatchTextBeginning, vgfMatchTextEnd, vgfMatchTextAnywhere];
+  NUMERIC_FILTER = [vgfNumericEQ, vgfNumericLT, vgfNumericLTE, vgfNumericGT, vgfNumericGTE, vgfNumericBetweenInclusive, vgfNumericBetweenExclusive];
+  SORTABLE_TEXT_FILTER = [vgfMatchTextExact, vgfMatchTextBeginning, vgfMatchTextEnd, vgfMatchTextAnywhere, vgfSortable];
+  SORTABLE_NUMERIC_FILTER = [vgfNumericEQ, vgfNumericLT, vgfNumericLTE, vgfNumericGT, vgfNumericGTE, vgfNumericBetweenInclusive, vgfNumericBetweenExclusive, vgfSortable];
+
+type
   TColumnFilter = record
     ColumnName: utf8string;
     Sort: TSortDirection;
-    Filter: TFilterType;
+    Filter: TVisualGridFilters;
     FilterText: utf8string;
     FilterNumeric1: Int64;
     FilterNumeric2: Int64;
@@ -68,8 +62,8 @@ type
 
   TSearchCapability = record
     ColumnName : utf8string;
-    SupportedFilters : TFilterType;
-    class function From(AName : utf8string; AFilterType : TFilterType) : TSearchCapability; static;
+    SupportedFilters : TVisualGridFilters;
+    class function From(AName : utf8string; AFilterType : TVisualGridFilters) : TSearchCapability; static;
   end;
 
   { IDataSource }
@@ -80,7 +74,7 @@ type
   end;
 
   TDrawVisualCellEvent = procedure(Sender: TObject; ACol, ARow: Longint;
-    constref Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant; var Handled: boolean) of object;
+    Canvas: TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant; var Handled: boolean) of object;
 
   { TCustomVisualGrid }
 
@@ -192,7 +186,7 @@ end;
 
 { TSearchCapability }
 
-class function TSearchCapability.From(AName : utf8string; AFilterType : TFilterType) : TSearchCapability;
+class function TSearchCapability.From(AName : utf8string; AFilterType : TVisualGridFilters) : TSearchCapability;
 begin
   Result.ColumnName := AName;
   Result.SupportedFilters := AFilterType;

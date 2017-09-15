@@ -28,7 +28,7 @@ type
     VisualGrid1: TVisualGrid;
     procedure FormCreate(Sender: TObject);
     procedure VisualGrid1DrawVisualCell(Sender: TObject; ACol, ARow: Longint;
-      constref Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
+      Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
       var Handled: boolean);
   private
     { Private declarations }
@@ -50,8 +50,8 @@ implementation
 function TForm1.GetCapabilities : TArray<TSearchCapability>;
 begin
   SetLength(Result, 2);
-  Result[0] := TSearchCapability.From('ID', ftSortableNumeric);
-  Result[1] := TSearchCapability.From('ID', ftSortableText);
+  Result[0] := TSearchCapability.From('ID', SORTABLE_NUMERIC_FILTER);
+  Result[1] := TSearchCapability.From('ID', SORTABLE_TEXT_FILTER);
 end;
 
 function TForm1.FetchPage(constref AParams: TPageFetchParams;
@@ -86,9 +86,12 @@ begin
   SetLength(ADataTable.Rows, LCount);
 
   for i := 0 to LCount - 1 do
-    ADataTable.Rows[i] := _JsonFastFmt('{ID:%,Name:?,Foo:%}',
-      [i + delta + 1, i + delta],
-      ['name'+inttostr(i + delta)]);
+  begin
+    ADataTable.Rows[i] := TDocVariant.New([dvoReturnNullForUnknownProperty,dvoValueCopiedByReference]);
+    ADataTable.Rows[i].ID := i + delta;
+    ADataTable.Rows[i].Name := 'name'+inttostr(i + delta);
+    ADataTable.Rows[i].Foo := i + delta + 1;
+  end;
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
@@ -99,7 +102,7 @@ begin
 end;
 
 procedure TForm1.VisualGrid1DrawVisualCell(Sender: TObject; ACol,
-  ARow: Longint; constref Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
+  ARow: Longint; Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
   var Handled: boolean);
 var
   LTextStyle: TTextStyle;
