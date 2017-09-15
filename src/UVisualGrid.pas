@@ -76,6 +76,8 @@ type
   TDrawVisualCellEvent = procedure(Sender: TObject; ACol, ARow: Longint;
     Canvas: TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant; var Handled: boolean) of object;
 
+  EVisualGridError = class(Exception);
+
   { TCustomVisualGrid }
 
   TCustomVisualGrid = class(TWinControl)
@@ -131,10 +133,8 @@ type
     FPageIndex: Integer;
     FPageCount: Integer;
 
-    FColumns: TStrings;
     FOnDrawVisualCell: TDrawVisualCellEvent;
 
-    procedure SetColumns(const Value: TStrings);
     procedure RefreshGrid;
     procedure ReloadColumns;
     procedure SetDataSource(ADataSource: IDataSource);
@@ -147,7 +147,6 @@ type
   public
     constructor Create(Owner: TComponent); override;
     destructor Destroy; override;
-    property Columns: TStrings read FColumns write SetColumns;
     property DataSource: IDataSource read FDataSource write SetDataSource;
     property PageSize: Integer read FPageSize write SetPageSize default 100;
     property PageIndex: Integer read FPageIndex write SetPageIndex default -1;
@@ -159,7 +158,6 @@ type
   TVisualGrid = class(TCustomVisualGrid)
   published
     property Align;
-    property Columns;
     property PageSize;
 
     property OnDrawVisualCell;
@@ -386,7 +384,6 @@ begin
 
   { default values for properties }
 
-  FColumns := TStringList.Create;
   PageSize := 100;
   PageIndex := -1;
 
@@ -404,7 +401,6 @@ end;
 
 destructor TCustomVisualGrid.Destroy;
 begin
-  FColumns.Free;
   inherited;
 end;
 
@@ -415,8 +411,10 @@ var
 begin
   if ARow = 0 then
   begin
-    if ACol < FColumns.Count then
-      LText := FColumns[ACol];
+    if ACol < Length(FDataTable.Columns) then
+      LText := FDataTable.Columns[ACol]
+    else
+      raise EVisualGridError.CreateFmt('Improper column index. Max expected is %d but %d found.', [Length(FDataTable.Columns),ACol]);
     FDrawGrid.Canvas.TextRect(Rect, Rect.Left+2, Rect.Top+2, LText)
   end
   else
@@ -514,12 +512,7 @@ begin
     FPageIndex := LResult.PageIndex;
 
     if ARefreshColumns then
-    begin
-      FColumns.Clear;
-      for i := 0 to High(FDataTable.Columns) do
-        FColumns.Add(FDataTable.Columns[i]);
       ReloadColumns;
-    end;
     FDrawGrid.RowCount := Length(FDataTable.Rows) + 1;
   end;
   RefreshPageIndexInterface;
@@ -534,13 +527,7 @@ end;
 
 procedure TCustomVisualGrid.ReloadColumns;
 begin
-  FDrawGrid.ColCount := FColumns.Count;
-end;
-
-procedure TCustomVisualGrid.SetColumns(const Value: TStrings);
-begin
-  FColumns.Assign(Value);
-  ReloadColumns;
+  FDrawGrid.ColCount := Length(FDataTable.Columns);
 end;
 
 procedure TCustomVisualGrid.SetDataSource(ADataSource: IDataSource);
