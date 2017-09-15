@@ -25,12 +25,12 @@ type
     CellSelectRadioButton: TRadioButton;
     SingleSelectRadioButton: TRadioButton;
     MultiRowSelectRadioButton: TRadioButton;
-    VisualGrid1: TVisualGrid;
     procedure FormCreate(Sender: TObject);
     procedure VisualGrid1DrawVisualCell(Sender: TObject; ACol, ARow: Longint;
       Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
       var Handled: boolean);
   private
+    FVisualGrid: TVisualGrid;
     { Private declarations }
     function GetCapabilities : TArray<TSearchCapability>;
     property Capability : TArray<TSearchCapability> read GetCapabilities;
@@ -41,7 +41,6 @@ type
 
 var
   Form1: TForm1;
-  VisualGrid1: TVisualGrid;
 
 implementation
 
@@ -96,9 +95,9 @@ end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
-  VisualGrid1 := TVisualGrid.Create(Self);
-  VisualGrid1.DataSource := Self;
-  GridPanel.AddDockCenter(VisualGrid1);
+  FVisualGrid := TVisualGrid.Create(Self);
+  FVisualGrid.DataSource := Self;
+  GridPanel.AddDockCenter(FVisualGrid);
 end;
 
 procedure TForm1.VisualGrid1DrawVisualCell(Sender: TObject; ACol,
