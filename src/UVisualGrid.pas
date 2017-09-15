@@ -9,11 +9,27 @@ uses
   Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, Types, Graphics;
 
 
+const
+    ftMatchTextExact = 1 SHL 0;
+    ftMatchTextBeginning = 1 SHL 1;
+    ftMatchTextEnd = 1 SHL 2;
+    ftMatchTextAnywhere = 1 SHL 3;
+    ftNumericEQ = 1 SHL 4;
+    ftNumericLT = 1 SHL 5;
+    ftNumericLTE = 1 SHL 6;
+    ftNumericGT = 1 SHL 7;
+    ftNumericGTE = 1 SHL 8;
+    ftNumericBetweenInclusive = 1 SHL 9;
+    ftNumericBetweenExclusive = 1 SHL 10;
+    ftSortable = 1 SHL 11;
+    ftText = ftMatchTextExact OR ftMatchTextBeginning OR ftMatchTextEnd OR ftMatchTextAnywhere;
+    ftNumeric = ftNumericEQ OR ftNumericLT OR ftNumericLTE OR ftNumericGT OR ftNumericGTE OR ftNumericBetweenInclusive OR ftNumericBetweenExclusive;
+    ftSortableText = ftMatchTextExact OR ftMatchTextBeginning OR ftMatchTextEnd OR ftMatchTextAnywhere OR ftSortable;
+    ftSortableNumeric = ftNumericEQ OR ftNumericLT OR ftNumericLTE OR ftNumericGT OR ftNumericGTE OR ftNumericBetweenInclusive OR ftNumericBetweenExclusive OR ftSortable;
+
 type
   TSortDirection = (sdNone, sdAscending, sdDescending);
-  TFilterType = (ftMatchTextExact, ftMatchTextBeginning, ftMatchTextEnd,
-    ftMatchTextAnywhere, ftNumericEQ, ftNumericLT, ftNumericLTE, ftNumericGT,
-    ftNumericGTE, ftNumericBetweenInclusive, ftNumericBetweenExclusive);
+  TFilterType  = DWord;
   TColumnFilter = record
     ColumnName: utf8string;
     Sort: TSortDirection;
@@ -40,14 +56,27 @@ type
     constructor Create(AIndex: Integer; ASize: Integer; AFilter: TFilterCriteria);
   end;
 
+  { TPageFetchResult }
+
   TPageFetchResult = record
     PageIndex: Integer;
     PageCount: Integer;
     TotalDataCount: Integer;
   end;
 
+  { TSearchCapability }
+
+  TSearchCapability = record
+    ColumnName : utf8string;
+    SupportedFilters : TFilterType;
+    class function From(AName : utf8string; AFilterType : TFilterType) : TSearchCapability; static;
+  end;
+
+  { IDataSource }
+
   IDataSource = interface
     function FetchPage(constref AParams: TPageFetchParams; var ADataTable: TDataTable): TPageFetchResult;
+    property Capability : TArray<TSearchCapability>;
   end;
 
   TDrawVisualCellEvent = procedure(Sender: TObject; ACol, ARow: Longint;
@@ -159,6 +188,14 @@ begin
   PageIndex:= AIndex;
   PageSize:=ASize;
   Filter:=AFilter;
+end;
+
+{ TSearchCapability }
+
+class function TSearchCapability.From(AName : utf8string; AFilterType : TFilterType) : TSearchCapability;
+begin
+  Result.ColumnName := AName;
+  Result.SupportedFilters := AFilterType;
 end;
 
 { TCustomVisualGrid }

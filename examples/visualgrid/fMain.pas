@@ -26,13 +26,14 @@ type
     SingleSelectRadioButton: TRadioButton;
     MultiRowSelectRadioButton: TRadioButton;
     VisualGrid1: TVisualGrid;
-    procedure CanSelectCheckBoxChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure VisualGrid1DrawVisualCell(Sender: TObject; ACol, ARow: Longint;
       constref Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
       var Handled: boolean);
   private
     { Private declarations }
+    function GetCapabilities : TArray<TSearchCapability>;
+    property Capability : TArray<TSearchCapability> read GetCapabilities;
     function FetchPage(constref AParams: TPageFetchParams; var ADataTable: TDataTable): TPageFetchResult;
   public
     { Public declarations }
@@ -45,6 +46,13 @@ var
 implementation
 
 {$R *.lfm}
+
+function TForm1.GetCapabilities : TArray<TSearchCapability>;
+begin
+  SetLength(Result, 2);
+  Result[0] := TSearchCapability.From('ID', ftSortableNumeric);
+  Result[1] := TSearchCapability.From('ID', ftSortableText);
+end;
 
 function TForm1.FetchPage(constref AParams: TPageFetchParams;
   var ADataTable: TDataTable): TPageFetchResult;
@@ -107,5 +115,6 @@ begin
     Canvas.TextRect(Rect, Rect.Left+2, Rect.Top+2, RowData, LTextStyle);
   end;
 end;
+
 
 end.

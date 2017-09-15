@@ -66,7 +66,6 @@ object Form1: TForm1
     Top = 160
     Width = 75
     Caption = 'Can Select'
-    OnChange = CanSelectCheckBoxChange
     TabOrder = 6
   end
   object CellSelectRadioButton: TRadioButton
