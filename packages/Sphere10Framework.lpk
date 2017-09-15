@@ -2,22 +2,21 @@
 <CONFIG>
   <Package Version="4">
     <PathDelim Value="\"/>
-    <Name Value="PF_VisualGrid"/>
+    <Name Value="Sphere10Framework"/>
     <Type Value="RunAndDesignTime"/>
     <CompilerOptions>
       <Version Value="11"/>
       <PathDelim Value="\"/>
       <SearchPaths>
-        <IncludeFiles Value="..\..\src"/>
-        <OtherUnitFiles Value="..\..\src\component"/>
+        <IncludeFiles Value="..\src"/>
+        <OtherUnitFiles Value="..\src"/>
         <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
     </CompilerOptions>
     <Files Count="1">
       <Item1>
-        <Filename Value="..\..\src\component\PF.VisualGrid.pas"/>
-        <HasRegisterProc Value="True"/>
-        <UnitName Value="PF.VisualGrid"/>
+        <Filename Value="..\src\UVisualGrid.pas"/>
+        <UnitName Value="UVisualGrid"/>
       </Item1>
     </Files>
     <RequiredPkgs Count="2">

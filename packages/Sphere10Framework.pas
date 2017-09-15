@@ -2,20 +2,19 @@
   This source is only used to compile and install the package.
  }
 
-unit PF_VisualGrid;
+unit Sphere10Framework;
 
 interface
 
 uses
-  PF.VisualGrid, LazarusPackageIntf;
+  UVisualGrid, LazarusPackageIntf;
 
 implementation
 
 procedure Register;
 begin
-  RegisterUnit('PF.VisualGrid', @PF.VisualGrid.Register);
 end;
 
 initialization
-  RegisterPackage('PF_VisualGrid', @Register);
+  RegisterPackage('Sphere10Framework', @Register);
 end.

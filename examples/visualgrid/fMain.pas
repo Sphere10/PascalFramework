@@ -1,12 +1,12 @@
 unit fMain;
 
-{$I pf.inc}
+{$MODE DELPHI}
 
 interface
 
 uses
   SysUtils, Classes, Forms, Controls, Graphics, Dialogs, Math,
-  PF.VisualGrid, StdCtrls, Menus, SynCommons, Types, Grids;
+  UVisualGrid, StdCtrls, Menus, SynCommons, Types, Grids;
 
 type
 
@@ -27,6 +27,7 @@ type
 
 var
   Form1: TForm1;
+  VisualGrid1: TVisualGrid;
 
 implementation
 
@@ -71,6 +72,16 @@ end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
+  VisualGrid1 := TVisualGrid.Create(Self);
+  with VisualGrid1 do begin
+    Left := 0;
+    Height := 471;
+    Top := 0;
+    Width := 722;
+    Align := alClient;
+    OnDrawVisualCell := VisualGrid1DrawVisualCell;
+  end;
+  InsertControl(VisualGrid1);
   VisualGrid1.DataSource := Self;
 end;
 

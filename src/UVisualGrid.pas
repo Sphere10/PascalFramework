@@ -1,6 +1,6 @@
-﻿unit PF.VisualGrid;
+﻿unit UVisualGrid;
 
-{$I pf.inc}
+{$MODE DELPHI}
 {.$DEFINE VISUALGRID_DEBUG}
 
 interface

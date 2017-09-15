@@ -21,15 +21,12 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="2">
+    <RequiredPackages Count="1">
       <Item1>
-        <PackageName Value="PF_VisualGrid"/>
-      </Item1>
-      <Item2>
         <PackageName Value="LCL"/>
-      </Item2>
+      </Item1>
     </RequiredPackages>
-    <Units Count="2">
+    <Units Count="3">
       <Unit0>
         <Filename Value="VisualGridExample.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -41,6 +38,10 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit1>
+      <Unit2>
+        <Filename Value="..\..\src\UVisualGrid.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit2>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -52,7 +53,7 @@
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir);..\..\src;mORMot"/>
       <Libraries Value="..\..\src\3rd\mORMot\fpc-win32"/>
-      <OtherUnitFiles Value="mORMot"/>
+      <OtherUnitFiles Value="mORMot;..\..\src"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>
