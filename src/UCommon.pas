@@ -134,7 +134,7 @@ type
     vtype: tvartype;
   private
     vfiller1 : word;
-    vfiller2: Pointer;
+    vfiller2: int32;
   public
     vcolumnmap: TTableRow.TColumnMapToIndex;
     vvalues: TArray<Variant>;
