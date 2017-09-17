@@ -81,7 +81,7 @@ type
 
   { TCustomVisualGrid }
 
-  TCustomVisualGrid = class(TWinControl)
+  TCustomVisualGrid = class(TCustomControl)
   protected type
     TUpdateOfVisualGridGUI = set of (updPageIndex, updPageSize);
   protected const
@@ -112,6 +112,7 @@ type
     FAllRecordsCountLabel: TLabel;
 
     FDrawGrid: TDrawGrid;
+    FDelayedBoundsChangeTimer: TTimer;
   protected { events for UI }
     procedure StandardDrawCell(Sender: TObject; ACol, ARow: Longint;
       Rect: TRect; State: TGridDrawState);
@@ -119,18 +120,23 @@ type
     procedure PageSizeEditChange(Sender: TObject);
     procedure PageNavigationClick(Sender: TObject);
   private
+    FAutoPageSize: boolean;
     FCanPage: boolean;
     FCanSearch: boolean;
     function GetCanvas: TCanvas;
+    procedure SetAutoPageSize(AValue: boolean);
     procedure SetCanPage(AValue: boolean);
     procedure SetCanSearch(AValue: boolean);
 {$IFDEF VISUALGRID_DEBUG}
     procedure ClickTest(Sender: TObject);
 {$ENDIF}
     procedure SetPageIndex(const Value: Integer);
-    procedure SetPageSize(const Value: Integer);
+    procedure SetPageSize(Value: Integer);
   protected { TComponent }
     procedure Loaded; override;
+  protected { TControl }
+    procedure BoundsChanged; override;
+    procedure DelayedBoundsChange(Sender: TObject);
   protected
     FGUIUpdates: TUpdateOfVisualGridGUI;
     FDataTable: TDataTable;
@@ -143,6 +149,9 @@ type
 
     procedure RefreshGrid;
     procedure ReloadColumns;
+    function ClientRowCount: Integer;
+    // return true if range is correct
+    function CheckRangeForPageSize(var APageSize: Integer): boolean;
     procedure SetDataSource(ADataSource: IDataSource);
     procedure DoDrawCell(Sender: TObject; ACol, ARow: Longint;
       Rect: TRect; State: TGridDrawState; const RowData: Variant);
@@ -156,6 +165,7 @@ type
     property DataSource: IDataSource read FDataSource write SetDataSource;
     property PageSize: Integer read FPageSize write SetPageSize default 100;
     property PageIndex: Integer read FPageIndex write SetPageIndex default -1;
+    property AutoPageSize: boolean read FAutoPageSize write SetAutoPageSize default false;
     property CanPage: boolean read FCanPage write SetCanPage default true;
     property CanSearch: boolean read FCanSearch write SetCanSearch default true;
     property Canvas: TCanvas read GetCanvas;
@@ -167,6 +177,7 @@ type
   published
     property Align;
     property PageSize;
+    property AutoPageSize;
     property CanPage;
     property CanSearch;
 
@@ -395,12 +406,20 @@ begin
     with FDrawGrid do
     begin
       Align := alClient;
+      BorderStyle := bsNone;
       OnDrawCell := StandardDrawCell;
     end;
   //end;
 
-  { default values for properties }
+  FDelayedBoundsChangeTimer := TTimer.Create(Self);
+  with FDelayedBoundsChangeTimer do
+  begin
+    Enabled:=false;
+    Interval:=10;
+    OnTimer:=DelayedBoundsChange;
+  end;
 
+  { default values for properties }
   PageSize := 100;
   PageIndex := -1;
   FCanPage := true;
@@ -446,6 +465,20 @@ begin
   ReloadColumns;
 end;
 
+procedure TCustomVisualGrid.BoundsChanged;
+begin
+  inherited BoundsChanged;
+  // fix maximize form problem for AutoPageSize (new size of grid is not yet fully propagated)
+  FDelayedBoundsChangeTimer.Enabled:=true;
+end;
+
+procedure TCustomVisualGrid.DelayedBoundsChange(Sender: TObject);
+begin
+  FDelayedBoundsChangeTimer.Enabled:=false;
+  if AutoPageSize then
+    PageSize := ClientRowCount;
+end;
+
 procedure TCustomVisualGrid.PageIndexEditChange(Sender: TObject);
 var
   LPageIndex: Integer;
@@ -475,16 +508,8 @@ begin
   if updPageSize in FGUIUpdates then
     Exit;
   LPageSize:=StrToIntDef(FPageSizeEdit.Text, FPageSize);
-  if LPageSize <= 0 then
-  begin
-    LPageSize:=FPageSize;
-    SetPageSizeEditText(IntToStr(FPageSize));
-  end
-  else if LPageSize > 1000000 then
-  begin
-    LPageSize:=1000000;
-    SetPageSizeEditText('1000000');
-  end;
+  if not CheckRangeForPageSize(LPageSize) then
+    SetPageSizeEditText(IntToStr(LPageSize));
   PageSize:=LPageSize;
 end;
 
@@ -503,6 +528,24 @@ end;
 function TCustomVisualGrid.GetCanvas: TCanvas;
 begin
   Result := FDrawGrid.Canvas;
+end;
+
+procedure TCustomVisualGrid.SetAutoPageSize(AValue: boolean);
+
+begin
+  if FAutoPageSize=AValue then
+    Exit;
+
+  FAutoPageSize:=AValue;
+
+  FPageSizeEdit.Visible:=not FAutoPageSize;
+  FPageSizeLabel.Visible:=not FAutoPageSize;
+  if FAutoPageSize then
+    FDrawGrid.ScrollBars:=ssNone
+  else
+    FDrawGrid.ScrollBars:=ssAutoBoth;
+
+  PageSize := ClientRowCount;
 end;
 
 procedure TCustomVisualGrid.SetCanPage(AValue: boolean);
@@ -577,6 +620,30 @@ begin
   FDrawGrid.ColCount := Length(FDataTable.Columns);
 end;
 
+function TCustomVisualGrid.ClientRowCount: Integer;
+begin
+  Result := ((FDrawGrid.ClientHeight - FDrawGrid.GridLineWidth) div FDrawGrid.DefaultRowHeight) - FDrawGrid.FixedRows;
+  if Result = 0 then
+    Result := 1;
+  FDrawGrid.VisibleRowCount;
+end;
+
+function TCustomVisualGrid.CheckRangeForPageSize(var APageSize: Integer
+  ): boolean;
+begin
+  if APageSize <= 0 then
+  begin
+    APageSize:=FPageSize;
+    Exit(False);
+  end
+  else if APageSize > 1000000 then
+  begin
+    APageSize:=1000000;
+    Exit(False);
+  end;
+  Result := True;
+end;
+
 procedure TCustomVisualGrid.SetDataSource(ADataSource: IDataSource);
 begin
   if FDataSource = ADataSource then
@@ -611,11 +678,12 @@ begin
   Exclude(FGUIUpdates, updPageSize);
 end;
 
-procedure TCustomVisualGrid.SetPageSize(const Value: Integer);
+procedure TCustomVisualGrid.SetPageSize(Value: Integer);
 begin
   if FPageSize = Value then
     Exit;
 
+  CheckRangeForPageSize(Value);
   FPageSize := Value;
   SetPageSizeEditText(IntToStr(FPageSize));
   RefreshPageIndexData(false);
