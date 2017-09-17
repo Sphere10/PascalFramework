@@ -12,6 +12,7 @@ uses
 
 
 type
+  TSelectionType = (stNone, stCell, stRow, stMultiRow);
   TSortDirection = (sdNone, sdAscending, sdDescending);
   TVisualGridFilter = (vgfMatchTextExact, vgfMatchTextBeginning, vgfMatchTextEnd,
     vgfMatchTextAnywhere, vgfNumericEQ, vgfNumericLT, vgfNumericLTE, vgfNumericGT,
@@ -123,6 +124,7 @@ type
     FAutoPageSize: boolean;
     FCanPage: boolean;
     FCanSearch: boolean;
+    FSelectionType: TSelectionType;
     function GetCanvas: TCanvas;
     procedure SetAutoPageSize(AValue: boolean);
     procedure SetCanPage(AValue: boolean);
@@ -132,6 +134,7 @@ type
 {$ENDIF}
     procedure SetPageIndex(const Value: Integer);
     procedure SetPageSize(Value: Integer);
+    procedure SetSelectionType(AValue: TSelectionType);
   protected { TComponent }
     procedure Loaded; override;
   protected { TControl }
@@ -144,6 +147,7 @@ type
     FPageSize: Integer;
     FPageIndex: Integer;
     FPageCount: Integer;
+    FDefaultDrawGridOptions: TGridOptions;
 
     FOnDrawVisualCell: TDrawVisualCellEvent;
 
@@ -169,6 +173,7 @@ type
     property CanPage: boolean read FCanPage write SetCanPage default true;
     property CanSearch: boolean read FCanSearch write SetCanSearch default true;
     property Canvas: TCanvas read GetCanvas;
+    property SelectionType: TSelectionType read FSelectionType write SetSelectionType;
 
     property OnDrawVisualCell: TDrawVisualCellEvent read FOnDrawVisualCell write FOnDrawVisualCell;
   end;
@@ -180,6 +185,7 @@ type
     property AutoPageSize;
     property CanPage;
     property CanSearch;
+    property SelectionType;
 
     property OnDrawVisualCell;
   end;
@@ -408,7 +414,9 @@ begin
       Align := alClient;
       BorderStyle := bsNone;
       OnDrawCell := StandardDrawCell;
+      Options := Options - [goRangeSelect];
     end;
+    FDefaultDrawGridOptions := FDrawGrid.Options;
   //end;
 
   FDelayedBoundsChangeTimer := TTimer.Create(Self);
@@ -687,6 +695,20 @@ begin
   FPageSize := Value;
   SetPageSizeEditText(IntToStr(FPageSize));
   RefreshPageIndexData(false);
+end;
+
+procedure TCustomVisualGrid.SetSelectionType(AValue: TSelectionType);
+begin
+  if FSelectionType=AValue then
+    Exit;
+
+  FSelectionType:=AValue;
+  case FSelectionType of
+    stNone: FDrawGrid.Options:=FDefaultDrawGridOptions;
+    stCell: FDrawGrid.Options:=FDefaultDrawGridOptions+[goDrawFocusSelected];
+    stRow: FDrawGrid.Options:=FDefaultDrawGridOptions+[goRowSelect];
+    stMultiRow: FDrawGrid.Options:=FDefaultDrawGridOptions+[goRowSelect,goRangeSelect];
+  end;
 end;
 
 procedure TCustomVisualGrid.StandardDrawCell(Sender: TObject; ACol,
