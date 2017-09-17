@@ -94,6 +94,7 @@ type
     FSearchEdit: TEdit;
     FTopPanel: TPanel;
     FTopPanelRight: TPanel;
+    //FClientPanel: TPanel;
     FBottomPanel: TPanel;
     FBottomCenterPanel: TPanel;
     FBottomRightPanel: TPanel;
@@ -118,7 +119,9 @@ type
     procedure PageSizeEditChange(Sender: TObject);
     procedure PageNavigationClick(Sender: TObject);
   private
+    FCanPage: boolean;
     function GetCanvas: TCanvas;
+    procedure SetCanPage(AValue: boolean);
 {$IFDEF VISUALGRID_DEBUG}
     procedure ClickTest(Sender: TObject);
 {$ENDIF}
@@ -151,6 +154,7 @@ type
     property DataSource: IDataSource read FDataSource write SetDataSource;
     property PageSize: Integer read FPageSize write SetPageSize default 100;
     property PageIndex: Integer read FPageIndex write SetPageIndex default -1;
+    property CanPage: boolean read FCanPage write SetCanPage default true;
     property Canvas: TCanvas read GetCanvas;
 
     property OnDrawVisualCell: TDrawVisualCellEvent read FOnDrawVisualCell write FOnDrawVisualCell;
@@ -160,6 +164,7 @@ type
   published
     property Align;
     property PageSize;
+    property CanPage;
 
     property OnDrawVisualCell;
   end;
@@ -206,10 +211,9 @@ begin
 
   { component layout }
 
-  ControlStyle := ControlStyle - [csAcceptsControls];
+  ControlStyle := ControlStyle - [csAcceptsControls] + [csOwnedChildrenNotSelectable];
 
   FTopPanel := TPanel.Create(Self);
-  FTopPanel.ControlStyle := FTopPanel.ControlStyle - [csAcceptsControls];
   FTopPanel.Parent := Self;
   with FTopPanel do
   begin
@@ -218,7 +222,6 @@ begin
     Height := 40;
 
     FTopPanelRight := TPanel.Create(Self);
-    FTopPanelRight.ControlStyle := FTopPanelRight.ControlStyle - [csAcceptsControls];
     FTopPanelRight.Parent := FTopPanel;
     with FTopPanelRight do
     begin
@@ -251,7 +254,6 @@ begin
   end;
 
   FBottomPanel := TPanel.Create(Self);
-  FBottomPanel.ControlStyle := FBottomPanel.ControlStyle - [csAcceptsControls];
   FBottomPanel.Parent := Self;
   with FBottomPanel do
   begin
@@ -260,7 +262,6 @@ begin
     Height := 40;
 
     FBottomRightPanel := TPanel.Create(Self);
-    FBottomRightPanel.ControlStyle := FBottomRightPanel.ControlStyle - [csAcceptsControls];
     FBottomRightPanel.Parent := FBottomPanel;
     with FBottomRightPanel do
     begin
@@ -339,7 +340,6 @@ begin
     end;
 
     FBottomCenterPanel := TPanel.Create(Self);
-    FBottomCenterPanel.ControlStyle := FBottomCenterPanel.ControlStyle - [csAcceptsControls];
     FBottomCenterPanel.Parent := FBottomPanel;
     with FBottomCenterPanel do
     begin
@@ -378,15 +378,28 @@ begin
     end;
   end;
 
-  FDrawGrid := TDrawGrid.Create(Self);
-  FDrawGrid.Parent := Self;
-  FDrawGrid.Align := alClient;
-  FDrawGrid.OnDrawCell := StandardDrawCell;
+  {FClientPanel := TPanel.Create(Self);
+  FClientPanel.Parent := Self;
+  with FClientPanel do
+  begin
+    Align := alClient;
+    BevelOuter := bvNone;
+    Color:=clWhite;}
+
+    FDrawGrid := TDrawGrid.Create(Self);
+    FDrawGrid.Parent := Self;
+    with FDrawGrid do
+    begin
+      Align := alClient;
+      OnDrawCell := StandardDrawCell;
+    end;
+  //end;
 
   { default values for properties }
 
   PageSize := 100;
   PageIndex := -1;
+  FCanPage := true;
 
   {$IFDEF VISUALGRID_DEBUG}
   with TButton.Create(Self) do
@@ -485,6 +498,20 @@ end;
 function TCustomVisualGrid.GetCanvas: TCanvas;
 begin
   Result := FDrawGrid.Canvas;
+end;
+
+procedure TCustomVisualGrid.SetCanPage(AValue: boolean);
+begin
+  if FCanPage=AValue then
+    Exit;
+
+  FCanPage:=AValue;
+  FBottomPanel.Visible:=FCanPage;
+  if csDesigning in ComponentState then
+    if FBottomPanel.Visible then
+      FBottomPanel.ControlStyle := FBottomPanel.ControlStyle - [csNoDesignVisible]
+    else
+      FBottomPanel.ControlStyle := FBottomPanel.ControlStyle + [csNoDesignVisible];
 end;
 
 procedure TCustomVisualGrid.RefreshGrid;
