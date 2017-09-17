@@ -1,12 +1,12 @@
 unit fMain;
 
-{$I pf.inc}
+{$MODE DELPHI}
 
 interface
 
 uses
   SynSQLite3Static, SysUtils, Classes, Forms, Controls, Graphics, Dialogs, Math,
-  PF.VisualGrid, SynCommons, mORMot, StdCtrls, mORMotSQLite3, SynDBSQLite3, SynDB;
+  UVisualGrid, SynCommons, mORMot, StdCtrls, mORMotSQLite3, SynDBSQLite3, SynDB;
 
 type
   TSampleData = class(TSQLRecord)
