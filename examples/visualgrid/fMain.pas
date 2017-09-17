@@ -5,8 +5,8 @@ unit fMain;
 interface
 
 uses
-  SysUtils, Classes, Forms, Controls, Graphics, Dialogs, Math,
-  UVisualGrid, StdCtrls, Menus, Types, Grids, ExtCtrls, UCommon;
+  SysUtils, Classes, Forms, Controls, Graphics, Dialogs, Math, PropEdits, LCLType,
+  UVisualGrid, StdCtrls, Menus, Types, Grids, ExtCtrls, RTTIGrids, UCommon;
 
 type
 
@@ -19,6 +19,8 @@ type
     CanSelectCheckBox: TCheckBox;
     AddDelayCheckBox: TCheckBox;
     GridPanel: TPanel;
+    Panel1: TPanel;
+    TIPropertyGrid1: TTIPropertyGrid;
     UserPageSizeRadioButton: TRadioButton;
     AutoPageSizeRadioButton: TRadioButton;
     FullPageSizeRadioButton: TRadioButton;
@@ -100,6 +102,7 @@ begin
   FVisualGrid := TVisualGrid.Create(Self);
   FVisualGrid.DataSource := Self;
   GridPanel.AddDockCenter(FVisualGrid);
+  TIPropertyGrid1.TIObject := FVisualGrid;
 end;
 
 procedure TForm1.VisualGrid1DrawVisualCell(Sender: TObject; ACol,
@@ -120,5 +123,17 @@ begin
   end;
 end;
 
-
+begin
+  RegisterPropertyEditor(TypeInfo(TAlign), TVisualGrid, 'Align', THiddenPropertyEditor);
+  RegisterPropertyEditor(TypeInfo(TCursor), TVisualGrid, 'Cursor', THiddenPropertyEditor);
+  RegisterPropertyEditor(TypeInfo(THelpContext), TVisualGrid, 'HelpContext', THiddenPropertyEditor);
+  RegisterPropertyEditor(TypeInfo(string), TVisualGrid, 'HelpKeyword', THiddenPropertyEditor);
+  RegisterPropertyEditor(TypeInfo(THelpType), TVisualGrid, 'HelpType', THiddenPropertyEditor);
+  RegisterPropertyEditor(TypeInfo(TTranslateString), TVisualGrid, 'Hint', THiddenPropertyEditor);
+  RegisterPropertyEditor(TypeInfo(TComponentName), TVisualGrid, 'Name', THiddenPropertyEditor);
+  RegisterPropertyEditor(TypeInfo(PtrInt), TVisualGrid, 'Tag', THiddenPropertyEditor);
+  RegisterPropertyEditor(TypeInfo(Integer), TVisualGrid, 'Left', THiddenPropertyEditor);
+  RegisterPropertyEditor(TypeInfo(Integer), TVisualGrid, 'Top', THiddenPropertyEditor);
+  RegisterPropertyEditor(TypeInfo(Integer), TVisualGrid, 'Width', THiddenPropertyEditor);
+  RegisterPropertyEditor(TypeInfo(Integer), TVisualGrid, 'Height', THiddenPropertyEditor);
 end.

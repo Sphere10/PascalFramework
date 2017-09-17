@@ -1,111 +1,139 @@
 object Form1: TForm1
   Left = 439
-  Height = 471
+  Height = 553
   Top = 210
-  Width = 722
+  Width = 988
   Caption = 'Form1'
-  ClientHeight = 471
-  ClientWidth = 722
+  ClientHeight = 553
+  ClientWidth = 988
   OnCreate = FormCreate
   LCLVersion = '1.6.4.0'
   object GridPanel: TPanel
-    Left = 208
-    Height = 384
-    Top = 56
-    Width = 490
-    Anchors = [akTop, akLeft, akRight, akBottom]
+    Left = 304
+    Height = 553
+    Top = 0
+    Width = 684
+    Align = alClient
     BevelOuter = bvNone
     BorderWidth = 1
     BorderStyle = bsSingle
+    ClientHeight = 549
+    ClientWidth = 680
     ParentColor = False
     TabOrder = 0
+    object Panel1: TPanel
+      Left = 72
+      Height = 424
+      Top = 48
+      Width = 458
+      Caption = 'Panel1'
+      ClientHeight = 424
+      ClientWidth = 458
+      TabOrder = 0
+      Visible = False
+      object CanPageCheckBox: TCheckBox
+        Left = 32
+        Height = 29
+        Top = 56
+        Width = 104
+        Caption = 'Can Page'
+        TabOrder = 0
+      end
+      object CanSearchCheckBox: TCheckBox
+        Left = 32
+        Height = 29
+        Top = 264
+        Width = 117
+        Caption = 'Can Search'
+        TabOrder = 1
+      end
+      object UserPageSizeRadioButton: TRadioButton
+        Left = 48
+        Height = 29
+        Top = 80
+        Width = 212
+        Caption = 'User editable page size'
+        TabOrder = 2
+      end
+      object AutoPageSizeRadioButton: TRadioButton
+        Left = 48
+        Height = 29
+        Top = 104
+        Width = 148
+        Caption = 'Auto page size'
+        TabOrder = 3
+      end
+      object FullPageSizeRadioButton: TRadioButton
+        Left = 48
+        Height = 29
+        Top = 128
+        Width = 136
+        Caption = 'Full page size'
+        TabOrder = 4
+      end
+      object CanSelectCheckBox: TCheckBox
+        Left = 32
+        Height = 29
+        Top = 160
+        Width = 111
+        Caption = 'Can Select'
+        TabOrder = 5
+      end
+      object CellSelectRadioButton: TRadioButton
+        Left = 48
+        Height = 29
+        Top = 184
+        Width = 106
+        Caption = 'Select cell'
+        TabOrder = 6
+      end
+      object SingleSelectRadioButton: TRadioButton
+        Left = 48
+        Height = 29
+        Top = 208
+        Width = 162
+        Caption = 'Select single row'
+        TabOrder = 7
+      end
+      object MultiRowSelectRadioButton: TRadioButton
+        Left = 48
+        Height = 29
+        Top = 236
+        Width = 158
+        Caption = 'Select multi-row'
+        TabOrder = 8
+      end
+      object AddDelayCheckBox: TCheckBox
+        Left = 32
+        Height = 29
+        Top = 320
+        Width = 160
+        Caption = 'Add Fetch Delay'
+        TabOrder = 9
+      end
+      object AlignCheckBox: TCheckBox
+        Left = 32
+        Height = 29
+        Top = 288
+        Width = 171
+        Caption = 'Align Horizontally'
+        TabOrder = 10
+      end
+    end
   end
-  object CanPageCheckBox: TCheckBox
-    Left = 32
-    Height = 29
-    Top = 56
-    Width = 104
-    Caption = 'Can Page'
-    TabOrder = 1
-  end
-  object CanSearchCheckBox: TCheckBox
-    Left = 32
-    Height = 29
-    Top = 264
-    Width = 117
-    Caption = 'Can Search'
-    TabOrder = 2
-  end
-  object UserPageSizeRadioButton: TRadioButton
-    Left = 48
-    Height = 29
-    Top = 80
-    Width = 212
-    Caption = 'User editable page size'
-    TabOrder = 3
-  end
-  object AutoPageSizeRadioButton: TRadioButton
-    Left = 48
-    Height = 29
-    Top = 104
-    Width = 148
-    Caption = 'Auto page size'
-    TabOrder = 4
-  end
-  object FullPageSizeRadioButton: TRadioButton
-    Left = 48
-    Height = 29
-    Top = 128
-    Width = 136
-    Caption = 'Full page size'
-    TabOrder = 5
-  end
-  object CanSelectCheckBox: TCheckBox
-    Left = 32
-    Height = 29
-    Top = 160
-    Width = 111
-    Caption = 'Can Select'
-    TabOrder = 6
-  end
-  object CellSelectRadioButton: TRadioButton
-    Left = 48
-    Height = 29
-    Top = 184
-    Width = 106
-    Caption = 'Select cell'
-    TabOrder = 7
-  end
-  object SingleSelectRadioButton: TRadioButton
-    Left = 48
-    Height = 29
-    Top = 208
-    Width = 162
-    Caption = 'Select single row'
-    TabOrder = 8
-  end
-  object MultiRowSelectRadioButton: TRadioButton
-    Left = 48
-    Height = 29
-    Top = 236
-    Width = 158
-    Caption = 'Select multi-row'
-    TabOrder = 9
-  end
-  object AddDelayCheckBox: TCheckBox
-    Left = 32
-    Height = 29
-    Top = 312
-    Width = 160
-    Caption = 'Add Fetch Delay'
-    TabOrder = 10
-  end
-  object AlignCheckBox: TCheckBox
-    Left = 32
-    Height = 29
-    Top = 288
-    Width = 171
-    Caption = 'Align Horizontally'
-    TabOrder = 11
+  object TIPropertyGrid1: TTIPropertyGrid
+    Left = 0
+    Height = 553
+    Top = 0
+    Width = 304
+    Align = alLeft
+    CheckboxForBoolean = True
+    DefaultValueFont.Color = clWindowText
+    Filter = [tkInteger, tkChar, tkEnumeration, tkFloat, tkSet, tkSString, tkLString, tkAString, tkWString, tkVariant, tkArray, tkRecord, tkInterface, tkClass, tkObject, tkWChar, tkBool, tkInt64, tkQWord, tkDynArray, tkInterfaceRaw, tkProcVar, tkUString, tkUChar, tkHelper, tkFile, tkClassRef, tkPointer]
+    Indent = 24
+    NameFont.Color = clWindowText
+    PreferredSplitterX = 150
+    SplitterX = 150
+    ValueFont.Color = clMaroon
   end
 end
