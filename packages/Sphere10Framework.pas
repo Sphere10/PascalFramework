@@ -13,6 +13,7 @@ implementation
 
 procedure Register;
 begin
+  RegisterUnit('UVisualGrid', @UVisualGrid.Register);
 end;
 
 initialization

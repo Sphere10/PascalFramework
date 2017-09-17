@@ -16,6 +16,7 @@
     <Files Count="1">
       <Item1>
         <Filename Value="..\src\UVisualGrid.pas"/>
+        <HasRegisterProc Value="True"/>
         <UnitName Value="UVisualGrid"/>
       </Item1>
     </Files>
