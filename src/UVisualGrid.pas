@@ -120,8 +120,10 @@ type
     procedure PageNavigationClick(Sender: TObject);
   private
     FCanPage: boolean;
+    FCanSearch: boolean;
     function GetCanvas: TCanvas;
     procedure SetCanPage(AValue: boolean);
+    procedure SetCanSearch(AValue: boolean);
 {$IFDEF VISUALGRID_DEBUG}
     procedure ClickTest(Sender: TObject);
 {$ENDIF}
@@ -155,6 +157,7 @@ type
     property PageSize: Integer read FPageSize write SetPageSize default 100;
     property PageIndex: Integer read FPageIndex write SetPageIndex default -1;
     property CanPage: boolean read FCanPage write SetCanPage default true;
+    property CanSearch: boolean read FCanSearch write SetCanSearch default true;
     property Canvas: TCanvas read GetCanvas;
 
     property OnDrawVisualCell: TDrawVisualCellEvent read FOnDrawVisualCell write FOnDrawVisualCell;
@@ -165,6 +168,7 @@ type
     property Align;
     property PageSize;
     property CanPage;
+    property CanSearch;
 
     property OnDrawVisualCell;
   end;
@@ -400,6 +404,7 @@ begin
   PageSize := 100;
   PageIndex := -1;
   FCanPage := true;
+  FCanSearch := true;
 
   {$IFDEF VISUALGRID_DEBUG}
   with TButton.Create(Self) do
@@ -512,6 +517,20 @@ begin
       FBottomPanel.ControlStyle := FBottomPanel.ControlStyle - [csNoDesignVisible]
     else
       FBottomPanel.ControlStyle := FBottomPanel.ControlStyle + [csNoDesignVisible];
+end;
+
+procedure TCustomVisualGrid.SetCanSearch(AValue: boolean);
+begin
+  if FCanSearch=AValue then
+    Exit;
+
+  FCanSearch:=AValue;
+  FTopPanel.Visible:=FCanSearch;
+  if csDesigning in ComponentState then
+    if FTopPanel.Visible then
+      FTopPanel.ControlStyle := FTopPanel.ControlStyle - [csNoDesignVisible]
+    else
+      FTopPanel.ControlStyle := FTopPanel.ControlStyle + [csNoDesignVisible];
 end;
 
 procedure TCustomVisualGrid.RefreshGrid;
