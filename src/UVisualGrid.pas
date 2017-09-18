@@ -121,11 +121,13 @@ type
     procedure PageSizeEditChange(Sender: TObject);
     procedure PageNavigationClick(Sender: TObject);
   private
+    FShowAllData: boolean;
     FAutoPageSize: boolean;
     FCanPage: boolean;
     FCanSearch: boolean;
     FSelectionType: TSelectionType;
     function GetCanvas: TCanvas;
+    procedure SetShowAllData(AValue: boolean);
     procedure SetAutoPageSize(AValue: boolean);
     procedure SetCanPage(AValue: boolean);
     procedure SetCanSearch(AValue: boolean);
@@ -148,12 +150,16 @@ type
     FPageIndex: Integer;
     FPageCount: Integer;
     FDefaultDrawGridOptions: TGridOptions;
+    FTotalDataCount: Integer;
 
     FOnDrawVisualCell: TDrawVisualCellEvent;
 
     procedure RefreshGrid;
     procedure ReloadColumns;
+    procedure LayoutChanged;
     function ClientRowCount: Integer;
+    procedure HidePageSizeControls(AVisible: boolean);
+    procedure HidePageNavigationControls(AVisible: boolean);
     // return true if range is correct
     function CheckRangeForPageSize(var APageSize: Integer): boolean;
     procedure SetDataSource(ADataSource: IDataSource);
@@ -170,6 +176,8 @@ type
     property PageSize: Integer read FPageSize write SetPageSize default 100;
     property PageIndex: Integer read FPageIndex write SetPageIndex default -1;
     property AutoPageSize: boolean read FAutoPageSize write SetAutoPageSize default false;
+    property ShowAllData: boolean read FShowAllData write SetShowAllData default false;
+
     property CanPage: boolean read FCanPage write SetCanPage default true;
     property CanSearch: boolean read FCanSearch write SetCanSearch default true;
     property Canvas: TCanvas read GetCanvas;
@@ -183,6 +191,7 @@ type
     property Align;
     property PageSize;
     property AutoPageSize;
+    property ShowAllData;
     property CanPage;
     property CanSearch;
     property SelectionType;
@@ -432,6 +441,7 @@ begin
   PageIndex := -1;
   FCanPage := true;
   FCanSearch := true;
+  FTotalDataCount := -1;
 
   {$IFDEF VISUALGRID_DEBUG}
   with TButton.Create(Self) do
@@ -538,6 +548,20 @@ begin
   Result := FDrawGrid.Canvas;
 end;
 
+procedure TCustomVisualGrid.SetShowAllData(AValue: boolean);
+begin
+  if FShowAllData=AValue then
+    Exit;
+
+  FShowAllData:=AValue;
+  if FShowAllData then
+    AutoPageSize:=false;
+
+  HidePageSizeControls(not AValue);
+  HidePageNavigationControls(not AValue);
+  PageSize:=FTotalDataCount;
+end;
+
 procedure TCustomVisualGrid.SetAutoPageSize(AValue: boolean);
 
 begin
@@ -545,9 +569,11 @@ begin
     Exit;
 
   FAutoPageSize:=AValue;
+  if FAutoPageSize then
+    ShowAllData:=false;
 
-  FPageSizeEdit.Visible:=not FAutoPageSize;
-  FPageSizeLabel.Visible:=not FAutoPageSize;
+  HidePageSizeControls(not FAutoPageSize);
+
   if FAutoPageSize then
     FDrawGrid.ScrollBars:=ssNone
   else
@@ -568,6 +594,8 @@ begin
       FBottomPanel.ControlStyle := FBottomPanel.ControlStyle - [csNoDesignVisible]
     else
       FBottomPanel.ControlStyle := FBottomPanel.ControlStyle + [csNoDesignVisible];
+
+  LayoutChanged;
 end;
 
 procedure TCustomVisualGrid.SetCanSearch(AValue: boolean);
@@ -582,6 +610,8 @@ begin
       FTopPanel.ControlStyle := FTopPanel.ControlStyle - [csNoDesignVisible]
     else
       FTopPanel.ControlStyle := FTopPanel.ControlStyle + [csNoDesignVisible];
+
+  LayoutChanged;
 end;
 
 procedure TCustomVisualGrid.RefreshGrid;
@@ -604,8 +634,13 @@ begin
 
     FPageCount:=LResult.PageCount;
 
-    FAllRecordsCountLabel.Visible := LResult.TotalDataCount >= 0;
-    FAllRecordsCountLabel.Caption:=Format('Total: %d', [LResult.TotalDataCount]);
+    if LResult.TotalDataCount >= 0 then
+      FTotalDataCount := LResult.TotalDataCount
+    else
+      FTotalDataCount := -1;
+
+    FAllRecordsCountLabel.Visible := FTotalDataCount<>-1;
+    FAllRecordsCountLabel.Caption:=Format('Total: %d', [FTotalDataCount]);
 
     FPageIndex := LResult.PageIndex;
 
@@ -628,12 +663,30 @@ begin
   FDrawGrid.ColCount := Length(FDataTable.Columns);
 end;
 
+procedure TCustomVisualGrid.LayoutChanged;
+begin
+  // layout has changed, maybe more space is available
+  if AutoPageSize then
+    PageSize := ClientRowCount;
+end;
+
 function TCustomVisualGrid.ClientRowCount: Integer;
 begin
   Result := ((FDrawGrid.ClientHeight - FDrawGrid.GridLineWidth) div FDrawGrid.DefaultRowHeight) - FDrawGrid.FixedRows;
   if Result = 0 then
     Result := 1;
   FDrawGrid.VisibleRowCount;
+end;
+
+procedure TCustomVisualGrid.HidePageSizeControls(AVisible: boolean);
+begin
+  FPageSizeEdit.Visible:=AVisible;
+  FPageSizeLabel.Visible:=AVisible;
+end;
+
+procedure TCustomVisualGrid.HidePageNavigationControls(AVisible: boolean);
+begin
+  FBottomRightPanel.Visible:=AVisible;
 end;
 
 function TCustomVisualGrid.CheckRangeForPageSize(var APageSize: Integer
