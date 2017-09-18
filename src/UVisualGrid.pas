@@ -95,6 +95,7 @@ type
   protected { component interface part }
     FSearchLabel: TLabel;
     FSearchEdit: TEdit;
+    FSearchButton: TButton;
     FTopPanel: TPanel;
     FTopPanelRight: TPanel;
     //FClientPanel: TPanel;
@@ -245,46 +246,6 @@ begin
 
   ControlStyle := ControlStyle - [csAcceptsControls] + [csOwnedChildrenNotSelectable];
 
-  FTopPanel := TPanel.Create(Self);
-  FTopPanel.Parent := Self;
-  with FTopPanel do
-  begin
-    Align := alTop;
-    BevelOuter := bvNone;
-    Height := 40;
-
-    FTopPanelRight := TPanel.Create(Self);
-    FTopPanelRight.Parent := FTopPanel;
-    with FTopPanelRight do
-    begin
-      BevelOuter := bvNone;
-      Align := alRight;
-      Height := 40;
-      Width := 177;
-
-      FSearchLabel := TLabel.Create(Self);
-      FSearchLabel.Parent := FTopPanelRight;
-      with FSearchLabel do
-      begin
-        Left := 7;
-        Top := 13;
-        Width := 37;
-        Height := 13;
-        Caption := 'Search:';
-      end;
-
-      FSearchEdit := TEdit.Create(Self);
-      FSearchEdit.Parent := FTopPanelRight;
-      with FSearchEdit do
-      begin
-        Left := 50;
-        Top := 10;
-        Width := 121;
-        Height := 21;
-      end;
-    end;
-  end;
-
   FBottomPanel := TPanel.Create(Self);
   FBottomPanel.Parent := Self;
   with FBottomPanel do
@@ -406,6 +367,58 @@ begin
         Width := 52;
         Height := 21;
         OnChange:=PageSizeEditChange;
+      end;
+    end;
+  end;
+
+  FTopPanel := TPanel.Create(Self);
+  FTopPanel.Parent := Self;
+  with FTopPanel do
+  begin
+    Align := alTop;
+    BevelOuter := bvNone;
+    Height := 40;
+
+    FTopPanelRight := TPanel.Create(Self);
+    FTopPanelRight.Parent := FTopPanel;
+    with FTopPanelRight do
+    begin
+      BevelOuter := bvNone;
+      Align := alRight;
+      Height := 40;
+      Width := 200;
+
+      {FSearchLabel := TLabel.Create(Self);
+      FSearchLabel.Parent := FTopPanelRight;
+      with FSearchLabel do
+      begin
+        Left := 7;
+        Top := 13;
+        Width := 37;
+        Height := 13;
+        Caption := 'Search:';
+      end;}
+
+      FSearchEdit := TEdit.Create(Self);
+      FSearchEdit.Parent := FTopPanelRight;
+      with FSearchEdit do
+      begin
+        Left := 50;
+        Top := 10;
+        Width := 121;
+        Height := 21;
+        TextHint := 'Search';
+      end;
+
+      FSearchButton := TButton.Create(Self);
+      FSearchButton.Parent := FTopPanelRight;
+      with FSearchButton do
+      begin
+        Left := 173;
+        Top := 10;
+        Width := 24;
+        Height := 23;
+        Caption := 'OK';
       end;
     end;
   end;
