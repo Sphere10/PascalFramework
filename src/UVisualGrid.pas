@@ -68,11 +68,13 @@ type
     class function From(const AName : utf8string; AFilterType : TVisualGridFilters) : TSearchCapability; static;
   end;
 
+  TSearchCapabilities = array of TSearchCapability;
+
   { IDataSource }
 
   IDataSource = interface
     function FetchPage(constref AParams: TPageFetchParams; var ADataTable: TDataTable): TPageFetchResult;
-    property Capability : TArray<TSearchCapability>;
+    property Capability : TSearchCapabilities;
   end;
 
   TDrawVisualCellEvent = procedure(Sender: TObject; ACol, ARow: Longint;

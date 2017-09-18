@@ -13,20 +13,21 @@ type
   { TForm1 }
 
   TForm1 = class(TForm, IDataSource)
+    AddDelayCheckBox: TCheckBox;
+    AlignCheckBox: TCheckBox;
+    AutoPageSizeRadioButton: TRadioButton;
     CanPageCheckBox: TCheckBox;
     CanSearchCheckBox: TCheckBox;
-    AlignCheckBox: TCheckBox;
     CanSelectCheckBox: TCheckBox;
-    AddDelayCheckBox: TCheckBox;
+    CellSelectRadioButton: TRadioButton;
+    FullPageSizeRadioButton: TRadioButton;
     GridPanel: TPanel;
+    MultiRowSelectRadioButton: TRadioButton;
     Panel1: TPanel;
+    Panel2: TPanel;
+    SingleSelectRadioButton: TRadioButton;
     TIPropertyGrid1: TTIPropertyGrid;
     UserPageSizeRadioButton: TRadioButton;
-    AutoPageSizeRadioButton: TRadioButton;
-    FullPageSizeRadioButton: TRadioButton;
-    CellSelectRadioButton: TRadioButton;
-    SingleSelectRadioButton: TRadioButton;
-    MultiRowSelectRadioButton: TRadioButton;
     procedure FormCreate(Sender: TObject);
     procedure VisualGrid1DrawVisualCell(Sender: TObject; ACol, ARow: Longint;
       Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
@@ -35,8 +36,8 @@ type
     FColumns: TTableColumns;
     FVisualGrid: TVisualGrid;
     { Private declarations }
-    function GetCapabilities : TArray<TSearchCapability>;
-    property Capability : TArray<TSearchCapability> read GetCapabilities;
+    function GetCapabilities: TSearchCapabilities;
+    property Capability: TSearchCapabilities read GetCapabilities;
     function FetchPage(constref AParams: TPageFetchParams; var ADataTable: TDataTable): TPageFetchResult;
   public
     { Public declarations }
@@ -49,7 +50,7 @@ implementation
 
 {$R *.lfm}
 
-function TForm1.GetCapabilities : TArray<TSearchCapability>;
+function TForm1.GetCapabilities: TSearchCapabilities;
 begin
   SetLength(Result, 2);
   Result[0] := TSearchCapability.From('ID', SORTABLE_NUMERIC_FILTER);
