@@ -53,7 +53,7 @@ function TForm1.GetCapabilities : TArray<TSearchCapability>;
 begin
   SetLength(Result, 2);
   Result[0] := TSearchCapability.From('ID', SORTABLE_NUMERIC_FILTER);
-  Result[1] := TSearchCapability.From('ID', SORTABLE_TEXT_FILTER);
+  Result[1] := TSearchCapability.From('Name', SORTABLE_TEXT_FILTER);
 end;
 
 function TForm1.FetchPage(constref AParams: TPageFetchParams;
