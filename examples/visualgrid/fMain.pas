@@ -5,8 +5,9 @@ unit fMain;
 interface
 
 uses
-  SysUtils, Classes, Forms, Controls, Graphics, Dialogs, Math, PropEdits, LCLType,
-  UVisualGrid, StdCtrls, Menus, Types, Grids, ExtCtrls, RTTIGrids, UCommon;
+  SysUtils, Classes, Forms, Controls, Graphics, Dialogs, Math, PropEdits,
+  LCLType, UVisualGrid, StdCtrls, Menus, Types, Grids, ExtCtrls, CheckLst,
+  RTTIGrids, UCommon;
 
 type
 
@@ -15,19 +16,10 @@ type
   TForm1 = class(TForm, IDataSource)
     AddDelayCheckBox: TCheckBox;
     AlignCheckBox: TCheckBox;
-    AutoPageSizeRadioButton: TRadioButton;
-    CanPageCheckBox: TCheckBox;
-    CanSearchCheckBox: TCheckBox;
-    CanSelectCheckBox: TCheckBox;
-    CellSelectRadioButton: TRadioButton;
-    FullPageSizeRadioButton: TRadioButton;
     GridPanel: TPanel;
-    MultiRowSelectRadioButton: TRadioButton;
     Panel1: TPanel;
     Panel2: TPanel;
-    SingleSelectRadioButton: TRadioButton;
     TIPropertyGrid1: TTIPropertyGrid;
-    UserPageSizeRadioButton: TRadioButton;
     procedure FormCreate(Sender: TObject);
     procedure VisualGrid1DrawVisualCell(Sender: TObject; ACol, ARow: Longint;
       Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
