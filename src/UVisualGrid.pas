@@ -693,6 +693,7 @@ end;
 procedure TCustomVisualGrid.MultiSearchToggleBoxChange(Sender: TObject);
 begin
    FTopPanelMultiSearch.Visible := FMultiSearchToggleBox.State=cbChecked;
+   LayoutChanged;
 end;
 
 function TCustomVisualGrid.GetCanvas: TCanvas;
