@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, Types, Graphics,
-  UCommon;
+  UCommon, Generics.Collections;
 
 
 
@@ -87,6 +87,26 @@ type
   TCustomVisualGrid = class(TCustomControl)
   protected type
     TUpdateOfVisualGridGUI = set of (updPageIndex, updPageSize);
+
+    { TSearchEdit }
+
+    TSearchEdit = class
+    private
+      FPanel: TPanel;
+      FEdit: TEdit;
+      FButton: TButton;
+
+      function GetEditVisible: boolean;
+      function GetVisible: boolean;
+      procedure SetEditVisible(AValue: boolean);
+      procedure SetVisible(AValue: boolean);
+    public
+      constructor Create(AParent: TWinControl);
+      destructor Destroy; override;
+
+      property EditVisible: boolean read GetEditVisible write SetEditVisible;
+      property Visible: boolean read GetVisible write SetVisible;
+    end;
   protected const
     PAGE_NAVIGATION_FIRST    = 1;
     PAGE_NAVIGATION_PREVIOUS = 2;
@@ -96,9 +116,14 @@ type
     FSearchLabel: TLabel;
     FSearchEdit: TEdit;
     FSearchButton: TButton;
+    FMultiSearchToggleBox: TToggleBox;
     FTopPanel: TPanel;
+    FTopPanelMultiSearch: TPanel;
+    FTopPanelMultiSearchFixed: TPanel;
+    FTopPanelMultiSearchClient: TPanel;
+    FTopPanelMultiSearchRight: TPanel;
     FTopPanelRight: TPanel;
-    //FClientPanel: TPanel;
+    FClientPanel: TPanel;
     FBottomPanel: TPanel;
     FBottomCenterPanel: TPanel;
     FBottomRightPanel: TPanel;
@@ -117,12 +142,15 @@ type
 
     FDrawGrid: TDrawGrid;
     FDelayedBoundsChangeTimer: TTimer;
+
+    FMultiSearchEdits: TObjectList<TSearchEdit>;
   protected { events for UI }
     procedure StandardDrawCell(Sender: TObject; ACol, ARow: Longint;
       Rect: TRect; State: TGridDrawState);
     procedure PageIndexEditChange(Sender: TObject);
     procedure PageSizeEditChange(Sender: TObject);
     procedure PageNavigationClick(Sender: TObject);
+    procedure MultiSearchToggleBoxChange(Sender: TObject);
   private
     FShowAllData: boolean;
     FAutoPageSize: boolean;
@@ -170,6 +198,7 @@ type
       Rect: TRect; State: TGridDrawState; const RowData: Variant);
     procedure RefreshPageIndexInterface;
     procedure RefreshPageIndexData(ARefreshColumns: boolean);
+    procedure ResizeSearchEdit(ACol: Integer);
     procedure SetPageIndexEditText(const AStr: utf8string);
     procedure SetPageSizeEditText(const AStr: utf8string);
   public
@@ -206,9 +235,57 @@ procedure Register;
 
 implementation
 
+type
+  TDrawGridAccess = class(TDrawGrid);
+  TScrollBarAccess = class(TScrollBar);
+
 procedure Register;
 begin
   RegisterComponents('Pascal Framework', [TVisualGrid]);
+end;
+
+{ TCustomVisualGrid.TSearchEdit }
+
+function TCustomVisualGrid.TSearchEdit.GetEditVisible: boolean;
+begin
+  Result := FEdit.Visible;
+end;
+
+function TCustomVisualGrid.TSearchEdit.GetVisible: boolean;
+begin
+  Result := FPanel.Visible;
+end;
+
+procedure TCustomVisualGrid.TSearchEdit.SetEditVisible(AValue: boolean);
+begin
+  FEdit.Visible:=AValue;
+  FButton.Visible:=AValue;
+end;
+
+procedure TCustomVisualGrid.TSearchEdit.SetVisible(AValue: boolean);
+begin
+  FPanel.Visible := AValue;
+end;
+
+constructor TCustomVisualGrid.TSearchEdit.Create(AParent: TWinControl);
+begin
+  FPanel := TPanel.Create(nil);
+  FPanel.Parent := AParent;
+  FPanel.BevelOuter := bvNone;
+  FEdit := TEdit.Create(FPanel);
+  FPanel.Height:=FEdit.Height;
+  FEdit.Parent := FPanel;
+  FEdit.Align:=alClient;
+  {FButton := TButton.Create(FPanel);
+  FButton.Width:=25;
+  FButton.Parent := FPanel;
+  FButton.Align:=alRight;}
+end;
+
+destructor TCustomVisualGrid.TSearchEdit.Destroy;
+begin
+  FPanel.Free;
+  inherited Destroy;
 end;
 
 { TPageFetchParams }
@@ -379,6 +456,19 @@ begin
     BevelOuter := bvNone;
     Height := 40;
 
+    FMultiSearchToggleBox := TToggleBox.Create(Self);
+    FMultiSearchToggleBox.Parent := FTopPanel;
+    with FMultiSearchToggleBox do
+    begin
+      Caption := 'Multi-Search';
+      State := cbChecked;
+      Left := 4;
+      Top := 6;
+      Height:=28;
+      Width := 150;
+      OnChange:=MultiSearchToggleBoxChange;
+    end;
+
     FTopPanelRight := TPanel.Create(Self);
     FTopPanelRight.Parent := FTopPanel;
     with FTopPanelRight do
@@ -423,25 +513,64 @@ begin
     end;
   end;
 
-  {FClientPanel := TPanel.Create(Self);
+  FClientPanel := TPanel.Create(Self);
   FClientPanel.Parent := Self;
   with FClientPanel do
   begin
     Align := alClient;
     BevelOuter := bvNone;
-    Color:=clWhite;}
+
+    FTopPanelMultiSearch := TPanel.Create(Self);
+    FTopPanelMultiSearch.Parent := FClientPanel;
+    with FTopPanelMultiSearch do
+    begin
+      Align:=alTop;
+      BevelOuter := bvNone;
+      Height := 40;
+
+      FTopPanelMultiSearchFixed := TPanel.Create(Self);
+      FTopPanelMultiSearchFixed.Parent := FTopPanelMultiSearch;
+      with FTopPanelMultiSearchFixed do
+      begin
+        Align:=alLeft;
+        BevelOuter := bvNone;
+        Height := 40;
+        Width := 0; // may be usefull for fixed columns
+      end;
+
+      FTopPanelMultiSearchClient := TPanel.Create(Self);
+      FTopPanelMultiSearchClient.Parent := FTopPanelMultiSearch;
+      with FTopPanelMultiSearchClient do
+      begin
+        Align:=alClient;
+        BevelOuter := bvNone;
+        Height := 40;
+      end;
+
+      FTopPanelMultiSearchRight := TPanel.Create(Self);
+      FTopPanelMultiSearchRight.Parent := FTopPanelMultiSearch;
+      with FTopPanelMultiSearchRight do
+      begin
+        Align:=alRight;
+        BevelOuter := bvNone;
+        Height := 40;
+        Width:=TScrollBarAccess.GetControlClassDefaultSize.cy;
+      end;
+    end;
+
 
     FDrawGrid := TDrawGrid.Create(Self);
-    FDrawGrid.Parent := Self;
+    FDrawGrid.Parent := FClientPanel;
     with FDrawGrid do
     begin
       Align := alClient;
       BorderStyle := bsNone;
       OnDrawCell := StandardDrawCell;
-      Options := Options - [goRangeSelect];
+      Options := (Options - [goRangeSelect]) + [goColSizing];
+      FixedCols := 0;
     end;
     FDefaultDrawGridOptions := FDrawGrid.Options;
-  //end;
+  end;
 
   FDelayedBoundsChangeTimer := TTimer.Create(Self);
   with FDelayedBoundsChangeTimer do
@@ -458,6 +587,8 @@ begin
   FCanSearch := true;
   FTotalDataCount := -1;
 
+  FMultiSearchEdits := TObjectList<TSearchEdit>.Create;
+
   {$IFDEF VISUALGRID_DEBUG}
   with TButton.Create(Self) do
   begin
@@ -472,6 +603,7 @@ end;
 
 destructor TCustomVisualGrid.Destroy;
 begin
+  FMultiSearchEdits.Free;
   inherited;
 end;
 
@@ -556,6 +688,11 @@ begin
     PAGE_NAVIGATION_NEXT: PageIndex := PageIndex + 1;
     PAGE_NAVIGATION_LAST: PageIndex := FPageCount - 1;
   end;
+end;
+
+procedure TCustomVisualGrid.MultiSearchToggleBoxChange(Sender: TObject);
+begin
+   FTopPanelMultiSearch.Visible := FMultiSearchToggleBox.State=cbChecked;
 end;
 
 function TCustomVisualGrid.GetCanvas: TCanvas;
@@ -667,6 +804,47 @@ begin
   FDrawGrid.Refresh;
 end;
 
+procedure TCustomVisualGrid.ResizeSearchEdit(ACol: Integer);
+var
+  LEdit: TSearchEdit;
+  LEditOnLeft, LEditOnRight: TSearchEdit;
+  //LFixedRect: TRect;
+  LRect: TRect;
+begin
+  LEdit := FMultiSearchEdits[ACol];
+  LEdit.Visible := FDrawGrid.IsFixedCellVisible(aCol, 0);
+  if ACol > 0 then
+    LEditOnLeft := FMultiSearchEdits[ACol-1]
+  else
+    LEditOnLeft := nil;
+
+  if ACol < FMultiSearchEdits.Count-1 then
+    LEditOnRight := FMultiSearchEdits[ACol+1]
+  else
+    LEditOnRight := nil;
+
+  if ACol = TDrawGridAccess(FDrawGrid).GCache.VisibleGrid.Right then
+    if Assigned(LEditOnRight) then
+      LEditOnRight.Visible:=false;
+  if ACol = TDrawGridAccess(FDrawGrid).GCache.VisibleGrid.Left then
+    begin
+      if Assigned(LEditOnLeft) then
+        if (ACol > FDrawGrid.FixedCols) or (not FDrawGrid.IsFixedCellVisible(ACol-1,0)) then
+          LEditOnLeft.Visible:=false
+    end;
+  // TODO : next column after fixed column
+  {if (ACol > 0) and (ACol = FDrawGrid.FixedCols) then
+  begin
+    fr := FDrawGrid.CellRect(aCol-1, aRow);
+
+    e.SetBounds(FDrawGrid.Left + fr.Right + 2, FDrawGrid.Top - e.Height, (aRect.Right - (fr.Right)) -1, e.Height);
+  end
+  else}
+  LRect := FDrawGrid.CellRect(ACol,0);
+  LEdit.FPanel.SetBounds(LRect.Left + 1, 0, LRect.Width - 2, LEdit.FEdit.Height);
+end;
+
+
 procedure TCustomVisualGrid.RefreshPageIndexInterface;
 begin
   SetPageIndexEditText(IntToStr(Succ(FPageIndex)));
@@ -674,8 +852,19 @@ begin
 end;
 
 procedure TCustomVisualGrid.ReloadColumns;
+var
+  i: Integer;
 begin
   FDrawGrid.ColCount := Length(FDataTable.Columns);
+  // TODO: may be optimized
+  FMultiSearchEdits.Clear;
+  for i := 0 to FDrawGrid.ColCount - 1 do
+  begin
+    FMultiSearchEdits.Add(TSearchEdit.Create(FTopPanelMultiSearchClient));
+    ResizeSearchEdit(i);
+  end;
+  if FDrawGrid.ColCount > 0 then
+    FTopPanelMultiSearch.Height:=FMultiSearchEdits.Last.FPanel.Height;
 end;
 
 procedure TCustomVisualGrid.LayoutChanged;
@@ -786,6 +975,8 @@ var
   LCellData: Variant;
 begin
   LHandled := False;
+  if ARow = 0 then
+    ResizeSearchEdit(ACol);
   if (ARow > 0) and Assigned(FDataSource) then
     LCellData := FDataTable.Rows[ARow-1]._(ACol);
 
