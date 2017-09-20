@@ -89,6 +89,9 @@ begin
     ADataTable.Rows[i].Name := 'name'+inttostr(i + delta);
     ADataTable.Rows[i].Foo := i + delta + 1;
   end;
+
+  if AddDelayCheckBox.Checked then
+    Sleep(2000);
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
