@@ -16,10 +16,12 @@ type
   TForm1 = class(TForm, IDataSource)
     AddDelayCheckBox: TCheckBox;
     AlignCheckBox: TCheckBox;
+    bRefresh: TButton;
     GridPanel: TPanel;
     Panel1: TPanel;
     Panel2: TPanel;
     TIPropertyGrid1: TTIPropertyGrid;
+    procedure bRefreshClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure VisualGrid1DrawVisualCell(Sender: TObject; ACol, ARow: Longint;
       Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
@@ -96,6 +98,11 @@ begin
   FVisualGrid.DataSource := Self;
   GridPanel.AddDockCenter(FVisualGrid);
   TIPropertyGrid1.TIObject := FVisualGrid;
+end;
+
+procedure TForm1.bRefreshClick(Sender: TObject);
+begin
+  TIPropertyGrid1.RefreshPropertyValues;
 end;
 
 procedure TForm1.VisualGrid1DrawVisualCell(Sender: TObject; ACol,
