@@ -158,6 +158,10 @@ type
     FCanSearch: boolean;
     FSelectionType: TSelectionType;
     function GetCanvas: TCanvas;
+    function GetMultiSearch: boolean;
+    function GetMultiSearchToggleBox: boolean;
+    procedure SetMultiSearchToggleBox(AValue: boolean);
+    procedure SetMultiSearch(AValue: boolean);
     procedure SetShowAllData(AValue: boolean);
     procedure SetAutoPageSize(AValue: boolean);
     procedure SetCanPage(AValue: boolean);
@@ -212,6 +216,8 @@ type
 
     property CanPage: boolean read FCanPage write SetCanPage default true;
     property CanSearch: boolean read FCanSearch write SetCanSearch default true;
+    property MultiSearchToggleBox: boolean read GetMultiSearchToggleBox write SetMultiSearchToggleBox;
+    property MultiSearch: boolean read GetMultiSearch write SetMultiSearch;
     property Canvas: TCanvas read GetCanvas;
     property SelectionType: TSelectionType read FSelectionType write SetSelectionType;
 
@@ -226,6 +232,8 @@ type
     property ShowAllData;
     property CanPage;
     property CanSearch;
+    property MultiSearchToggleBox;
+    property MultiSearch;
     property SelectionType;
 
     property OnDrawVisualCell;
@@ -547,7 +555,7 @@ begin
         Height := 40;
       end;
 
-      FTopPanelMultiSearchRight := TPanel.Create(Self);
+      {FTopPanelMultiSearchRight := TPanel.Create(Self);
       FTopPanelMultiSearchRight.Parent := FTopPanelMultiSearch;
       with FTopPanelMultiSearchRight do
       begin
@@ -555,7 +563,7 @@ begin
         BevelOuter := bvNone;
         Height := 40;
         Width:=TScrollBarAccess.GetControlClassDefaultSize.cy;
-      end;
+      end;}
     end;
 
 
@@ -699,6 +707,37 @@ end;
 function TCustomVisualGrid.GetCanvas: TCanvas;
 begin
   Result := FDrawGrid.Canvas;
+end;
+
+function TCustomVisualGrid.GetMultiSearch: boolean;
+begin
+  Result := FMultiSearchToggleBox.State=cbChecked;
+end;
+
+function TCustomVisualGrid.GetMultiSearchToggleBox: boolean;
+begin
+  Result := FMultiSearchToggleBox.Visible;
+end;
+
+procedure TCustomVisualGrid.SetMultiSearchToggleBox(AValue: boolean);
+begin
+  if FMultiSearchToggleBox.Visible=AValue then
+    Exit;
+  FMultiSearchToggleBox.Visible:=AValue;
+end;
+
+procedure TCustomVisualGrid.SetMultiSearch(AValue: boolean);
+begin
+  if (AValue and (FMultiSearchToggleBox.State=cbChecked)) or
+     (not AValue and (FMultiSearchToggleBox.State=cbUnchecked)) then
+    Exit;
+
+  if AValue then
+    FMultiSearchToggleBox.State:=cbChecked
+  else
+    FMultiSearchToggleBox.State:=cbUnchecked;
+
+  MultiSearchToggleBoxChange(Self);
 end;
 
 procedure TCustomVisualGrid.SetShowAllData(AValue: boolean);
