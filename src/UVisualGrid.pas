@@ -117,6 +117,7 @@ type
     FSearchEdit: TEdit;
     FSearchButton: TButton;
     FMultiSearchToggleBox: TToggleBox;
+    FMultiSearchButton: TButton;
     FTopPanel: TPanel;
     FTopPanelMultiSearch: TPanel;
     FTopPanelMultiSearchFixed: TPanel;
@@ -160,6 +161,7 @@ type
     function GetCanvas: TCanvas;
     function GetMultiSearch: boolean;
     function GetMultiSearchToggleBox: boolean;
+    function GetSingleSearch: boolean;
     procedure SetMultiSearchToggleBox(AValue: boolean);
     procedure SetMultiSearch(AValue: boolean);
     procedure SetShowAllData(AValue: boolean);
@@ -172,6 +174,7 @@ type
     procedure SetPageIndex(const Value: Integer);
     procedure SetPageSize(Value: Integer);
     procedure SetSelectionType(AValue: TSelectionType);
+    procedure SetSingleSearch(AValue: boolean);
   protected { TComponent }
     procedure Loaded; override;
   protected { TControl }
@@ -216,8 +219,9 @@ type
 
     property CanPage: boolean read FCanPage write SetCanPage default true;
     property CanSearch: boolean read FCanSearch write SetCanSearch default true;
-    property MultiSearchToggleBox: boolean read GetMultiSearchToggleBox write SetMultiSearchToggleBox;
-    property MultiSearch: boolean read GetMultiSearch write SetMultiSearch;
+    property MultiSearchToggleBox: boolean read GetMultiSearchToggleBox write SetMultiSearchToggleBox default true;
+    property MultiSearch: boolean read GetMultiSearch write SetMultiSearch default true;
+    property SingleSearch: boolean read GetSingleSearch write SetSingleSearch default true;
     property Canvas: TCanvas read GetCanvas;
     property SelectionType: TSelectionType read FSelectionType write SetSelectionType;
 
@@ -234,6 +238,7 @@ type
     property CanSearch;
     property MultiSearchToggleBox;
     property MultiSearch;
+    property SingleSearch;
     property SelectionType;
 
     property OnDrawVisualCell;
@@ -473,9 +478,21 @@ begin
       Left := 4;
       Top := 6;
       Height:=28;
-      Width := 150;
+      Width := 120;
       OnChange:=MultiSearchToggleBoxChange;
     end;
+
+    FMultiSearchButton := TButton.Create(Self);
+    FMultiSearchButton.Parent := FTopPanel;
+    with FMultiSearchButton do
+    begin
+      Left := 126;
+      Top := 6;
+      Width := 28;
+      Height := 28;
+      Caption := 'OK';
+    end;
+
 
     FTopPanelRight := TPanel.Create(Self);
     FTopPanelRight.Parent := FTopPanel;
@@ -701,6 +718,7 @@ end;
 procedure TCustomVisualGrid.MultiSearchToggleBoxChange(Sender: TObject);
 begin
    FTopPanelMultiSearch.Visible := FMultiSearchToggleBox.State=cbChecked;
+   FMultiSearchButton.Visible := FMultiSearchToggleBox.Visible and (FMultiSearchToggleBox.State=cbChecked);
    LayoutChanged;
 end;
 
@@ -719,11 +737,19 @@ begin
   Result := FMultiSearchToggleBox.Visible;
 end;
 
+function TCustomVisualGrid.GetSingleSearch: boolean;
+begin
+  Result := FTopPanelRight.Visible;
+end;
+
 procedure TCustomVisualGrid.SetMultiSearchToggleBox(AValue: boolean);
 begin
   if FMultiSearchToggleBox.Visible=AValue then
     Exit;
   FMultiSearchToggleBox.Visible:=AValue;
+  FMultiSearchButton.Visible:=AValue;
+
+  CanSearch:=AValue or SingleSearch;
 end;
 
 procedure TCustomVisualGrid.SetMultiSearch(AValue: boolean);
@@ -1006,6 +1032,14 @@ begin
     stRow: FDrawGrid.Options:=FDefaultDrawGridOptions+[goRowSelect];
     stMultiRow: FDrawGrid.Options:=FDefaultDrawGridOptions+[goRowSelect,goRangeSelect];
   end;
+end;
+
+procedure TCustomVisualGrid.SetSingleSearch(AValue: boolean);
+begin
+  if AValue = FTopPanelRight.Visible then
+    exit;
+  FTopPanelRight.Visible := AValue;
+  CanSearch:=AValue or MultiSearchToggleBox;
 end;
 
 procedure TCustomVisualGrid.StandardDrawCell(Sender: TObject; ACol,
