@@ -62,6 +62,7 @@ type
 
   { TSearchCapability }
 
+  PSearchCapability = ^TSearchCapability;
   TSearchCapability = record
     ColumnName : utf8string;
     SupportedFilters : TVisualGridFilters;
@@ -74,7 +75,8 @@ type
 
   IDataSource = interface
     function FetchPage(constref AParams: TPageFetchParams; var ADataTable: TDataTable): TPageFetchResult;
-    property Capability : TSearchCapabilities;
+    function GetSearchCapabilities: TSearchCapabilities;
+    property SearchCapabilities : TSearchCapabilities read GetSearchCapabilities;
   end;
 
   TDrawVisualCellEvent = procedure(Sender: TObject; ACol, ARow: Longint;
@@ -101,6 +103,7 @@ type
       procedure SetEditVisible(AValue: boolean);
       procedure SetVisible(AValue: boolean);
     public
+      SearchCapability: PSearchCapability;
       constructor Create(AParent: TWinControl);
       destructor Destroy; override;
 
@@ -188,6 +191,7 @@ type
     FGUIUpdates: TUpdateOfVisualGridGUI;
     FDataTable: TDataTable;
     FDataSource: IDataSource;
+    FSearchCapabilities: TSearchCapabilities;
     FPageSize: Integer;
     FPageIndex: Integer;
     FPageCount: Integer;
@@ -322,7 +326,7 @@ end;
 procedure TCustomVisualGrid.TSearchEdit.SetEditVisible(AValue: boolean);
 begin
   FEdit.Visible:=AValue;
-  FButton.Visible:=AValue;
+  //FButton.Visible:=AValue;
 end;
 
 procedure TCustomVisualGrid.TSearchEdit.SetVisible(AValue: boolean);
@@ -979,13 +983,31 @@ end;
 procedure TCustomVisualGrid.ReloadColumns;
 var
   i: Integer;
+  LEdit: TSearchEdit;
+  p: PSearchCapability;
+
+  function SearchCapability: PSearchCapability;
+  var
+    j: Integer;
+  begin
+    for j := 0 to High(FSearchCapabilities) do
+      if FSearchCapabilities[j].ColumnName = FDataTable.Columns[i] then
+        Exit(@FSearchCapabilities[j]);
+    Result := nil;
+  end;
+
 begin
   FDrawGrid.ColCount := Length(FDataTable.Columns);
   // TODO: may be optimized
   FMultiSearchEdits.Clear;
+  FSearchCapabilities := Copy(FDataSource.SearchCapabilities);
   for i := 0 to FDrawGrid.ColCount - 1 do
   begin
-    FMultiSearchEdits.Add(TSearchEdit.Create(FTopPanelMultiSearchClient));
+    LEdit := TSearchEdit.Create(FTopPanelMultiSearchClient);
+    FMultiSearchEdits.Add(LEdit);
+    p := SearchCapability;
+    LEdit.EditVisible:=Assigned(p);
+    LEdit.SearchCapability := p;
     ResizeSearchEdit(i);
   end;
   if FDrawGrid.ColCount > 0 then

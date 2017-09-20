@@ -30,8 +30,8 @@ type
     FColumns: TTableColumns;
     FVisualGrid: TVisualGrid;
     { Private declarations }
-    function GetCapabilities: TSearchCapabilities;
-    property Capability: TSearchCapabilities read GetCapabilities;
+  private { IDataSource implementation }
+    function GetSearchCapabilities: TSearchCapabilities;
     function FetchPage(constref AParams: TPageFetchParams; var ADataTable: TDataTable): TPageFetchResult;
   public
     { Public declarations }
@@ -44,11 +44,11 @@ implementation
 
 {$R *.lfm}
 
-function TForm1.GetCapabilities: TSearchCapabilities;
+function TForm1.GetSearchCapabilities: TSearchCapabilities;
 begin
-  SetLength(Result, 2);
-  Result[0] := TSearchCapability.From('ID', SORTABLE_NUMERIC_FILTER);
-  Result[1] := TSearchCapability.From('Name', SORTABLE_TEXT_FILTER);
+  Result := TSearchCapabilities.Create(
+    TSearchCapability.From('ID', SORTABLE_NUMERIC_FILTER),
+    TSearchCapability.From('Name', SORTABLE_TEXT_FILTER));
 end;
 
 function TForm1.FetchPage(constref AParams: TPageFetchParams;
