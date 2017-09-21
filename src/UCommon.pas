@@ -451,6 +451,7 @@ begin
   else
   begin
     VarClear(variant(Dest));
+    FillChar(LDestRow, SizeOf(LDestRow), #0);
     LDestRow.vtype := LSourceRow.vtype;
     LDestRow.vcolumnmap := LSourceRow.vcolumnmap;
     LDestRow.vvalues := system.copy(TTableRowData(LSourceRow).vvalues);
