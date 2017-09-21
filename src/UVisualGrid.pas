@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, Types, Graphics,
-  UCommon, Generics.Collections;
+  UCommon, Generics.Collections, Menus;
 
 
 
@@ -79,6 +79,21 @@ type
     property SearchCapabilities : TSearchCapabilities read GetSearchCapabilities;
   end;
 
+  { TVisualGridSelection }
+
+  TVisualGridSelection = record
+  private
+    function GetCol: longint;
+    function GetRow: longint;
+    function GetRowCount: longint;
+  public
+    Selections: array of TRect;
+    property Col: longint read GetCol;
+    property Row: longint read GetRow;
+    property RowCount: longint read GetRowCount;
+  end;
+
+  TPreparePopupMenuEvent = procedure(Sender: TObject; constref ASelection: TVisualGridSelection; out APopupMenu: TPopupMenu) of object;
   TDrawVisualCellEvent = procedure(Sender: TObject; ACol, ARow: Longint;
     Canvas: TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant; var Handled: boolean) of object;
 
@@ -163,6 +178,8 @@ type
   protected { events for UI }
     procedure StandardDrawCell(Sender: TObject; ACol, ARow: Longint;
       Rect: TRect; State: TGridDrawState);
+    procedure GridMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
     procedure PageIndexEditingDone(Sender: TObject);
     procedure PageSizeEditingDone(Sender: TObject);
     procedure PageNavigationClick(Sender: TObject);
@@ -171,6 +188,7 @@ type
     procedure FetchDataThreadProgress(Sender: TObject);
   private
     FFetchDataInThread: boolean;
+    FOnPreparePopupMenu: TPreparePopupMenuEvent;
     FShowAllData: boolean;
     FAutoPageSize: boolean;
     FCanPage: boolean;
@@ -251,6 +269,7 @@ type
     property SelectionType: TSelectionType read FSelectionType write SetSelectionType;
 
     property OnDrawVisualCell: TDrawVisualCellEvent read FOnDrawVisualCell write FOnDrawVisualCell;
+    property OnPreparePopupMenu: TPreparePopupMenuEvent read FOnPreparePopupMenu write FOnPreparePopupMenu;
   end;
 
   TVisualGrid = class(TCustomVisualGrid)
@@ -293,6 +312,29 @@ type
 procedure Register;
 begin
   RegisterComponents('Pascal Framework', [TVisualGrid]);
+end;
+
+{ TVisualGridSelection }
+
+function TVisualGridSelection.GetCol: longint;
+begin
+  if Length(Selections) = 0 then
+    Exit(-1);
+  Result := Selections[0].Left;
+end;
+
+function TVisualGridSelection.GetRow: longint;
+begin
+  if Length(Selections) = 0 then
+    Exit(-1);
+  Result := Selections[0].Top;
+end;
+
+function TVisualGridSelection.GetRowCount: longint;
+begin
+  if Length(Selections) = 0 then
+    Exit(0);
+  Result := Selections[0].Height;
 end;
 
 { TFetchDataThread }
@@ -665,6 +707,7 @@ begin
       Align := alClient;
       BorderStyle := bsNone;
       OnDrawCell := StandardDrawCell;
+      OnMouseUp := GridMouseUp;
       Options := (Options - [goRangeSelect]) + [goColSizing];
       FixedCols := 0;
     end;
@@ -1272,6 +1315,37 @@ begin
     FOnDrawVisualCell(Self, ACol, ARow, Canvas, Rect, State, LCellData, LHandled);
   if not LHandled then
     DoDrawCell(Self, ACol, ARow, Rect, State, LCellData);
+end;
+
+procedure TCustomVisualGrid.GridMouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+var
+  LPopup: TPopupMenu;
+  LSelection: TVisualGridSelection;
+  i: integer;
+  LPoint: TPoint;
+  LContains: boolean = false;
+begin
+  if Button = mbRight then
+    if (SelectionType <> stNone) and Assigned(FOnPreparePopupMenu) and
+       (FDrawGrid.MouseToGridZone(X, Y) = gzNormal) then
+    begin
+      FDrawGrid.MouseToCell(X, Y, LPoint.x, LPoint.y);
+      SetLength(LSelection.Selections, FDrawGrid.SelectedRangeCount);
+      for i := 0 to High(LSelection.Selections) do
+      begin
+        LSelection.Selections[i] := FDrawGrid.SelectedRange[i];
+        if not LContains then
+          LContains := LSelection.Selections[i].Contains(LPoint);
+        LSelection.Selections[i].Top:=LSelection.Selections[i].Top-1; // - fixed row
+      end;
+      if not LContains then
+        Exit;
+      FOnPreparePopupMenu(Self, LSelection, LPopup);
+      if Assigned(LPopup) then
+        with FDrawGrid.ClientToScreen(TPoint.Create(X, Y)) do
+          LPopup.PopUp(X, Y);
+    end;
 end;
 
 end.
