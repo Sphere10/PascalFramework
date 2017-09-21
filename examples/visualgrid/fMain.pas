@@ -91,7 +91,7 @@ begin
   end;
 
   if AddDelayCheckBox.Checked then
-    Sleep(2000);
+    Sleep(3000);
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);

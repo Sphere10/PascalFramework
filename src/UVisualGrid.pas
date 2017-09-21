@@ -90,6 +90,12 @@ type
   protected type
     TUpdateOfVisualGridGUI = set of (updPageIndex, updPageSize);
 
+    TLastFetchDataResult = record
+      FromThread: boolean;
+      RefreshColumns: boolean;
+      FetchResult: TPageFetchResult;
+    end;
+
     { TSearchEdit }
 
     TSearchEdit = class
@@ -116,6 +122,7 @@ type
     PAGE_NAVIGATION_NEXT     = 3;
     PAGE_NAVIGATION_LAST     = 4;
   protected { component interface part }
+    FAllPanel: TPanel;
     FSearchLabel: TLabel;
     FSearchEdit: TEdit;
     FSearchButton: TButton;
@@ -128,6 +135,9 @@ type
     FTopPanelMultiSearchRight: TPanel;
     FTopPanelRight: TPanel;
     FClientPanel: TPanel;
+    FLoadDataPanel: TPanel;
+    FLoadDataLabel: TLabel;
+    FLoadDataProgressLabel: TLabel;
     FBottomPanel: TPanel;
     FBottomCenterPanel: TPanel;
     FBottomRightPanel: TPanel;
@@ -179,7 +189,7 @@ type
 {$IFDEF VISUALGRID_DEBUG}
     procedure ClickTest(Sender: TObject);
 {$ENDIF}
-    procedure SetPageIndex(const Value: Integer);
+    procedure SetPageIndex(Value: Integer);
     procedure SetPageSize(Value: Integer);
     procedure SetSelectionType(AValue: TSelectionType);
     procedure SetSingleSearch(AValue: boolean);
@@ -197,6 +207,7 @@ type
     FPageCount: Integer;
     FDefaultDrawGridOptions: TGridOptions;
     FTotalDataCount: Integer;
+    FLastFetchDataResult: TLastFetchDataResult;
 
     FOnDrawVisualCell: TDrawVisualCellEvent;
 
@@ -218,7 +229,7 @@ type
     procedure SetPageSizeEditText(const AStr: utf8string);
     procedure BeforeFetchPage;
     procedure FetchPage(out AResult: TPageFetchResult);
-    procedure AfterFetchPage(ARefreshColumns: boolean; constref APageFetchResult: TPageFetchResult);
+    procedure AfterFetchPage;
   public
     constructor Create(Owner: TComponent); override;
     destructor Destroy; override;
@@ -270,8 +281,7 @@ type
   TFetchDataThread = class(TThread)
   protected
     FGrid: TCustomVisualGrid;
-    FRefreshColumns: boolean;
-    FFetchResult: TPageFetchResult;
+    FLastFetchDataResult: TCustomVisualGrid.TLastFetchDataResult;
     procedure Execute; override;
   public
     constructor Create(AGrid: TCustomVisualGrid; ARefreshColumns: boolean);
@@ -287,27 +297,28 @@ end;
 
 procedure TFetchDataThread.Execute;
 begin
-  FGrid.FetchPage(FFetchResult);
+  FGrid.FetchPage(FLastFetchDataResult.FetchResult);
 end;
 
 constructor TFetchDataThread.Create(AGrid: TCustomVisualGrid;
   ARefreshColumns: boolean);
 begin
   FGrid := AGrid;
-  FGrid.Enabled := false;
+  FGrid.FAllPanel.Enabled := false;
   FGrid.FFetchDataThreadTimer.Enabled:=true;
-  FGrid.FDrawGrid.Visible:=False;
+  FGrid.FLoadDataPanel.Visible:=True;
+  FGrid.FLoadDataPanel.BringToFront;
   FGrid.BeforeFetchPage;
   FreeOnTerminate:=true;
+  FLastFetchDataResult.RefreshColumns:=ARefreshColumns;
   inherited Create(false);
 end;
 
 destructor TFetchDataThread.Destroy;
 begin
-  FGrid.FFetchDataThreadTimer.Enabled:=false;
-  FGrid.FDrawGrid.Visible:=true;
-  FGrid.AfterFetchPage(FRefreshColumns,FFetchResult);
-  FGrid.Enabled := true;
+  FLastFetchDataResult.FromThread:=true;
+  FGrid.FLastFetchDataResult := FLastFetchDataResult;
+  Synchronize(FGrid.AfterFetchPage);
   inherited Destroy;
 end;
 
@@ -390,8 +401,16 @@ begin
 
   ControlStyle := ControlStyle - [csAcceptsControls] + [csOwnedChildrenNotSelectable];
 
+  FAllPanel := TPanel.Create(Self);
+  FAllPanel.Parent := Self;
+  with FAllPanel do
+  begin
+    Align:=alClient;
+    BevelOuter := bvNone;
+  end;
+
   FBottomPanel := TPanel.Create(Self);
-  FBottomPanel.Parent := Self;
+  FBottomPanel.Parent := FAllPanel;
   with FBottomPanel do
   begin
     Align := alBottom;
@@ -516,7 +535,7 @@ begin
   end;
 
   FTopPanel := TPanel.Create(Self);
-  FTopPanel.Parent := Self;
+  FTopPanel.Parent := FAllPanel;
   with FTopPanel do
   begin
     Align := alTop;
@@ -593,7 +612,7 @@ begin
   end;
 
   FClientPanel := TPanel.Create(Self);
-  FClientPanel.Parent := Self;
+  FClientPanel.Parent := FAllPanel;
   with FClientPanel do
   begin
     Align := alClient;
@@ -637,7 +656,6 @@ begin
       end;}
     end;
 
-
     FDrawGrid := TDrawGrid.Create(Self);
     FDrawGrid.Parent := FClientPanel;
     with FDrawGrid do
@@ -649,6 +667,42 @@ begin
       FixedCols := 0;
     end;
     FDefaultDrawGridOptions := FDrawGrid.Options;
+  end;
+
+  FLoadDataPanel := TPanel.Create(Self);
+  FLoadDataPanel.Parent := Self;
+  with FLoadDataPanel do
+  begin
+    //BevelOuter := bvNone;
+    Width := 300;
+    Height := 150;
+    //Align:=alClient;
+    Visible:=false;
+    AnchorSideLeft.Control := Self;
+    AnchorSideLeft.Side := asrCenter;
+    AnchorSideTop.Control := Self;
+    AnchorSideTop.Side := asrCenter;
+
+    FLoadDataLabel := TLabel.Create(Self);
+    FLoadDataLabel.Parent := FLoadDataPanel;
+    with FLoadDataLabel do
+    begin
+      AnchorSideLeft.Control := FLoadDataPanel;
+      AnchorSideLeft.Side := asrCenter;
+      AnchorSideTop.Control := FLoadDataPanel;
+      AnchorSideTop.Side := asrCenter;
+      Caption := 'DATA LOADING';
+    end;
+    FLoadDataProgressLabel := TLabel.Create(Self);
+    FLoadDataProgressLabel.Parent := FLoadDataPanel;
+    with FLoadDataProgressLabel do
+    begin
+      AnchorSideLeft.Control := FLoadDataLabel;
+      AnchorSideLeft.Side := asrCenter;
+      AnchorSideTop.Control := FLoadDataLabel;
+      AnchorSideTop.Side := asrBottom;
+      Caption := '-';
+    end
   end;
 
   FDelayedBoundsChangeTimer := TTimer.Create(Self);
@@ -736,9 +790,9 @@ procedure TCustomVisualGrid.FetchDataThreadProgress(Sender: TObject);
 const
   PROGRESS: Integer = 0;
 {$J-}
-  PROGRESS_CHARS: array[0..3] of string = ('   ', '.  ', '.. ', '...');
+  PROGRESS_CHARS: array[0..3] of string = ('-', '\', '|', '/');
 begin
-  FClientPanel.Caption := 'LOADING DATA ' + PROGRESS_CHARS[PROGRESS];
+  FLoadDataProgressLabel.Caption := PROGRESS_CHARS[PROGRESS];
   Inc(PROGRESS);
   if PROGRESS > High(PROGRESS_CHARS) then
     PROGRESS := 0;
@@ -919,16 +973,16 @@ begin
 end;
 
 procedure TCustomVisualGrid.RefreshPageIndexData(ARefreshColumns: boolean);
-var
-  LResult: TPageFetchResult;
 begin
   if Assigned(FDataSource) and FetchDataInThread then
     TFetchDataThread.Create(Self, ARefreshColumns)
   else
   begin
     BeforeFetchPage;
-    FetchPage(LResult);
-    AfterFetchPage(ARefreshColumns, LResult);
+    FLastFetchDataResult.FromThread:=false;
+    FLastFetchDataResult.RefreshColumns:=ARefreshColumns;
+    FetchPage(FLastFetchDataResult.FetchResult);
+    AfterFetchPage;
   end;
 end;
 
@@ -1001,6 +1055,11 @@ begin
   // TODO: may be optimized
   FMultiSearchEdits.Clear;
   FSearchCapabilities := Copy(FDataSource.SearchCapabilities);
+  if Length(FSearchCapabilities) = 0 then
+  begin
+    MultiSearch:=false;
+    MultiSearchToggleBox:=false;
+  end;
   for i := 0 to FDrawGrid.ColCount - 1 do
   begin
     LEdit := TSearchEdit.Create(FTopPanelMultiSearchClient);
@@ -1066,11 +1125,15 @@ begin
   RefreshPageIndexData(true);
 end;
 
-procedure TCustomVisualGrid.SetPageIndex(const Value: Integer);
+procedure TCustomVisualGrid.SetPageIndex(Value: Integer);
 begin
+  if Value >= FPageCount then
+    Value := FPageCount - 1;
+  if Value < 0 then
+    Value := 0;
+
   if FPageIndex = Value then
     Exit;
-
 
   FPageIndex := Value;
   RefreshPageIndexData(false)
@@ -1106,24 +1169,31 @@ begin
     FillChar(AResult, SizeOf(AResult), #0);
 end;
 
-procedure TCustomVisualGrid.AfterFetchPage(ARefreshColumns: boolean; constref
-  APageFetchResult: TPageFetchResult);
+procedure TCustomVisualGrid.AfterFetchPage;
 begin
+  with FLastFetchDataResult do
   if Assigned(FDataSource) then
   begin
-    FPageCount:=APageFetchResult.PageCount;
+    if FromThread then
+    begin
+      FFetchDataThreadTimer.Enabled:=false;
+      FLoadDataPanel.Visible:=False;
+      FAllPanel.Enabled := true;
+    end;
 
-    if APageFetchResult.TotalDataCount >= 0 then
-      FTotalDataCount := APageFetchResult.TotalDataCount
+    FPageCount:=FetchResult.PageCount;
+
+    if FetchResult.TotalDataCount >= 0 then
+      FTotalDataCount := FetchResult.TotalDataCount
     else
       FTotalDataCount := -1;
 
     FAllRecordsCountLabel.Visible := FTotalDataCount<>-1;
     FAllRecordsCountLabel.Caption:=Format('Total: %d', [FTotalDataCount]);
 
-    FPageIndex := APageFetchResult.PageIndex;
+    FPageIndex := FetchResult.PageIndex;
 
-    if ARefreshColumns then
+    if RefreshColumns then
       ReloadColumns;
     FDrawGrid.RowCount := Length(FDataTable.Rows) + 1;
   end;
@@ -1169,6 +1239,8 @@ var
   LHandled: boolean;
   LCellData: Variant;
 begin
+  if FFetchDataThreadTimer.Enabled then
+    Exit;
   LHandled := False;
   if ARow = 0 then
     ResizeSearchEdit(ACol);
