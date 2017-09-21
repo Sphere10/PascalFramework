@@ -84,6 +84,7 @@ type
   TVisualGridSelection = record
   private
     function GetCol: longint;
+    function GetColCount: longint;
     function GetRow: longint;
     function GetRowCount: longint;
   public
@@ -91,6 +92,7 @@ type
     property Col: longint read GetCol;
     property Row: longint read GetRow;
     property RowCount: longint read GetRowCount;
+    property ColCount: longint read GetColCount;
   end;
 
   TPreparePopupMenuEvent = procedure(Sender: TObject; constref ASelection: TVisualGridSelection; out APopupMenu: TPopupMenu) of object;
@@ -194,14 +196,19 @@ type
     FCanPage: boolean;
     FCanSearch: boolean;
     FSelectionType: TSelectionType;
+    function GetCells(ACol, ARow: Integer): Variant;
+    function GetRows(ARow: Integer): Variant;
+    function GetSelection: TVisualGridSelection;
     procedure SetAllEditsAsReadOny(AReadOnly: boolean);
     function GetCanvas: TCanvas;
     function GetMultiSearch: boolean;
     function GetMultiSearchToggleBox: boolean;
     function GetSingleSearch: boolean;
+    procedure SetCells(ACol, ARow: Integer; AValue: Variant);
     procedure SetFetchDataInThread(AValue: boolean);
     procedure SetMultiSearchToggleBox(AValue: boolean);
     procedure SetMultiSearch(AValue: boolean);
+    procedure SetRows(ARow: Integer; AValue: Variant);
     procedure SetShowAllData(AValue: boolean);
     procedure SetAutoPageSize(AValue: boolean);
     procedure SetCanPage(AValue: boolean);
@@ -267,6 +274,10 @@ type
     property SingleSearch: boolean read GetSingleSearch write SetSingleSearch default true;
     property Canvas: TCanvas read GetCanvas;
     property SelectionType: TSelectionType read FSelectionType write SetSelectionType;
+    property Selection: TVisualGridSelection read GetSelection;
+
+    property Cells[ACol, ARow: Integer]: Variant read GetCells write SetCells;
+    property Rows[ARow: Integer]: Variant read GetRows write SetRows;
 
     property OnDrawVisualCell: TDrawVisualCellEvent read FOnDrawVisualCell write FOnDrawVisualCell;
     property OnPreparePopupMenu: TPreparePopupMenuEvent read FOnPreparePopupMenu write FOnPreparePopupMenu;
@@ -321,6 +332,13 @@ begin
   if Length(Selections) = 0 then
     Exit(-1);
   Result := Selections[0].Left;
+end;
+
+function TVisualGridSelection.GetColCount: longint;
+begin
+  if Length(Selections) = 0 then
+    Exit(0);
+  Result := Selections[0].Width;
 end;
 
 function TVisualGridSelection.GetRow: longint;
@@ -862,6 +880,28 @@ begin
     e.FEdit.ReadOnly:=AReadOnly;
 end;
 
+function TCustomVisualGrid.GetCells(ACol, ARow: Integer): Variant;
+begin
+  Result := FDataTable.Rows[ARow]._(ACol);
+end;
+
+function TCustomVisualGrid.GetRows(ARow: Integer): Variant;
+begin
+  Result := FDataTable.Rows[ARow];
+end;
+
+function TCustomVisualGrid.GetSelection: TVisualGridSelection;
+var
+  i: Integer;
+begin
+  SetLength(Result.Selections, FDrawGrid.SelectedRangeCount);
+  for i := 0 to High(Result.Selections) do
+  begin
+    Result.Selections[i] := FDrawGrid.SelectedRange[i];
+    Result.Selections[i].Top:=Result.Selections[i].Top-1; // - fixed row
+  end;
+end;
+
 procedure TCustomVisualGrid.PageIndexEditingDone(Sender: TObject);
 var
   LPageIndex: Integer;
@@ -935,6 +975,12 @@ begin
   Result := FTopPanelRight.Visible;
 end;
 
+procedure TCustomVisualGrid.SetCells(ACol, ARow: Integer; AValue: Variant);
+begin
+  TTableRowData(FDataTable.Rows[ARow]).vvalues[ACol] := AValue;
+  FDrawGrid.InvalidateCell(ACol, ARow);
+end;
+
 procedure TCustomVisualGrid.SetFetchDataInThread(AValue: boolean);
 begin
   if FFetchDataInThread=AValue then Exit;
@@ -963,6 +1009,12 @@ begin
     FMultiSearchToggleBox.State:=cbUnchecked;
 
   MultiSearchToggleBoxChange(Self);
+end;
+
+procedure TCustomVisualGrid.SetRows(ARow: Integer; AValue: Variant);
+begin
+  FDataTable.Rows[ARow] := AValue;
+  FDrawGrid.InvalidateRow(ARow + 1); // + fixed row
 end;
 
 procedure TCustomVisualGrid.SetShowAllData(AValue: boolean);
@@ -1331,14 +1383,13 @@ begin
        (FDrawGrid.MouseToGridZone(X, Y) = gzNormal) then
     begin
       FDrawGrid.MouseToCell(X, Y, LPoint.x, LPoint.y);
-      SetLength(LSelection.Selections, FDrawGrid.SelectedRangeCount);
+      LSelection := Selection;
       for i := 0 to High(LSelection.Selections) do
-      begin
-        LSelection.Selections[i] := FDrawGrid.SelectedRange[i];
         if not LContains then
+        begin
           LContains := LSelection.Selections[i].Contains(LPoint);
-        LSelection.Selections[i].Top:=LSelection.Selections[i].Top-1; // - fixed row
-      end;
+          Break;
+        end;
       if not LContains then
         Exit;
       FOnPreparePopupMenu(Self, LSelection, LPopup);
