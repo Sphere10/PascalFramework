@@ -122,7 +122,7 @@ type
     PAGE_NAVIGATION_NEXT     = 3;
     PAGE_NAVIGATION_LAST     = 4;
   protected { component interface part }
-    FAllPanel: TPanel;
+    FMainPanel: TPanel;
     FSearchLabel: TLabel;
     FSearchEdit: TEdit;
     FSearchButton: TButton;
@@ -157,13 +157,14 @@ type
     FDrawGrid: TDrawGrid;
     FDelayedBoundsChangeTimer: TTimer;
     FFetchDataThreadTimer: TTimer;
+    FEditingDoneTimer: TTimer;
 
     FMultiSearchEdits: TObjectList<TSearchEdit>;
   protected { events for UI }
     procedure StandardDrawCell(Sender: TObject; ACol, ARow: Longint;
       Rect: TRect; State: TGridDrawState);
-    procedure PageIndexEditChange(Sender: TObject);
-    procedure PageSizeEditChange(Sender: TObject);
+    procedure PageIndexEditingDone(Sender: TObject);
+    procedure PageSizeEditingDone(Sender: TObject);
     procedure PageNavigationClick(Sender: TObject);
     procedure MultiSearchToggleBoxChange(Sender: TObject);
     procedure DelayedBoundsChange(Sender: TObject);
@@ -175,6 +176,7 @@ type
     FCanPage: boolean;
     FCanSearch: boolean;
     FSelectionType: TSelectionType;
+    procedure SetAllEditsAsReadOny(AReadOnly: boolean);
     function GetCanvas: TCanvas;
     function GetMultiSearch: boolean;
     function GetMultiSearchToggleBox: boolean;
@@ -304,7 +306,7 @@ constructor TFetchDataThread.Create(AGrid: TCustomVisualGrid;
   ARefreshColumns: boolean);
 begin
   FGrid := AGrid;
-  FGrid.FAllPanel.Enabled := false;
+  FGrid.SetAllEditsAsReadOny(true);
   FGrid.FFetchDataThreadTimer.Enabled:=true;
   FGrid.FLoadDataPanel.Visible:=True;
   FGrid.FLoadDataPanel.BringToFront;
@@ -401,16 +403,16 @@ begin
 
   ControlStyle := ControlStyle - [csAcceptsControls] + [csOwnedChildrenNotSelectable];
 
-  FAllPanel := TPanel.Create(Self);
-  FAllPanel.Parent := Self;
-  with FAllPanel do
+  FMainPanel := TPanel.Create(Self);
+  FMainPanel.Parent := Self;
+  with FMainPanel do
   begin
     Align:=alClient;
     BevelOuter := bvNone;
   end;
 
   FBottomPanel := TPanel.Create(Self);
-  FBottomPanel.Parent := FAllPanel;
+  FBottomPanel.Parent := FMainPanel;
   with FBottomPanel do
   begin
     Align := alBottom;
@@ -433,7 +435,7 @@ begin
         Top := 10;
         Width := 56;
         Height := 21;
-        OnChange := PageIndexEditChange;
+        OnEditingDone := PageIndexEditingDone;
       end;
       FPageCountLabel := TLabel.Create(Self);
       FPageCountLabel.Parent := FBottomRightPanel;
@@ -529,13 +531,13 @@ begin
         Top := 10;
         Width := 52;
         Height := 21;
-        OnChange:=PageSizeEditChange;
+        OnEditingDone:=PageSizeEditingDone;
       end;
     end;
   end;
 
   FTopPanel := TPanel.Create(Self);
-  FTopPanel.Parent := FAllPanel;
+  FTopPanel.Parent := FMainPanel;
   with FTopPanel do
   begin
     Align := alTop;
@@ -612,7 +614,7 @@ begin
   end;
 
   FClientPanel := TPanel.Create(Self);
-  FClientPanel.Parent := FAllPanel;
+  FClientPanel.Parent := FMainPanel;
   with FClientPanel do
   begin
     Align := alClient;
@@ -721,6 +723,13 @@ begin
     OnTimer:=FetchDataThreadProgress;
   end;
 
+  FEditingDoneTimer := TTimer.Create(Self);
+  with FEditingDoneTimer do
+  begin
+    Enabled:=false;
+    Interval:=2000;
+  end;
+
   { default values for properties }
   PageSize := 100;
   PageIndex := -1;
@@ -798,7 +807,19 @@ begin
     PROGRESS := 0;
 end;
 
-procedure TCustomVisualGrid.PageIndexEditChange(Sender: TObject);
+procedure TCustomVisualGrid.SetAllEditsAsReadOny(AReadOnly: boolean);
+var
+  e: TSearchEdit;
+begin
+  FSearchEdit.ReadOnly:=AReadOnly;
+  FPageSizeEdit.ReadOnly:=AReadOnly;
+  FPageIndexEdit.ReadOnly:=AReadOnly;
+  FDrawGrid.Enabled:=not AReadOnly;
+  for e in FMultiSearchEdits do
+    e.FEdit.ReadOnly:=AReadOnly;
+end;
+
+procedure TCustomVisualGrid.PageIndexEditingDone(Sender: TObject);
 var
   LPageIndex: Integer;
 begin
@@ -820,7 +841,7 @@ begin
   PageIndex := LPageIndex;
 end;
 
-procedure TCustomVisualGrid.PageSizeEditChange(Sender: TObject);
+procedure TCustomVisualGrid.PageSizeEditingDone(Sender: TObject);
 var
   LPageSize: Integer;
 begin
@@ -1178,7 +1199,7 @@ begin
     begin
       FFetchDataThreadTimer.Enabled:=false;
       FLoadDataPanel.Visible:=False;
-      FAllPanel.Enabled := true;
+      SetAllEditsAsReadOny(false);
     end;
 
     FPageCount:=FetchResult.PageCount;
