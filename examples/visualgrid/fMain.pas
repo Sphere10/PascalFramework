@@ -18,8 +18,8 @@ type
     AlignCheckBox: TCheckBox;
     bRefresh: TButton;
     GridPanel: TPanel;
-    MenuItem1: TMenuItem;
-    MenuItem2: TMenuItem;
+    miUpdateCell: TMenuItem;
+    miUpdateRow: TMenuItem;
     MenuItem3: TMenuItem;
     Panel1: TPanel;
     Panel2: TPanel;
@@ -27,6 +27,8 @@ type
     TIPropertyGrid1: TTIPropertyGrid;
     procedure bRefreshClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure miUpdateCellClick(Sender: TObject);
+    procedure miUpdateRowClick(Sender: TObject);
   private
     FColumns: TTableColumns;
     FVisualGrid: TVisualGrid;
@@ -116,6 +118,28 @@ begin
 
   GridPanel.AddDockCenter(FVisualGrid);
   TIPropertyGrid1.TIObject := FVisualGrid;
+end;
+
+procedure TForm1.miUpdateCellClick(Sender: TObject);
+begin
+  with FVisualGrid.Selection do
+    FVisualGrid.Cells[Col, Row] := 'Test';
+end;
+
+procedure TForm1.miUpdateRowClick(Sender: TObject);
+var
+  i, j: Integer;
+  r: variant;
+  rd: TTableRowData absolute r;
+begin
+  with FVisualGrid.Selection do
+    for i := 0 to RowCount - 1 do
+    begin
+      r := FVisualGrid.Rows[i + Row];
+      for j := 0 to High(rd.vvalues) do
+        rd.vvalues[j] := 'Test';
+      FVisualGrid.Rows[i + Row] := r;
+    end;
 end;
 
 procedure TForm1.bRefreshClick(Sender: TObject);
