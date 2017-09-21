@@ -18,14 +18,15 @@ type
     AlignCheckBox: TCheckBox;
     bRefresh: TButton;
     GridPanel: TPanel;
+    MenuItem1: TMenuItem;
+    MenuItem2: TMenuItem;
+    MenuItem3: TMenuItem;
     Panel1: TPanel;
     Panel2: TPanel;
+    PopupMenu1: TPopupMenu;
     TIPropertyGrid1: TTIPropertyGrid;
     procedure bRefreshClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
-    procedure VisualGrid1DrawVisualCell(Sender: TObject; ACol, ARow: Longint;
-      Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
-      var Handled: boolean);
   private
     FColumns: TTableColumns;
     FVisualGrid: TVisualGrid;
@@ -33,6 +34,11 @@ type
   private { IDataSource implementation }
     function GetSearchCapabilities: TSearchCapabilities;
     function FetchPage(constref AParams: TPageFetchParams; var ADataTable: TDataTable): TPageFetchResult;
+  private
+    procedure PreparePopupMenu(Sender: TObject; constref ASelection: TVisualGridSelection; out APopupMenu: TPopupMenu);
+    procedure DrawVisualCell(Sender: TObject; ACol, ARow: Longint;
+      Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
+      var Handled: boolean);
   public
     { Public declarations }
   end;
@@ -94,11 +100,20 @@ begin
     Sleep(3000);
 end;
 
+procedure TForm1.PreparePopupMenu(Sender: TObject; constref
+  ASelection: TVisualGridSelection; out APopupMenu: TPopupMenu);
+begin
+  APopupMenu := PopupMenu1;
+end;
+
 procedure TForm1.FormCreate(Sender: TObject);
 begin
   FColumns := TTableColumns.Create('ID', 'Name', 'Foo');
   FVisualGrid := TVisualGrid.Create(Self);
   FVisualGrid.DataSource := Self;
+  FVisualGrid.OnDrawVisualCell:=DrawVisualCell;
+  FVisualGrid.OnPreparePopupMenu:=PreparePopupMenu;
+
   GridPanel.AddDockCenter(FVisualGrid);
   TIPropertyGrid1.TIObject := FVisualGrid;
 end;
@@ -108,7 +123,7 @@ begin
   TIPropertyGrid1.RefreshPropertyValues;
 end;
 
-procedure TForm1.VisualGrid1DrawVisualCell(Sender: TObject; ACol,
+procedure TForm1.DrawVisualCell(Sender: TObject; ACol,
   ARow: Longint; Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
   var Handled: boolean);
 var
