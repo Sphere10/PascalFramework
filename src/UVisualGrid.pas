@@ -140,6 +140,7 @@ type
     PAGE_NAVIGATION_LAST     = 4;
   protected { component interface part }
     FMainPanel: TPanel;
+    FCaptionLabel: TLabel;
     FSearchLabel: TLabel;
     FSearchEdit: TEdit;
     FSearchButton: TButton;
@@ -196,14 +197,22 @@ type
     FCanPage: boolean;
     FCanSearch: boolean;
     FSelectionType: TSelectionType;
+    function GetCaption: TCaption;
+    function GetCaptionAlignment: TAlignment;
+    function GetCaptionFont: TFont;
     function GetCells(ACol, ARow: Integer): Variant;
     function GetRows(ARow: Integer): Variant;
     function GetSelection: TVisualGridSelection;
+    function GetCaptionVisible: boolean;
     procedure SetAllEditsAsReadOny(AReadOnly: boolean);
     function GetCanvas: TCanvas;
     function GetMultiSearch: boolean;
     function GetMultiSearchToggleBox: boolean;
     function GetSingleSearch: boolean;
+    procedure SetCaption(AValue: TCaption);
+    procedure SetCaptionAlignment(AValue: TAlignment);
+    procedure SetCaptionFont(AValue: TFont);
+    procedure SetCaptionVisible(AValue: boolean);
     procedure SetCells(ACol, ARow: Integer; AValue: Variant);
     procedure SetFetchDataInThread(AValue: boolean);
     procedure SetMultiSearchToggleBox(AValue: boolean);
@@ -276,6 +285,11 @@ type
     property SelectionType: TSelectionType read FSelectionType write SetSelectionType;
     property Selection: TVisualGridSelection read GetSelection;
 
+    property Caption: TCaption read GetCaption write SetCaption;
+    property CaptionVisible: boolean read GetCaptionVisible write SetCaptionVisible;
+    property CaptionFont: TFont read GetCaptionFont write SetCaptionFont;
+    property CaptionAlignment: TAlignment read GetCaptionAlignment write SetCaptionAlignment default taLeftJustify;
+
     property Cells[ACol, ARow: Integer]: Variant read GetCells write SetCells;
     property Rows[ARow: Integer]: Variant read GetRows write SetRows;
 
@@ -285,6 +299,11 @@ type
 
   TVisualGrid = class(TCustomVisualGrid)
   published
+    property Caption;
+    property CaptionVisible;
+    property CaptionFont;
+    property CaptionAlignment;
+
     property Align;
     property PageSize;
     property AutoPageSize;
@@ -298,6 +317,7 @@ type
     property FetchDataInThread;
 
     property OnDrawVisualCell;
+    property OnPreparePopupMenu;
   end;
 
 procedure Register;
@@ -596,6 +616,14 @@ begin
     end;
   end;
 
+  FCaptionLabel := TLabel.Create(Self);
+  FCaptionLabel.Parent := Self;
+  with FCaptionLabel do
+  begin
+    Align := alTop;
+    Visible := false;
+  end;
+
   FTopPanel := TPanel.Create(Self);
   FTopPanel.Parent := FMainPanel;
   with FTopPanel do
@@ -885,6 +913,21 @@ begin
   Result := FDataTable.Rows[ARow]._(ACol);
 end;
 
+function TCustomVisualGrid.GetCaption: TCaption;
+begin
+  Result := FCaptionLabel.Caption;
+end;
+
+function TCustomVisualGrid.GetCaptionAlignment: TAlignment;
+begin
+  Result := FCaptionLabel.Alignment;
+end;
+
+function TCustomVisualGrid.GetCaptionFont: TFont;
+begin
+  Result := FCaptionLabel.Font;
+end;
+
 function TCustomVisualGrid.GetRows(ARow: Integer): Variant;
 begin
   Result := FDataTable.Rows[ARow];
@@ -900,6 +943,11 @@ begin
     Result.Selections[i] := FDrawGrid.SelectedRange[i];
     Result.Selections[i].Top:=Result.Selections[i].Top-1; // - fixed row
   end;
+end;
+
+function TCustomVisualGrid.GetCaptionVisible: boolean;
+begin
+  Result := FCaptionLabel.Visible;
 end;
 
 procedure TCustomVisualGrid.PageIndexEditingDone(Sender: TObject);
@@ -973,6 +1021,29 @@ end;
 function TCustomVisualGrid.GetSingleSearch: boolean;
 begin
   Result := FTopPanelRight.Visible;
+end;
+
+procedure TCustomVisualGrid.SetCaption(AValue: TCaption);
+begin
+  FCaptionLabel.Caption:=AValue;
+  LayoutChanged;
+end;
+
+procedure TCustomVisualGrid.SetCaptionAlignment(AValue: TAlignment);
+begin
+  FCaptionLabel.Alignment:=AValue;
+end;
+
+procedure TCustomVisualGrid.SetCaptionFont(AValue: TFont);
+begin
+  FCaptionLabel.Font:=AValue;
+  LayoutChanged;
+end;
+
+procedure TCustomVisualGrid.SetCaptionVisible(AValue: boolean);
+begin
+  FCaptionLabel.Visible:=AValue;
+  LayoutChanged;
 end;
 
 procedure TCustomVisualGrid.SetCells(ACol, ARow: Integer; AValue: Variant);
