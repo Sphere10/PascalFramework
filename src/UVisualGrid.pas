@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, Types, Graphics,
-  UCommon, Generics.Collections, Menus;
+  UCommon, Generics.Collections, Menus, ComboEx;
 
 
 
@@ -96,6 +96,7 @@ type
   end;
 
   TPreparePopupMenuEvent = procedure(Sender: TObject; constref ASelection: TVisualGridSelection; out APopupMenu: TPopupMenu) of object;
+  TSelectionEvent = procedure(Sender: TObject; constref ASelection: TVisualGridSelection) of object;
   TDrawVisualCellEvent = procedure(Sender: TObject; ACol, ARow: Longint;
     Canvas: TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant; var Handled: boolean) of object;
 
@@ -120,6 +121,7 @@ type
       FPanel: TPanel;
       FEdit: TEdit;
       FButton: TButton;
+      FCheckComboState: TCheckComboItemState;
 
       function GetEditVisible: boolean;
       function GetVisible: boolean;
@@ -144,8 +146,7 @@ type
     FSearchLabel: TLabel;
     FSearchEdit: TEdit;
     FSearchButton: TButton;
-    FMultiSearchToggleBox: TToggleBox;
-    FMultiSearchButton: TButton;
+    FMultiSearchCheckComboBox: TCheckComboBox;
     FTopPanel: TPanel;
     FTopPanelMultiSearch: TPanel;
     FTopPanelMultiSearchFixed: TPanel;
@@ -183,15 +184,18 @@ type
       Rect: TRect; State: TGridDrawState);
     procedure GridMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    procedure GridSelection(Sender: TObject; aCol, aRow: Integer);
     procedure PageIndexEditingDone(Sender: TObject);
     procedure PageSizeEditingDone(Sender: TObject);
     procedure PageNavigationClick(Sender: TObject);
-    procedure MultiSearchToggleBoxChange(Sender: TObject);
+    procedure MultiSearchCheckComboBoxChange(Sender: TObject; AIndex: Integer);
     procedure DelayedBoundsChange(Sender: TObject);
     procedure FetchDataThreadProgress(Sender: TObject);
   private
+    FExpressionCheckComboState: TCheckComboItemState;
     FFetchDataInThread: boolean;
     FOnPreparePopupMenu: TPreparePopupMenuEvent;
+    FOnSelection: TSelectionEvent;
     FShowAllData: boolean;
     FAutoPageSize: boolean;
     FCanPage: boolean;
@@ -206,8 +210,6 @@ type
     function GetCaptionVisible: boolean;
     procedure SetAllEditsAsReadOny(AReadOnly: boolean);
     function GetCanvas: TCanvas;
-    function GetMultiSearch: boolean;
-    function GetMultiSearchToggleBox: boolean;
     function GetSingleSearch: boolean;
     procedure SetCaption(AValue: TCaption);
     procedure SetCaptionAlignment(AValue: TAlignment);
@@ -215,8 +217,6 @@ type
     procedure SetCaptionVisible(AValue: boolean);
     procedure SetCells(ACol, ARow: Integer; AValue: Variant);
     procedure SetFetchDataInThread(AValue: boolean);
-    procedure SetMultiSearchToggleBox(AValue: boolean);
-    procedure SetMultiSearch(AValue: boolean);
     procedure SetRows(ARow: Integer; AValue: Variant);
     procedure SetShowAllData(AValue: boolean);
     procedure SetAutoPageSize(AValue: boolean);
@@ -228,7 +228,6 @@ type
     procedure SetPageIndex(Value: Integer);
     procedure SetPageSize(Value: Integer);
     procedure SetSelectionType(AValue: TSelectionType);
-    procedure SetSingleSearch(AValue: boolean);
   protected { TComponent }
     procedure Loaded; override;
   protected { TControl }
@@ -278,9 +277,6 @@ type
 
     property CanPage: boolean read FCanPage write SetCanPage default true;
     property CanSearch: boolean read FCanSearch write SetCanSearch default true;
-    property MultiSearchToggleBox: boolean read GetMultiSearchToggleBox write SetMultiSearchToggleBox default true;
-    property MultiSearch: boolean read GetMultiSearch write SetMultiSearch default true;
-    property SingleSearch: boolean read GetSingleSearch write SetSingleSearch default true;
     property Canvas: TCanvas read GetCanvas;
     property SelectionType: TSelectionType read FSelectionType write SetSelectionType;
     property Selection: TVisualGridSelection read GetSelection;
@@ -294,6 +290,7 @@ type
     property Rows[ARow: Integer]: Variant read GetRows write SetRows;
 
     property OnDrawVisualCell: TDrawVisualCellEvent read FOnDrawVisualCell write FOnDrawVisualCell;
+    property OnSelection: TSelectionEvent read FOnSelection write FOnSelection;
     property OnPreparePopupMenu: TPreparePopupMenuEvent read FOnPreparePopupMenu write FOnPreparePopupMenu;
   end;
 
@@ -310,13 +307,11 @@ type
     property ShowAllData;
     property CanPage;
     property CanSearch;
-    property MultiSearchToggleBox;
-    property MultiSearch;
-    property SingleSearch;
     property SelectionType;
     property FetchDataInThread;
 
     property OnDrawVisualCell;
+    property OnSelection;
     property OnPreparePopupMenu;
   end;
 
@@ -358,7 +353,7 @@ function TVisualGridSelection.GetColCount: longint;
 begin
   if Length(Selections) = 0 then
     Exit(0);
-  Result := Selections[0].Width;
+  Result := Selections[0].Width + 1;
 end;
 
 function TVisualGridSelection.GetRow: longint;
@@ -372,7 +367,7 @@ function TVisualGridSelection.GetRowCount: longint;
 begin
   if Length(Selections) = 0 then
     Exit(0);
-  Result := Selections[0].Height;
+  Result := Selections[0].Height + 1;
 end;
 
 { TFetchDataThread }
@@ -436,6 +431,9 @@ begin
   FPanel.Height:=FEdit.Height;
   FEdit.Parent := FPanel;
   FEdit.Align:=alClient;
+  FCheckComboState.Enabled:=true;
+  FCheckComboState.State:=cbChecked;
+  FCheckComboState.Data:=self;
   {FButton := TButton.Create(FPanel);
   FButton.Width:=25;
   FButton.Parent := FPanel;
@@ -630,32 +628,18 @@ begin
   begin
     Align := alTop;
     BevelOuter := bvNone;
-    Height := 40;
+    Height := 36;
 
-    FMultiSearchToggleBox := TToggleBox.Create(Self);
-    FMultiSearchToggleBox.Parent := FTopPanel;
-    with FMultiSearchToggleBox do
+    FMultiSearchCheckComboBox := TCheckComboBox.Create(Self);
+    FMultiSearchCheckComboBox.Parent := FTopPanel;
+    with FMultiSearchCheckComboBox do
     begin
-      Caption := 'Multi-Search';
-      State := cbChecked;
       Left := 4;
       Top := 6;
       Height:=28;
       Width := 120;
-      OnChange:=MultiSearchToggleBoxChange;
+      OnItemChange:=MultiSearchCheckComboBoxChange;
     end;
-
-    FMultiSearchButton := TButton.Create(Self);
-    FMultiSearchButton.Parent := FTopPanel;
-    with FMultiSearchButton do
-    begin
-      Left := 126;
-      Top := 6;
-      Width := 28;
-      Height := 28;
-      Caption := 'OK';
-    end;
-
 
     FTopPanelRight := TPanel.Create(Self);
     FTopPanelRight.Parent := FTopPanel;
@@ -682,7 +666,7 @@ begin
       with FSearchEdit do
       begin
         Left := 50;
-        Top := 10;
+        Top := 6;
         Width := 121;
         Height := 21;
         TextHint := 'Search';
@@ -693,7 +677,7 @@ begin
       with FSearchButton do
       begin
         Left := 173;
-        Top := 10;
+        Top := 6;
         Width := 24;
         Height := 23;
         Caption := 'OK';
@@ -754,6 +738,7 @@ begin
       BorderStyle := bsNone;
       OnDrawCell := StandardDrawCell;
       OnMouseUp := GridMouseUp;
+      OnSelection := GridSelection;
       Options := (Options - [goRangeSelect]) + [goColSizing];
       FixedCols := 0;
     end;
@@ -942,6 +927,7 @@ begin
   begin
     Result.Selections[i] := FDrawGrid.SelectedRange[i];
     Result.Selections[i].Top:=Result.Selections[i].Top-1; // - fixed row
+    Result.Selections[i].Bottom:=Result.Selections[i].Bottom-1; // - fixed row
   end;
 end;
 
@@ -996,26 +982,41 @@ begin
   end;
 end;
 
-procedure TCustomVisualGrid.MultiSearchToggleBoxChange(Sender: TObject);
+procedure TCustomVisualGrid.MultiSearchCheckComboBoxChange(Sender: TObject; AIndex: Integer);
+var
+  LState: PTCheckComboItemState;
+  LOldHasEdit, LNewHasEdit: boolean;
+
+  function HasOneOrMoreEdit: boolean;
+  var
+    LEdit: TSearchEdit;
+  begin
+    for LEdit in FMultiSearchEdits do
+      if LEdit.EditVisible then
+        exit(true);
+    Result := false
+  end;
+
 begin
-   FTopPanelMultiSearch.Visible := FMultiSearchToggleBox.State=cbChecked;
-   FMultiSearchButton.Visible := FMultiSearchToggleBox.Visible and (FMultiSearchToggleBox.State=cbChecked);
-   LayoutChanged;
+  LOldHasEdit := HasOneOrMoreEdit;
+  LState := PTCheckComboItemState(FMultiSearchCheckComboBox.Items.Objects[AIndex]);
+  if Assigned(LState^.Data) then
+    TSearchEdit(LState^.Data).EditVisible:=LState^.State=cbChecked
+  else
+    FSearchEdit.Visible:=LState^.State=cbChecked;
+
+  LNewHasEdit := HasOneOrMoreEdit;
+  FTopPanelMultiSearch.Visible := LNewHasEdit;
+
+  FSearchButton.Visible:=FSearchEdit.Visible or LNewHasEdit;
+
+  if LOldHasEdit <> LNewHasEdit then
+    LayoutChanged;
 end;
 
 function TCustomVisualGrid.GetCanvas: TCanvas;
 begin
   Result := FDrawGrid.Canvas;
-end;
-
-function TCustomVisualGrid.GetMultiSearch: boolean;
-begin
-  Result := FMultiSearchToggleBox.State=cbChecked;
-end;
-
-function TCustomVisualGrid.GetMultiSearchToggleBox: boolean;
-begin
-  Result := FMultiSearchToggleBox.Visible;
 end;
 
 function TCustomVisualGrid.GetSingleSearch: boolean;
@@ -1056,30 +1057,6 @@ procedure TCustomVisualGrid.SetFetchDataInThread(AValue: boolean);
 begin
   if FFetchDataInThread=AValue then Exit;
   FFetchDataInThread:=AValue;
-end;
-
-procedure TCustomVisualGrid.SetMultiSearchToggleBox(AValue: boolean);
-begin
-  if FMultiSearchToggleBox.Visible=AValue then
-    Exit;
-  FMultiSearchToggleBox.Visible:=AValue;
-  FMultiSearchButton.Visible:=AValue;
-
-  CanSearch:=AValue or SingleSearch;
-end;
-
-procedure TCustomVisualGrid.SetMultiSearch(AValue: boolean);
-begin
-  if (AValue and (FMultiSearchToggleBox.State=cbChecked)) or
-     (not AValue and (FMultiSearchToggleBox.State=cbUnchecked)) then
-    Exit;
-
-  if AValue then
-    FMultiSearchToggleBox.State:=cbChecked
-  else
-    FMultiSearchToggleBox.State:=cbUnchecked;
-
-  MultiSearchToggleBoxChange(Self);
 end;
 
 procedure TCustomVisualGrid.SetRows(ARow: Integer; AValue: Variant);
@@ -1241,12 +1218,10 @@ begin
   FDrawGrid.ColCount := Length(FDataTable.Columns);
   // TODO: may be optimized
   FMultiSearchEdits.Clear;
+  FSearchButton.Visible := true;
+  FMultiSearchCheckComboBox.Items.BeginUpdate;
+  FMultiSearchCheckComboBox.Items.Clear;
   FSearchCapabilities := Copy(FDataSource.SearchCapabilities);
-  if Length(FSearchCapabilities) = 0 then
-  begin
-    MultiSearch:=false;
-    MultiSearchToggleBox:=false;
-  end;
   for i := 0 to FDrawGrid.ColCount - 1 do
   begin
     LEdit := TSearchEdit.Create(FTopPanelMultiSearchClient);
@@ -1255,9 +1230,17 @@ begin
     LEdit.EditVisible:=Assigned(p);
     LEdit.SearchCapability := p;
     ResizeSearchEdit(i);
+    if Assigned(p) then
+      FMultiSearchCheckComboBox.Items.AddObject(p^.ColumnName, @LEdit.FCheckComboState);
   end;
   if FDrawGrid.ColCount > 0 then
     FTopPanelMultiSearch.Height:=FMultiSearchEdits.Last.FPanel.Height;
+
+  FExpressionCheckComboState.Enabled:=true;
+  FExpressionCheckComboState.State:=cbChecked;
+  FExpressionCheckComboState.Data:=nil;
+  FMultiSearchCheckComboBox.Items.AddObject('Expression', @FExpressionCheckComboState);
+  FMultiSearchCheckComboBox.Items.EndUpdate;
 end;
 
 procedure TCustomVisualGrid.LayoutChanged;
@@ -1412,14 +1395,6 @@ begin
   end;
 end;
 
-procedure TCustomVisualGrid.SetSingleSearch(AValue: boolean);
-begin
-  if AValue = FTopPanelRight.Visible then
-    exit;
-  FTopPanelRight.Visible := AValue;
-  CanSearch:=AValue or MultiSearchToggleBox;
-end;
-
 procedure TCustomVisualGrid.StandardDrawCell(Sender: TObject; ACol,
   ARow: Longint; Rect: TRect; State: TGridDrawState);
 var
@@ -1468,6 +1443,12 @@ begin
         with FDrawGrid.ClientToScreen(TPoint.Create(X, Y)) do
           LPopup.PopUp(X, Y);
     end;
+end;
+
+procedure TCustomVisualGrid.GridSelection(Sender: TObject; aCol, aRow: Integer);
+begin
+  if (SelectionType <> stNone) and Assigned(FOnSelection) then
+    FOnSelection(Self, Selection);
 end;
 
 end.

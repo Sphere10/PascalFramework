@@ -18,6 +18,7 @@ type
     AlignCheckBox: TCheckBox;
     bRefresh: TButton;
     GridPanel: TPanel;
+    lSelection: TLabel;
     miUpdateCell: TMenuItem;
     miUpdateRow: TMenuItem;
     MenuItem3: TMenuItem;
@@ -41,6 +42,7 @@ type
     procedure DrawVisualCell(Sender: TObject; ACol, ARow: Longint;
       Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
       var Handled: boolean);
+    procedure Selection(Sender: TObject; constref ASelection: TVisualGridSelection);
   public
     { Public declarations }
   end;
@@ -115,6 +117,7 @@ begin
   FVisualGrid.DataSource := Self;
   FVisualGrid.OnDrawVisualCell:=DrawVisualCell;
   FVisualGrid.OnPreparePopupMenu:=PreparePopupMenu;
+  FVisualGrid.OnSelection:=Selection;
 
   GridPanel.AddDockCenter(FVisualGrid);
   TIPropertyGrid1.TIObject := FVisualGrid;
@@ -163,6 +166,13 @@ begin
     Canvas.TextStyle:=LTextStyle;
     Canvas.TextRect(Rect, Rect.Left+2, Rect.Top+2, RowData, LTextStyle);
   end;
+end;
+
+procedure TForm1.Selection(Sender: TObject; constref
+  ASelection: TVisualGridSelection);
+begin
+  lSelection.Caption := Format('Col = %d Row = %d ColCount = %d RowCount = %d ',
+    [ASelection.Col, ASelection.Row, ASelection.ColCount, ASelection.RowCount]);
 end;
 
 begin

@@ -32,8 +32,8 @@ object Form1: TForm1
     TabOrder = 1
     object TIPropertyGrid1: TTIPropertyGrid
       Left = 1
-      Height = 463
-      Top = 89
+      Height = 431
+      Top = 121
       Width = 304
       Align = alLeft
       CheckboxForBoolean = True
@@ -47,17 +47,17 @@ object Form1: TForm1
     end
     object Panel1: TPanel
       Left = 1
-      Height = 63
+      Height = 95
       Top = 1
       Width = 302
       Align = alTop
-      ClientHeight = 63
+      ClientHeight = 95
       ClientWidth = 302
       TabOrder = 1
       object AddDelayCheckBox: TCheckBox
         Left = 8
         Height = 29
-        Top = 32
+        Top = 48
         Width = 160
         Caption = 'Add Fetch Delay'
         TabOrder = 0
@@ -65,16 +65,25 @@ object Form1: TForm1
       object AlignCheckBox: TCheckBox
         Left = 8
         Height = 29
-        Top = 8
+        Top = 24
         Width = 171
         Caption = 'Align Horizontally'
         TabOrder = 1
+      end
+      object lSelection: TLabel
+        Left = 1
+        Height = 25
+        Top = 1
+        Width = 300
+        Align = alTop
+        Caption = 'Selection'
+        ParentColor = False
       end
     end
     object bRefresh: TButton
       Left = 1
       Height = 25
-      Top = 64
+      Top = 96
       Width = 302
       Align = alTop
       Caption = 'Refresh inspector'
@@ -83,8 +92,8 @@ object Form1: TForm1
     end
   end
   object PopupMenu1: TPopupMenu
-    left = 352
-    top = 32
+    left = 360
+    top = 24
     object miUpdateCell: TMenuItem
       Caption = 'Update cell'
       OnClick = miUpdateCellClick
