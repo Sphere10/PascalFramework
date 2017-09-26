@@ -119,6 +119,7 @@ type
 
     TSearchEdit = class
     private
+      FGrid: TCustomVisualGrid;
       FPanel: TPanel;
       FEdit: TEdit;
       FButton: TButton;
@@ -129,12 +130,13 @@ type
       procedure SetVisible(AValue: boolean);
     public
       SearchCapability: PSearchCapability;
-      constructor Create(AParent: TWinControl);
+      constructor Create(AParent: TWinControl; AGrid: TCustomVisualGrid);
       destructor Destroy; override;
 
       property EditVisible: boolean read GetEditVisible write SetEditVisible;
       property Visible: boolean read GetVisible write SetVisible;
     end;
+
   protected const
     PAGE_NAVIGATION_FIRST    = 1;
     PAGE_NAVIGATION_PREVIOUS = 2;
@@ -177,6 +179,9 @@ type
     FDelayedBoundsChangeTimer: TTimer;
     FFetchDataThreadTimer: TTimer;
     FEditingDoneTimer: TTimer;
+    FSearchKindPopupMenu: TPopupMenu;
+    FSingleSearchMenuItem: TMenuItem;
+    FMultiSearchMenuItem: TMenuItem;
 
     FMultiSearchEdits: TObjectList<TSearchEdit>;
   protected { events for UI }
@@ -184,6 +189,7 @@ type
       Rect: TRect; State: TGridDrawState);
     procedure GridMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    procedure SearchKindPopupMenuClick(Sender: TObject);
     procedure GridSelection(Sender: TObject; aCol, aRow: Integer);
     procedure PageIndexEditingDone(Sender: TObject);
     procedure PageSizeEditingDone(Sender: TObject);
@@ -426,14 +432,17 @@ begin
   FPanel.Visible := AValue;
 end;
 
-constructor TCustomVisualGrid.TSearchEdit.Create(AParent: TWinControl);
+constructor TCustomVisualGrid.TSearchEdit.Create(AParent: TWinControl;
+  AGrid: TCustomVisualGrid);
 begin
+  FGrid := AGrid;
   FPanel := TPanel.Create(nil);
   FPanel.Parent := AParent;
   FPanel.BevelOuter := bvNone;
   FEdit := TEdit.Create(FPanel);
   FPanel.Height:=FEdit.Height;
   FEdit.Parent := FPanel;
+  FEdit.PopupMenu := FGrid.FSearchKindPopupMenu;
   FEdit.Align:=alClient;
   {FButton := TButton.Create(FPanel);
   FButton.Width:=25;
@@ -481,6 +490,18 @@ begin
   { component layout }
 
   ControlStyle := ControlStyle - [csAcceptsControls] + [csOwnedChildrenNotSelectable];
+
+  FSearchKindPopupMenu := TPopupMenu.Create(Self);
+  FSingleSearchMenuItem := TMenuItem.Create(Self);
+  FSingleSearchMenuItem.RadioItem:=True;
+  FSingleSearchMenuItem.Caption:='Standard Search';
+  FSingleSearchMenuItem.OnClick:=SearchKindPopupMenuClick;
+  FMultiSearchMenuItem := TMenuItem.Create(Self);
+  FMultiSearchMenuItem.RadioItem:=True;
+  FMultiSearchMenuItem.Caption:='Multi-Column Search';
+  FMultiSearchMenuItem.OnClick:=SearchKindPopupMenuClick;
+
+  FSearchKindPopupMenu.Items.Add([FSingleSearchMenuItem, FMultiSearchMenuItem]);
 
   FMainPanel := TPanel.Create(Self);
   FMainPanel.Parent := Self;
@@ -640,6 +661,45 @@ begin
       Height:=28;
       Width := 120;
       OnItemChange:=MultiSearchCheckComboBoxChange;
+      PopupMenu:=FSearchKindPopupMenu;
+    end;
+
+    FSearchEdit := TEdit.Create(Self);
+    FSearchEdit.Parent := FTopPanel;
+    with FSearchEdit do
+    begin
+      AnchorSideLeft.Control := FMultiSearchCheckComboBox;
+      AnchorSideLeft.Side := asrBottom;
+      AnchorSideTop.Control := FMultiSearchCheckComboBox;
+      AnchorSideBottom.Control := FMultiSearchCheckComboBox;
+      AnchorSideBottom.Side := asrBottom;
+      Anchors := [akTop, akLeft, akBottom];
+      BorderSpacing.Left := 2;
+      Left := 50;
+      Top := 6;
+      Width := 121;
+      Height := 21;
+      TextHint := 'Search expression';
+      PopupMenu:=FSearchKindPopupMenu;
+    end;
+
+    FSearchButton := TButton.Create(Self);
+    FSearchButton.Parent := FTopPanel;
+    with FSearchButton do
+    begin
+      AnchorSideLeft.Control := FSearchEdit;
+      AnchorSideLeft.Side := asrBottom;
+      AnchorSideTop.Control := FMultiSearchCheckComboBox;
+      AnchorSideBottom.Control := FMultiSearchCheckComboBox;
+      AnchorSideBottom.Side := asrBottom;
+      Anchors := [akTop, akLeft, akBottom];
+      BorderSpacing.Left := 2;
+      Left := 173;
+      Top := 6;
+      Width := 100;
+      Height := 23;
+      Caption := 'Apply filter';
+      PopupMenu:=FSearchKindPopupMenu;
     end;
 
     FTopPanelRight := TPanel.Create(Self);
@@ -661,28 +721,6 @@ begin
         Height := 13;
         Caption := 'Search:';
       end;}
-
-      FSearchEdit := TEdit.Create(Self);
-      FSearchEdit.Parent := FTopPanelRight;
-      with FSearchEdit do
-      begin
-        Left := 50;
-        Top := 6;
-        Width := 121;
-        Height := 21;
-        TextHint := 'Search';
-      end;
-
-      FSearchButton := TButton.Create(Self);
-      FSearchButton.Parent := FTopPanelRight;
-      with FSearchButton do
-      begin
-        Left := 173;
-        Top := 6;
-        Width := 24;
-        Height := 23;
-        Caption := 'OK';
-      end;
     end;
   end;
 
@@ -1224,7 +1262,7 @@ begin
   FSearchCapabilities := Copy(FDataSource.SearchCapabilities);
   for i := 0 to FDrawGrid.ColCount - 1 do
   begin
-    LEdit := TSearchEdit.Create(FTopPanelMultiSearchClient);
+    LEdit := TSearchEdit.Create(FTopPanelMultiSearchClient, Self);
     FMultiSearchEdits.Add(LEdit);
     p := SearchCapability;
     LEdit.EditVisible:=Assigned(p);
@@ -1453,6 +1491,22 @@ begin
         with FDrawGrid.ClientToScreen(TPoint.Create(X, Y)) do
           LPopup.PopUp(X, Y);
     end;
+end;
+
+procedure TCustomVisualGrid.SearchKindPopupMenuClick(Sender: TObject);
+var
+  i: Integer;
+  LIsMultiSearch: boolean;
+begin
+  TMenuItem(Sender).Checked:=true;
+  LIsMultiSearch := Sender = FMultiSearchMenuItem;
+
+  // LIsMultiSearch
+  //   true: check almost all (except expression)
+  //   false: check only expression
+  for i := 0 to FMultiSearchCheckComboBox.Items.Count - 2 do
+    FMultiSearchCheckComboBox.Checked[i] := LIsMultiSearch;
+  FMultiSearchCheckComboBox.Checked[FMultiSearchCheckComboBox.Items.Count-1] := not LIsMultiSearch;
 end;
 
 procedure TCustomVisualGrid.GridSelection(Sender: TObject; aCol, aRow: Integer);
