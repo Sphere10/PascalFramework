@@ -1421,19 +1421,22 @@ var
   LPopup: TPopupMenu;
   LSelection: TVisualGridSelection;
   i: integer;
-  LPoint: TPoint;
+  LCol, LRow: longint;
   LContains: boolean = false;
 begin
   if Button = mbRight then
     if (SelectionType <> stNone) and Assigned(FOnPreparePopupMenu) and
        (FDrawGrid.MouseToGridZone(X, Y) = gzNormal) then
     begin
-      FDrawGrid.MouseToCell(X, Y, LPoint.x, LPoint.y);
+      FDrawGrid.MouseToCell(X, Y, LCol, LRow);
+      // fixed rows
+      Dec(LRow);
       LSelection := Selection;
       for i := 0 to High(LSelection.Selections) do
         if not LContains then
         begin
-          LContains := LSelection.Selections[i].Contains(LPoint);
+          with LSelection.Selections[i] do
+            LContains := (LCol >= Left) and (LRow >= Top) and (LCol <= Right) and (LRow <= Bottom);
           Break;
         end;
       if not LContains then
