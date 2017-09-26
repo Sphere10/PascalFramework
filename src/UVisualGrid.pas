@@ -122,7 +122,6 @@ type
       FPanel: TPanel;
       FEdit: TEdit;
       FButton: TButton;
-      FCheckComboState: TCheckComboItemState;
 
       function GetEditVisible: boolean;
       function GetVisible: boolean;
@@ -193,7 +192,6 @@ type
     procedure DelayedBoundsChange(Sender: TObject);
     procedure FetchDataThreadProgress(Sender: TObject);
   private
-    FExpressionCheckComboState: TCheckComboItemState;
     FFetchDataInThread: boolean;
     FOnPreparePopupMenu: TPreparePopupMenuEvent;
     FOnSelection: TSelectionEvent;
@@ -437,9 +435,6 @@ begin
   FPanel.Height:=FEdit.Height;
   FEdit.Parent := FPanel;
   FEdit.Align:=alClient;
-  FCheckComboState.Enabled:=true;
-  FCheckComboState.State:=cbChecked;
-  FCheckComboState.Data:=self;
   {FButton := TButton.Create(FPanel);
   FButton.Width:=25;
   FButton.Parent := FPanel;
@@ -1225,8 +1220,7 @@ begin
   // TODO: may be optimized
   FMultiSearchEdits.Clear;
   FSearchButton.Visible := true;
-  FMultiSearchCheckComboBox.Items.BeginUpdate;
-  FMultiSearchCheckComboBox.Items.Clear;
+  FMultiSearchCheckComboBox.Clear;
   FSearchCapabilities := Copy(FDataSource.SearchCapabilities);
   for i := 0 to FDrawGrid.ColCount - 1 do
   begin
@@ -1237,16 +1231,15 @@ begin
     LEdit.SearchCapability := p;
     ResizeSearchEdit(i);
     if Assigned(p) then
-      FMultiSearchCheckComboBox.Items.AddObject(p^.ColumnName, @LEdit.FCheckComboState);
+    begin
+      FMultiSearchCheckComboBox.AddItem(p^.ColumnName, cbChecked);
+      FMultiSearchCheckComboBox.Objects[FMultiSearchCheckComboBox.Items.Count-1] := LEdit;
+    end;
   end;
   if FDrawGrid.ColCount > 0 then
     FTopPanelMultiSearch.Height:=FMultiSearchEdits.Last.FPanel.Height;
 
-  FExpressionCheckComboState.Enabled:=true;
-  FExpressionCheckComboState.State:=cbChecked;
-  FExpressionCheckComboState.Data:=nil;
-  FMultiSearchCheckComboBox.Items.AddObject('Expression', @FExpressionCheckComboState);
-  FMultiSearchCheckComboBox.Items.EndUpdate;
+  FMultiSearchCheckComboBox.AddItem('Expression', cbChecked);
 end;
 
 procedure TCustomVisualGrid.LayoutChanged;
