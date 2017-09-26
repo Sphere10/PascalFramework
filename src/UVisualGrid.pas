@@ -37,6 +37,7 @@ type
 
   TFilterCriteria = TArray<TColumnFilter>;
 
+  PDataTable = ^TDataTable;
   TDataTable = record
   public
     Columns: TTableColumns;
@@ -235,6 +236,7 @@ type
   protected
     FGUIUpdates: TUpdateOfVisualGridGUI;
     FDataTable: TDataTable;
+    FCachedDataTable: PDataTable;
     FDataSource: IDataSource;
     FSearchCapabilities: TSearchCapabilities;
     FPageSize: Integer;
@@ -388,6 +390,10 @@ begin
   FGrid.BeforeFetchPage;
   FreeOnTerminate:=true;
   FLastFetchDataResult.RefreshColumns:=ARefreshColumns;
+  // fast copy of data (we need to draw old data for a while)
+  New(FGrid.FCachedDataTable);
+  Move(FGrid.FDataTable, FGrid.FCachedDataTable^, SizeOf(TDataTable));
+  FillChar(FGrid.FDataTable, SizeOf(TDataTable), #0);
   inherited Create(false);
 end;
 
@@ -1346,6 +1352,8 @@ begin
   begin
     if FromThread then
     begin
+      Dispose(FCachedDataTable);
+      FCachedDataTable := nil;
       FFetchDataThreadTimer.Enabled:=false;
       FLoadDataPanel.Visible:=False;
       SetAllEditsAsReadOny(false);
@@ -1399,15 +1407,21 @@ procedure TCustomVisualGrid.StandardDrawCell(Sender: TObject; ACol,
   ARow: Longint; Rect: TRect; State: TGridDrawState);
 var
   LHandled: boolean;
+  LSource: PDataTable;
   LCellData: Variant;
 begin
-  if FFetchDataThreadTimer.Enabled then
-    Exit;
   LHandled := False;
   if ARow = 0 then
     ResizeSearchEdit(ACol);
   if (ARow > 0) and Assigned(FDataSource) then
-    LCellData := FDataTable.Rows[ARow-1]._(ACol);
+  begin
+    if FFetchDataThreadTimer.Enabled then
+      LSource := FCachedDataTable
+    else
+      LSource := @FDataTable;
+
+    LCellData := LSource^.Rows[ARow-1]._(ACol);
+  end;
 
   if Assigned(FOnDrawVisualCell) then
     FOnDrawVisualCell(Self, ACol, ARow, Canvas, Rect, State, LCellData, LHandled);
