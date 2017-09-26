@@ -1,8 +1,12 @@
 program VisualGridExample;
 
 {$mode objfpc}{$H+}
+{.$DEFINE REPORT_MEMORY_LEAKS}
 
 uses
+  {$IFDEF REPORT_MEMORY_LEAKS}
+  heaptrc,
+  {$ENDIF}
   {$IFDEF UNIX}{$IFDEF UseCThreads}
   cthreads,
   {$ENDIF}{$ENDIF}
@@ -13,6 +17,10 @@ uses
 {$R *.res}
 
 begin
+  // report memory leaks
+  {$IFDEF REPORT_MEMORY_LEAKS}
+  SetHeapTraceOutput('heaptrc.log');
+  {$ENDIF}
   RequireDerivedFormResource:=True;
   Application.Initialize;
   Application.CreateForm(TForm1, Form1);
