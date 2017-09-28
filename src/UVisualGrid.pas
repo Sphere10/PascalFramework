@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, Types, Graphics,
-  UCommon, Generics.Collections, Menus, ComboEx;
+  UCommon, Generics.Collections, Menus, ComboEx, Buttons;
 
 
 
@@ -147,7 +147,7 @@ type
     FCaptionLabel: TLabel;
     FSearchLabel: TLabel;
     FSearchEdit: TEdit;
-    FSearchButton: TButton;
+    FSearchButton: TSpeedButton;
     FMultiSearchCheckComboBox: TCheckComboBox;
     FTopPanel: TPanel;
     FTopPanelMultiSearch: TPanel;
@@ -685,8 +685,9 @@ begin
       PopupMenu:=FSearchKindPopupMenu;
     end;
 
-    FSearchButton := TButton.Create(Self);
+    FSearchButton := TSpeedButton.Create(Self);
     FSearchButton.Parent := FTopPanel;
+    FSearchButton.LoadGlyphFromResourceName(HINSTANCE, 'VISUALGRID_SEARCH');
     with FSearchButton do
     begin
       AnchorSideLeft.Control := FSearchEdit;
@@ -698,9 +699,8 @@ begin
       BorderSpacing.Left := 2;
       Left := 173;
       Top := 6;
-      Width := 100;
+      Width := 23;
       Height := 23;
-      Caption := 'Apply filter';
       PopupMenu:=FSearchKindPopupMenu;
     end;
 
