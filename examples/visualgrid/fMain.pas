@@ -15,7 +15,8 @@ type
 
   TForm1 = class(TForm, IDataSource)
     AddDelayCheckBox: TCheckBox;
-    AlignCheckBox: TCheckBox;
+    ColumnsAutoFillCheckBox: TCheckBox;
+    FirstColumnStretchedCheckBox: TCheckBox;
     bRefresh: TButton;
     GridPanel: TPanel;
     lSelection: TLabel;
@@ -26,7 +27,9 @@ type
     Panel2: TPanel;
     PopupMenu1: TPopupMenu;
     TIPropertyGrid1: TTIPropertyGrid;
+    procedure ColumnsAutoFillCheckBoxChange(Sender: TObject);
     procedure bRefreshClick(Sender: TObject);
+    procedure FirstColumnStretchedCheckBoxChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure miUpdateCellClick(Sender: TObject);
     procedure miUpdateRowClick(Sender: TObject);
@@ -147,6 +150,21 @@ end;
 
 procedure TForm1.bRefreshClick(Sender: TObject);
 begin
+  TIPropertyGrid1.RefreshPropertyValues;
+end;
+
+procedure TForm1.FirstColumnStretchedCheckBoxChange(Sender: TObject);
+begin
+  FVisualGrid.Columns[0].StretchedToFill:=FirstColumnStretchedCheckBox.Checked;
+end;
+
+procedure TForm1.ColumnsAutoFillCheckBoxChange(Sender: TObject);
+begin
+  if ColumnsAutoFillCheckBox.Checked then
+    FVisualGrid.Options := FVisualGrid.Options + [vgoColAutoFill]
+  else
+    FVisualGrid.Options := FVisualGrid.Options - [vgoColAutoFill];
+
   TIPropertyGrid1.RefreshPropertyValues;
 end;
 

@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, Types, Graphics,
-  UCommon, Generics.Collections, Menus, ComboEx, Buttons;
+  UCommon, Generics.Collections, Menus, ComboEx, Buttons, Math;
 
 
 
@@ -96,6 +96,19 @@ type
     property ColCount: longint read GetColCount;
   end;
 
+  { TColumnOptions }
+
+  TVisualColumn = class
+  private
+    function GetStretchedToFill: boolean; inline;
+    procedure SetStretchedToFill(AValue: boolean); inline;
+  protected
+    FColumn: TGridColumn;
+  public
+    constructor Create(AColumn: TGridColumn);
+    property StretchedToFill: boolean read GetStretchedToFill write SetStretchedToFill;
+  end;
+
   TPreparePopupMenuEvent = procedure(Sender: TObject; constref ASelection: TVisualGridSelection; out APopupMenu: TPopupMenu) of object;
   TSelectionEvent = procedure(Sender: TObject; constref ASelection: TVisualGridSelection) of object;
   TDrawVisualCellEvent = procedure(Sender: TObject; ACol, ARow: Longint;
@@ -103,7 +116,7 @@ type
 
   EVisualGridError = class(Exception);
 
-  TVisualGridOptions = set of (vgoColSizing);
+  TVisualGridOptions = set of (vgoColAutoFill, vgoColSizing);
 
   { TCustomVisualGrid }
 
@@ -186,6 +199,7 @@ type
     FMultiSearchMenuItem: TMenuItem;
 
     FMultiSearchEdits: TObjectList<TSearchEdit>;
+    FColumns: TObjectList<TVisualColumn>;
   protected { events for UI }
     procedure StandardDrawCell(Sender: TObject; ACol, ARow: Longint;
       Rect: TRect; State: TGridDrawState);
@@ -213,6 +227,9 @@ type
     function GetCaptionAlignment: TAlignment;
     function GetCaptionFont: TFont;
     function GetCells(ACol, ARow: Integer): Variant;
+    function GetColCount: Integer; inline;
+    function GetColumns(Index: Integer): TVisualColumn;
+    function GetRowCount: Integer; inline;
     function GetRows(ARow: Integer): Variant;
     function GetSelection: TVisualGridSelection;
     function GetCaptionVisible: boolean;
@@ -297,7 +314,10 @@ type
     property CaptionFont: TFont read GetCaptionFont write SetCaptionFont;
     property CaptionAlignment: TAlignment read GetCaptionAlignment write SetCaptionAlignment default taLeftJustify;
 
+    property ColCount: Integer read GetColCount;
+    property Columns[Index: Integer]: TVisualColumn read GetColumns;
     property Cells[ACol, ARow: Integer]: Variant read GetCells write SetCells;
+    property RowCount: Integer read GetRowCount;
     property Rows[ARow: Integer]: Variant read GetRows write SetRows;
 
     property OnDrawVisualCell: TDrawVisualCellEvent read FOnDrawVisualCell write FOnDrawVisualCell;
@@ -352,6 +372,23 @@ type
 procedure Register;
 begin
   RegisterComponents('Pascal Framework', [TVisualGrid]);
+end;
+
+{ TVisualColumn }
+
+function TVisualColumn.GetStretchedToFill: boolean;
+begin
+  Result := FColumn.SizePriority > 0;
+end;
+
+procedure TVisualColumn.SetStretchedToFill(AValue: boolean);
+begin
+  FColumn.SizePriority := ifthen(AValue, 1);
+end;
+
+constructor TVisualColumn.Create(AColumn: TGridColumn);
+begin
+  FColumn := AColumn;
 end;
 
 { TVisualGridSelection }
@@ -494,6 +531,9 @@ end;
 constructor TCustomVisualGrid.Create(Owner: TComponent);
 begin
   inherited;
+
+  FMultiSearchEdits := TObjectList<TSearchEdit>.Create;
+  FColumns := TObjectList<TVisualColumn>.Create;
 
   { component layout }
 
@@ -788,6 +828,8 @@ begin
       OnSelection := GridSelection;
       Options := (Options - [goRangeSelect]);
       FixedCols := 0;
+      ColCount:=0;
+      RowCount:=0;
     end;
     FDefaultDrawGridOptions := FDrawGrid.Options;
   end;
@@ -858,8 +900,6 @@ begin
   FCanSearch := true;
   FTotalDataCount := -1;
 
-  FMultiSearchEdits := TObjectList<TSearchEdit>.Create;
-
   {$IFDEF VISUALGRID_DEBUG}
   with TButton.Create(Self) do
   begin
@@ -874,6 +914,7 @@ end;
 
 destructor TCustomVisualGrid.Destroy;
 begin
+  FColumns.Free;
   FMultiSearchEdits.Free;
   inherited;
 end;
@@ -946,6 +987,21 @@ end;
 function TCustomVisualGrid.GetCells(ACol, ARow: Integer): Variant;
 begin
   Result := FDataTable.Rows[ARow]._(ACol);
+end;
+
+function TCustomVisualGrid.GetColCount: Integer;
+begin
+  Result := FColumns.Count;
+end;
+
+function TCustomVisualGrid.GetColumns(Index: Integer): TVisualColumn;
+begin
+  Result := FColumns[Index];
+end;
+
+function TCustomVisualGrid.GetRowCount: Integer;
+begin
+  Result := Length(FDataTable.Rows);
 end;
 
 function TCustomVisualGrid.GetCaption: TCaption;
@@ -1118,6 +1174,8 @@ begin
     FDrawGrid.Options := FDrawGrid.Options + [goColSizing]
   else
     FDrawGrid.Options := FDrawGrid.Options - [goColSizing];
+
+  FDrawGrid.AutoFillColumns:=vgoColAutoFill in FOptions;
 end;
 
 procedure TCustomVisualGrid.SetRows(ARow: Integer; AValue: Variant);
@@ -1264,6 +1322,7 @@ var
   i: Integer;
   LEdit: TSearchEdit;
   p: PSearchCapability;
+  LColumn: TVisualColumn;
 
   function SearchCapability: PSearchCapability;
   var
@@ -1276,13 +1335,23 @@ var
   end;
 
 begin
-  FDrawGrid.ColCount := Length(FDataTable.Columns);
+  FDrawGrid.Columns.Clear;
+  FDrawGrid.Columns.BeginUpdate;
+  FColumns.Clear;
+  for i := 0 to High(FDataTable.Columns) do
+  begin
+    LColumn := TVisualColumn.Create(FDrawGrid.Columns.Add);
+    FColumns.Add(LColumn);
+    LColumn.StretchedToFill:=False;
+    LColumn.FColumn.Title.Caption:=''; //FDataTable.Columns[i]; already painted in default drawing event
+  end;
+  FDrawGrid.Columns.EndUpdate;
   // TODO: may be optimized
   FMultiSearchEdits.Clear;
   FSearchButton.Visible := true;
   FMultiSearchCheckComboBox.Clear;
   FSearchCapabilities := Copy(FDataSource.SearchCapabilities);
-  for i := 0 to FDrawGrid.ColCount - 1 do
+  for i := 0 to High(FDataTable.Columns) do
   begin
     LEdit := TSearchEdit.Create(FTopPanelMultiSearchClient, Self);
     FMultiSearchEdits.Add(LEdit);
@@ -1296,9 +1365,10 @@ begin
       FMultiSearchCheckComboBox.Objects[FMultiSearchCheckComboBox.Items.Count-1] := LEdit;
     end;
   end;
-  if FDrawGrid.ColCount > 0 then
+  if FDrawGrid.Columns.Count > 0 then
     FTopPanelMultiSearch.Height:=FMultiSearchEdits.Last.FPanel.Height;
 
+  // last item doesn't need to store object
   FMultiSearchCheckComboBox.AddItem('Expression', cbChecked);
 end;
 

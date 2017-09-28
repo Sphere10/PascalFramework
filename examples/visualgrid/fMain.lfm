@@ -32,8 +32,8 @@ object Form1: TForm1
     TabOrder = 1
     object TIPropertyGrid1: TTIPropertyGrid
       Left = 1
-      Height = 431
-      Top = 121
+      Height = 412
+      Top = 140
       Width = 304
       Align = alLeft
       CheckboxForBoolean = True
@@ -47,27 +47,37 @@ object Form1: TForm1
     end
     object Panel1: TPanel
       Left = 1
-      Height = 95
+      Height = 114
       Top = 1
       Width = 302
       Align = alTop
-      ClientHeight = 95
+      AutoSize = True
+      ClientHeight = 114
       ClientWidth = 302
       TabOrder = 1
       object AddDelayCheckBox: TCheckBox
-        Left = 8
+        AnchorSideLeft.Control = Panel1
+        AnchorSideTop.Control = FirstColumnStretchedCheckBox
+        AnchorSideTop.Side = asrBottom
+        Left = 11
         Height = 29
-        Top = 48
-        Width = 160
-        Caption = 'Add Fetch Delay'
+        Top = 84
+        Width = 155
+        BorderSpacing.Left = 10
+        Caption = 'Add fetch delay'
         TabOrder = 0
       end
-      object AlignCheckBox: TCheckBox
-        Left = 8
+      object ColumnsAutoFillCheckBox: TCheckBox
+        AnchorSideLeft.Control = Panel1
+        AnchorSideTop.Control = lSelection
+        AnchorSideTop.Side = asrBottom
+        Left = 11
         Height = 29
-        Top = 24
-        Width = 171
-        Caption = 'Align Horizontally'
+        Top = 26
+        Width = 261
+        BorderSpacing.Left = 10
+        Caption = 'Columns auto fill horizontally'
+        OnChange = ColumnsAutoFillCheckBoxChange
         TabOrder = 1
       end
       object lSelection: TLabel
@@ -79,11 +89,24 @@ object Form1: TForm1
         Caption = 'Selection'
         ParentColor = False
       end
+      object FirstColumnStretchedCheckBox: TCheckBox
+        AnchorSideLeft.Control = ColumnsAutoFillCheckBox
+        AnchorSideTop.Control = ColumnsAutoFillCheckBox
+        AnchorSideTop.Side = asrBottom
+        Left = 31
+        Height = 29
+        Top = 55
+        Width = 248
+        BorderSpacing.Left = 20
+        Caption = 'First column stretched to fit'
+        OnChange = FirstColumnStretchedCheckBoxChange
+        TabOrder = 2
+      end
     end
     object bRefresh: TButton
       Left = 1
       Height = 25
-      Top = 96
+      Top = 115
       Width = 302
       Align = alTop
       Caption = 'Refresh inspector'
