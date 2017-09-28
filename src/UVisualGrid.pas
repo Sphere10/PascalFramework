@@ -325,6 +325,8 @@ procedure Register;
 
 implementation
 
+{$R *.rc}
+
 type
   TDrawGridAccess = class(TDrawGrid);
   //TScrollBarAccess = class(TScrollBar);
