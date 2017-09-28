@@ -172,7 +172,6 @@ type
     FTopPanelMultiSearchFixed: TPanel;
     FTopPanelMultiSearchClient: TPanel;
     FTopPanelMultiSearchRight: TPanel;
-    FTopPanelRight: TPanel;
     FClientPanel: TPanel;
     FLoadDataPanel: TPanel;
     FLoadDataLabel: TLabel;
@@ -238,7 +237,6 @@ type
     function GetCaptionVisible: boolean;
     procedure ControlsEnable(AEnable: boolean);
     function GetCanvas: TCanvas;
-    function GetSingleSearch: boolean;
     procedure SetCaption(AValue: TCaption);
     procedure SetCaptionAlignment(AValue: TAlignment);
     procedure SetCaptionFont(AValue: TFont);
@@ -762,27 +760,6 @@ begin
       Height := 23;
       PopupMenu:=FSearchKindPopupMenu;
     end;
-
-    FTopPanelRight := TPanel.Create(Self);
-    FTopPanelRight.Parent := FTopPanel;
-    with FTopPanelRight do
-    begin
-      BevelOuter := bvNone;
-      Align := alRight;
-      Height := 40;
-      Width := 200;
-
-      {FSearchLabel := TLabel.Create(Self);
-      FSearchLabel.Parent := FTopPanelRight;
-      with FSearchLabel do
-      begin
-        Left := 7;
-        Top := 13;
-        Width := 37;
-        Height := 13;
-        Caption := 'Search:';
-      end;}
-    end;
   end;
 
   FClientPanel := TPanel.Create(Self);
@@ -1136,11 +1113,6 @@ end;
 function TCustomVisualGrid.GetCanvas: TCanvas;
 begin
   Result := FDrawGrid.Canvas;
-end;
-
-function TCustomVisualGrid.GetSingleSearch: boolean;
-begin
-  Result := FTopPanelRight.Visible;
 end;
 
 procedure TCustomVisualGrid.SetCaption(AValue: TCaption);
