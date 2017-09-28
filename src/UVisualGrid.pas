@@ -216,7 +216,7 @@ type
     function GetRows(ARow: Integer): Variant;
     function GetSelection: TVisualGridSelection;
     function GetCaptionVisible: boolean;
-    procedure SetAllEditsAsReadOny(AReadOnly: boolean);
+    procedure ControlsEnable(AEnable: boolean);
     function GetCanvas: TCanvas;
     function GetSingleSearch: boolean;
     procedure SetCaption(AValue: TCaption);
@@ -395,7 +395,7 @@ constructor TFetchDataThread.Create(AGrid: TCustomVisualGrid;
   ARefreshColumns: boolean);
 begin
   FGrid := AGrid;
-  FGrid.SetAllEditsAsReadOny(true);
+  FGrid.ControlsEnable(false);
   FGrid.FFetchDataThreadTimer.Enabled:=true;
   FGrid.FLoadDataPanel.Visible:=True;
   FGrid.FLoadDataPanel.BringToFront;
@@ -928,16 +928,19 @@ begin
     PROGRESS := 0;
 end;
 
-procedure TCustomVisualGrid.SetAllEditsAsReadOny(AReadOnly: boolean);
+procedure TCustomVisualGrid.ControlsEnable(AEnable: boolean);
 var
   e: TSearchEdit;
+  LReadOnly: boolean;
 begin
-  FSearchEdit.ReadOnly:=AReadOnly;
-  FPageSizeEdit.ReadOnly:=AReadOnly;
-  FPageIndexEdit.ReadOnly:=AReadOnly;
-  FDrawGrid.Enabled:=not AReadOnly;
+  LReadOnly:=not AEnable;
+  FMultiSearchCheckComboBox.Enabled:=AEnable;
+  FSearchEdit.ReadOnly:=LReadOnly;
+  FPageSizeEdit.ReadOnly:=LReadOnly;
+  FPageIndexEdit.ReadOnly:=LReadOnly;
+  FDrawGrid.Enabled:=AEnable;
   for e in FMultiSearchEdits do
-    e.FEdit.ReadOnly:=AReadOnly;
+    e.FEdit.ReadOnly:=LReadOnly;
 end;
 
 function TCustomVisualGrid.GetCells(ACol, ARow: Integer): Variant;
@@ -1406,7 +1409,7 @@ begin
       FCachedDataTable := nil;
       FFetchDataThreadTimer.Enabled:=false;
       FLoadDataPanel.Visible:=False;
-      SetAllEditsAsReadOny(false);
+      ControlsEnable(true);
     end;
 
     FPageCount:=FetchResult.PageCount;
@@ -1461,6 +1464,7 @@ var
   LCellData: Variant;
 begin
   LHandled := False;
+
   if ARow = 0 then
     ResizeSearchEdit(ACol);
   if (ARow > 0) and Assigned(FDataSource) then
