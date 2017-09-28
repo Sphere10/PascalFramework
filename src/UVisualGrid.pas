@@ -9,8 +9,6 @@ uses
   Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, Types, Graphics,
   UCommon, Generics.Collections, Menus, ComboEx, Buttons, Math;
 
-
-
 type
   TSelectionType = (stNone, stCell, stRow, stMultiRow);
   TSortDirection = (sdNone, sdAscending, sdDescending);
@@ -98,15 +96,20 @@ type
 
   { TColumnOptions }
 
+  { TVisualColumn }
+
   TVisualColumn = class
   private
     function GetStretchedToFill: boolean; inline;
+    function GetWidth: Integer; inline;
     procedure SetStretchedToFill(AValue: boolean); inline;
+    procedure SetWidth(AValue: Integer); inline;
   protected
     FColumn: TGridColumn;
   public
     constructor Create(AColumn: TGridColumn);
     property StretchedToFill: boolean read GetStretchedToFill write SetStretchedToFill;
+    property Width: Integer read GetWidth write SetWidth;
   end;
 
   TPreparePopupMenuEvent = procedure(Sender: TObject; constref ASelection: TVisualGridSelection; out APopupMenu: TPopupMenu) of object;
@@ -381,9 +384,19 @@ begin
   Result := FColumn.SizePriority > 0;
 end;
 
+function TVisualColumn.GetWidth: Integer;
+begin
+  Result := FColumn.Width;
+end;
+
 procedure TVisualColumn.SetStretchedToFill(AValue: boolean);
 begin
   FColumn.SizePriority := ifthen(AValue, 1);
+end;
+
+procedure TVisualColumn.SetWidth(AValue: Integer);
+begin
+  FColumn.Width := AValue;
 end;
 
 constructor TVisualColumn.Create(AColumn: TGridColumn);

@@ -32,8 +32,8 @@ object Form1: TForm1
     TabOrder = 1
     object TIPropertyGrid1: TTIPropertyGrid
       Left = 1
-      Height = 412
-      Top = 140
+      Height = 379
+      Top = 173
       Width = 304
       Align = alLeft
       CheckboxForBoolean = True
@@ -47,12 +47,12 @@ object Form1: TForm1
     end
     object Panel1: TPanel
       Left = 1
-      Height = 114
+      Height = 147
       Top = 1
       Width = 302
       Align = alTop
       AutoSize = True
-      ClientHeight = 114
+      ClientHeight = 147
       ClientWidth = 302
       TabOrder = 1
       object AddDelayCheckBox: TCheckBox
@@ -102,11 +102,70 @@ object Form1: TForm1
         OnChange = FirstColumnStretchedCheckBoxChange
         TabOrder = 2
       end
+      object bSetWidth: TButton
+        AnchorSideLeft.Control = Panel1
+        AnchorSideTop.Control = AddDelayCheckBox
+        AnchorSideTop.Side = asrBottom
+        Left = 5
+        Height = 25
+        Top = 117
+        Width = 149
+        BorderSpacing.Left = 4
+        BorderSpacing.Top = 4
+        BorderSpacing.Bottom = 4
+        Caption = 'Set width for col'
+        OnClick = bSetWidthClick
+        TabOrder = 3
+      end
+      object eCol: TEdit
+        AnchorSideLeft.Control = bSetWidth
+        AnchorSideLeft.Side = asrBottom
+        AnchorSideTop.Control = bSetWidth
+        AnchorSideBottom.Control = bSetWidth
+        AnchorSideBottom.Side = asrBottom
+        Left = 156
+        Height = 25
+        Top = 117
+        Width = 34
+        Anchors = [akTop, akLeft, akBottom]
+        BorderSpacing.Left = 2
+        NumbersOnly = True
+        TabOrder = 4
+        Text = '0'
+      end
+      object lWidth: TLabel
+        AnchorSideLeft.Control = eCol
+        AnchorSideLeft.Side = asrBottom
+        AnchorSideTop.Control = eCol
+        Left = 192
+        Height = 25
+        Top = 117
+        Width = 44
+        BorderSpacing.Left = 2
+        Caption = 'width'
+        ParentColor = False
+      end
+      object eWidth: TEdit
+        AnchorSideLeft.Control = lWidth
+        AnchorSideLeft.Side = asrBottom
+        AnchorSideTop.Control = lWidth
+        AnchorSideBottom.Control = bSetWidth
+        AnchorSideBottom.Side = asrBottom
+        Left = 238
+        Height = 25
+        Top = 117
+        Width = 51
+        Anchors = [akTop, akLeft, akBottom]
+        BorderSpacing.Left = 2
+        NumbersOnly = True
+        TabOrder = 5
+        Text = '150'
+      end
     end
     object bRefresh: TButton
       Left = 1
       Height = 25
-      Top = 115
+      Top = 148
       Width = 302
       Align = alTop
       Caption = 'Refresh inspector'

@@ -15,10 +15,14 @@ type
 
   TForm1 = class(TForm, IDataSource)
     AddDelayCheckBox: TCheckBox;
+    bSetWidth: TButton;
     ColumnsAutoFillCheckBox: TCheckBox;
+    eCol: TEdit;
+    eWidth: TEdit;
     FirstColumnStretchedCheckBox: TCheckBox;
     bRefresh: TButton;
     GridPanel: TPanel;
+    lWidth: TLabel;
     lSelection: TLabel;
     miUpdateCell: TMenuItem;
     miUpdateRow: TMenuItem;
@@ -27,6 +31,7 @@ type
     Panel2: TPanel;
     PopupMenu1: TPopupMenu;
     TIPropertyGrid1: TTIPropertyGrid;
+    procedure bSetWidthClick(Sender: TObject);
     procedure ColumnsAutoFillCheckBoxChange(Sender: TObject);
     procedure bRefreshClick(Sender: TObject);
     procedure FirstColumnStretchedCheckBoxChange(Sender: TObject);
@@ -166,6 +171,20 @@ begin
     FVisualGrid.Options := FVisualGrid.Options - [vgoColAutoFill];
 
   TIPropertyGrid1.RefreshPropertyValues;
+end;
+
+procedure TForm1.bSetWidthClick(Sender: TObject);
+var
+  LCol: Integer;
+begin
+  LCol := StrToIntDef(eCol.Text, 0);
+  if LCol >= FVisualGrid.ColCount then
+  begin
+    LCol := FVisualGrid.ColCount - 1;
+    eCol.Text := IntToStr(LCol);
+  end;
+
+  FVisualGrid.Columns[LCol].Width := StrToIntDef(eWidth.Text, 150);
 end;
 
 procedure TForm1.DrawVisualCell(Sender: TObject; ACol,
