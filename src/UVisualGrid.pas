@@ -103,6 +103,8 @@ type
 
   EVisualGridError = class(Exception);
 
+  TVisualGridOptions = set of (vgoColSizing);
+
   { TCustomVisualGrid }
 
   TCustomVisualGrid = class(TCustomControl)
@@ -201,6 +203,7 @@ type
     FFetchDataInThread: boolean;
     FOnPreparePopupMenu: TPreparePopupMenuEvent;
     FOnSelection: TSelectionEvent;
+    FOptions: TVisualGridOptions;
     FShowAllData: boolean;
     FAutoPageSize: boolean;
     FCanPage: boolean;
@@ -222,6 +225,7 @@ type
     procedure SetCaptionVisible(AValue: boolean);
     procedure SetCells(ACol, ARow: Integer; AValue: Variant);
     procedure SetFetchDataInThread(AValue: boolean);
+    procedure SetOptions(AValue: TVisualGridOptions);
     procedure SetRows(ARow: Integer; AValue: Variant);
     procedure SetShowAllData(AValue: boolean);
     procedure SetAutoPageSize(AValue: boolean);
@@ -283,6 +287,7 @@ type
 
     property CanPage: boolean read FCanPage write SetCanPage default true;
     property CanSearch: boolean read FCanSearch write SetCanSearch default true;
+    property Options: TVisualGridOptions read FOptions write SetOptions;
     property Canvas: TCanvas read GetCanvas;
     property SelectionType: TSelectionType read FSelectionType write SetSelectionType;
     property Selection: TVisualGridSelection read GetSelection;
@@ -313,6 +318,7 @@ type
     property ShowAllData;
     property CanPage;
     property CanSearch;
+    property Options;
     property SelectionType;
     property FetchDataInThread;
 
@@ -780,7 +786,7 @@ begin
       OnDrawCell := StandardDrawCell;
       OnMouseUp := GridMouseUp;
       OnSelection := GridSelection;
-      Options := (Options - [goRangeSelect]) + [goColSizing];
+      Options := (Options - [goRangeSelect]);
       FixedCols := 0;
     end;
     FDefaultDrawGridOptions := FDrawGrid.Options;
@@ -1098,6 +1104,17 @@ procedure TCustomVisualGrid.SetFetchDataInThread(AValue: boolean);
 begin
   if FFetchDataInThread=AValue then Exit;
   FFetchDataInThread:=AValue;
+end;
+
+procedure TCustomVisualGrid.SetOptions(AValue: TVisualGridOptions);
+begin
+  if FOptions=AValue then Exit;
+
+  FOptions:=AValue;
+  if vgoColSizing in FOptions then
+    FDrawGrid.Options := FDrawGrid.Options + [goColSizing]
+  else
+    FDrawGrid.Options := FDrawGrid.Options - [goColSizing];
 end;
 
 procedure TCustomVisualGrid.SetRows(ARow: Integer; AValue: Variant);
