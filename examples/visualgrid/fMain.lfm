@@ -137,12 +137,16 @@ object Form1: TForm1
         AnchorSideLeft.Control = eCol
         AnchorSideLeft.Side = asrBottom
         AnchorSideTop.Control = eCol
+        AnchorSideBottom.Control = bSetWidth
+        AnchorSideBottom.Side = asrBottom
         Left = 192
         Height = 25
         Top = 117
         Width = 44
+        Anchors = [akTop, akLeft, akBottom]
         BorderSpacing.Left = 2
         Caption = 'width'
+        Layout = tlCenter
         ParentColor = False
       end
       object eWidth: TEdit
