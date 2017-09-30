@@ -172,6 +172,7 @@ type
     FTopPanelMultiSearchFixed: TPanel;
     FTopPanelMultiSearchClient: TPanel;
     FTopPanelMultiSearchRight: TPanel;
+    FTopPanelRight: TPanel;
     FClientPanel: TPanel;
     FLoadDataPanel: TPanel;
     FLoadDataLabel: TLabel;
@@ -715,50 +716,63 @@ begin
     FMultiSearchCheckComboBox.Parent := FTopPanel;
     with FMultiSearchCheckComboBox do
     begin
-      Left := 4;
-      Top := 6;
-      Height:=28;
+      AnchorSideTop.Control := FTopPanel;
+      AnchorSideLeft.Control := FTopPanel;
+      AnchorSideBottom.Control := FTopPanel;
+      AnchorSideBottom.Side := asrBottom;
+      Anchors := [akLeft, akTop, akBottom];
+
+      BorderSpacing.Top := 6;
+      BorderSpacing.Left := 4;
+      BorderSpacing.Bottom := 6;
       Width := 120;
       OnItemChange:=MultiSearchCheckComboBoxChange;
       PopupMenu:=FSearchKindPopupMenu;
     end;
 
-    FSearchEdit := TEdit.Create(Self);
-    FSearchEdit.Parent := FTopPanel;
-    with FSearchEdit do
+    FTopPanelRight := TPanel.Create(Self);
+    FTopPanelRight.Parent := FTopPanel;
+    with FTopPanelRight do
     begin
-      AnchorSideLeft.Control := FMultiSearchCheckComboBox;
-      AnchorSideLeft.Side := asrBottom;
-      AnchorSideTop.Control := FMultiSearchCheckComboBox;
-      AnchorSideBottom.Control := FMultiSearchCheckComboBox;
-      AnchorSideBottom.Side := asrBottom;
-      Anchors := [akTop, akLeft, akBottom];
-      BorderSpacing.Left := 2;
-      Left := 50;
-      Top := 6;
-      Width := 121;
-      Height := 21;
-      TextHint := 'Search expression';
-      PopupMenu:=FSearchKindPopupMenu;
-    end;
+      BevelOuter := bvNone;
+      Align := alRight;
+      Height := 40;
+      Width := 200;
 
-    FSearchButton := TSpeedButton.Create(Self);
-    FSearchButton.Parent := FTopPanel;
-    FSearchButton.LoadGlyphFromResourceName(HINSTANCE, 'VISUALGRID_SEARCH');
-    with FSearchButton do
-    begin
-      AnchorSideLeft.Control := FSearchEdit;
-      AnchorSideLeft.Side := asrBottom;
-      AnchorSideTop.Control := FMultiSearchCheckComboBox;
-      AnchorSideBottom.Control := FMultiSearchCheckComboBox;
-      AnchorSideBottom.Side := asrBottom;
-      Anchors := [akTop, akLeft, akBottom];
-      BorderSpacing.Left := 2;
-      Left := 173;
-      Top := 6;
-      Width := 23;
-      Height := 23;
-      PopupMenu:=FSearchKindPopupMenu;
+      FSearchButton := TSpeedButton.Create(Self);
+      FSearchButton.Parent := FTopPanelRight;
+      FSearchButton.LoadGlyphFromResourceName(HINSTANCE, 'VISUALGRID_SEARCH');
+      with FSearchButton do
+      begin
+        AnchorSideTop.Control := FTopPanelRight;
+        AnchorSideRight.Control := FTopPanelRight;
+        AnchorSideRight.Side := asrBottom;
+        AnchorSideBottom.Control := FTopPanelRight;
+        AnchorSideBottom.Side := asrBottom;
+        Anchors := [akTop, akRight, akBottom];
+        BorderSpacing.Top := 6;
+        BorderSpacing.Right := 4;
+        BorderSpacing.Bottom := 6;
+        Width := 23;
+        PopupMenu:=FSearchKindPopupMenu;
+      end;
+
+      FSearchEdit := TEdit.Create(Self);
+      FSearchEdit.Parent := FTopPanelRight;
+      with FSearchEdit do
+      begin
+        AnchorSideTop.Control := FTopPanelRight;
+        AnchorSideRight.Control := FSearchButton;
+        AnchorSideBottom.Control := FTopPanelRight;
+        AnchorSideBottom.Side := asrBottom;
+        Anchors := [akTop, akRight, akBottom];
+        BorderSpacing.Top := 6;
+        BorderSpacing.Right := 2;
+        BorderSpacing.Bottom := 6;
+        Width := 121;
+        TextHint := 'Search expression';
+        PopupMenu:=FSearchKindPopupMenu;
+      end;
     end;
   end;
 
