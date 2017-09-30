@@ -1514,10 +1514,13 @@ begin
 end;
 
 procedure TCustomVisualGrid.SetSelectionType(AValue: TSelectionType);
+var
+  LSelectionEvent: boolean;
 begin
   if FSelectionType=AValue then
     Exit;
 
+  LSelectionEvent := FSelectionType=stNone;
   FSelectionType:=AValue;
   case FSelectionType of
     stNone: FDrawGrid.Options:=FDefaultDrawGridOptions;
@@ -1525,6 +1528,8 @@ begin
     stRow: FDrawGrid.Options:=FDefaultDrawGridOptions+[goRowSelect];
     stMultiRow: FDrawGrid.Options:=FDefaultDrawGridOptions+[goRowSelect,goRangeSelect];
   end;
+  if LSelectionEvent and Assigned(FOnSelection) then
+    FOnSelection(Self, Selection);
 end;
 
 procedure TCustomVisualGrid.StandardDrawCell(Sender: TObject; ACol,
