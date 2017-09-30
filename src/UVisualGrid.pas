@@ -119,7 +119,7 @@ type
 
   EVisualGridError = class(Exception);
 
-  TVisualGridOptions = set of (vgoColAutoFill, vgoColSizing);
+  TVisualGridOptions = set of (vgoColAutoFill, vgoColSizing, vgoMultiSearchCheckComboBox);
 
   { TCustomVisualGrid }
 
@@ -728,6 +728,7 @@ begin
       Width := 120;
       OnItemChange:=MultiSearchCheckComboBoxChange;
       PopupMenu:=FSearchKindPopupMenu;
+      Visible:=False;
     end;
 
     FTopPanelRight := TPanel.Create(Self);
@@ -1175,6 +1176,7 @@ begin
     FDrawGrid.Options := FDrawGrid.Options - [goColSizing];
 
   FDrawGrid.AutoFillColumns:=vgoColAutoFill in FOptions;
+  FMultiSearchCheckComboBox.Visible:=vgoMultiSearchCheckComboBox in FOptions;
 end;
 
 procedure TCustomVisualGrid.SetRows(ARow: Integer; AValue: Variant);
