@@ -16,8 +16,10 @@ type
   TForm1 = class(TForm, IDataSource)
     AddDelayCheckBox: TCheckBox;
     bSetWidth: TButton;
+    bSearchParser: TButton;
     ColumnsAutoFillCheckBox: TCheckBox;
     eCol: TEdit;
+    eSearchParser: TEdit;
     eWidth: TEdit;
     FirstColumnStretchedCheckBox: TCheckBox;
     bRefresh: TButton;
@@ -29,9 +31,11 @@ type
     MenuItem3: TMenuItem;
     Panel1: TPanel;
     Panel2: TPanel;
+    Panel3: TPanel;
     PopupMenu1: TPopupMenu;
     TIPropertyGrid1: TTIPropertyGrid;
     procedure bSetWidthClick(Sender: TObject);
+    procedure bSearchParserClick(Sender: TObject);
     procedure ColumnsAutoFillCheckBoxChange(Sender: TObject);
     procedure bRefreshClick(Sender: TObject);
     procedure FirstColumnStretchedCheckBoxChange(Sender: TObject);
@@ -185,6 +189,11 @@ begin
   end;
 
   FVisualGrid.Columns[LCol].Width := StrToIntDef(eWidth.Text, 150);
+end;
+
+procedure TForm1.bSearchParserClick(Sender: TObject);
+begin
+  WriteLn(TVisualGridSearchParser.Parse(eSearchParser.Text).TextMatchKind);
 end;
 
 procedure TForm1.DrawVisualCell(Sender: TObject; ACol,

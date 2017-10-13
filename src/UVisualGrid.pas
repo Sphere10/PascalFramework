@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, Types, Graphics,
-  UCommon, Generics.Collections, Menus, ComboEx, Buttons, Math;
+  UCommon, Generics.Collections, Menus, ComboEx, Buttons, Math, LazUTF8;
 
 type
   TSelectionType = (stNone, stCell, stRow, stMultiRow);
@@ -165,6 +165,7 @@ type
     FCaptionLabel: TLabel;
     FSearchLabel: TLabel;
     FSearchEdit: TEdit;
+    FSearchColumnComboBox: TComboBox;
     FSearchButton: TSpeedButton;
     FMultiSearchCheckComboBox: TCheckComboBox;
     FTopPanel: TPanel;
@@ -349,6 +350,29 @@ type
     property OnPreparePopupMenu;
   end;
 
+  { TVisualGridSearchParser }
+  TExpressionKind = (ekUnknown, ekText, ekNum, ekSet);
+  TTextMatchKind = (tmkUnknown, tmkMatchTextExact, tmkMatchTextBeginning, tmkMatchTextEnd,
+    tmkMatchTextAnywhere);
+  TNumericComparisionKind = (nckUnknown, nckNumericEQ, nckNumericLT, nckNumericLTE,
+    nckNumericGT, nckNumericGTE);
+  TSetKind = (skUnknown, skNumericBetweenInclusive, skNumericBetweenExclusive);
+
+  TExpressionRecord = record
+  case Kind: TExpressionKind of
+    ekUnknown: ();
+    ekText: (TextMatchKind: TTextMatchKind);
+    ekNum: (NumericComparisionKind: TNumericComparisionKind);
+    ekSet: (SetKind: TSetKind);
+  end;
+
+  TVisualGridSearchParser = class
+  public
+    class procedure Parse(const AExpression: utf8string;
+      var AExpressionKind: TExpressionKind; out AExpressionRecord: TExpressionRecord); overload;
+    class function Parse(const AExpression: utf8string): TExpressionRecord; overload;
+  end;
+
 procedure Register;
 
 implementation
@@ -374,6 +398,192 @@ type
 procedure Register;
 begin
   RegisterComponents('Pascal Framework', [TVisualGrid]);
+end;
+
+{ TVisualGridSearchParser }
+
+class procedure TVisualGridSearchParser.Parse(const AExpression: utf8string;
+  var AExpressionKind: TExpressionKind; out AExpressionRecord: TExpressionRecord
+  );
+const
+  MAX_VALUES = 2;
+type
+  TToken = (tkNone, tkPercent, tkLess, tkGreater, tkEqual, tkLessOrEqual,
+    tkGreaterOrEqual, tkOpeningParenthesis, tkClosingParenthesis,
+    tkOpeningBracket, tkClosingBracket,  tkText, tkNum, tkWhiteChar);
+
+  TUTF8Char = record
+    Length: byte;
+    Char: array [0..3] of AnsiChar;
+  end;
+
+  procedure GetChar(APos: PAnsiChar; out AChar: TUTF8Char; ANewPos: PPAnsiChar);
+  begin
+    AChar.Length := UTF8CharacterLength(APos);
+
+    if AChar.Length >= 1 then AChar.Char[0] := APos[0];
+    if AChar.Length >= 2 then AChar.Char[1] := APos[1];
+    if AChar.Length >= 3 then AChar.Char[2] := APos[2];
+    if AChar.Length = 4 then AChar.Char[3] := APos[3];
+
+    Inc(APos, AChar.Length);
+    ANewPos^ := APos;
+  end;
+
+var
+  c: PAnsiChar;
+  LChar: TUTF8Char;
+  LValueIdx: Integer = -1;
+  LValues: array[0..MAX_VALUES-1] of utf8string; // for now only 2 values for set
+  LValue: PUTF8String;
+  LToken: TToken = tkNone;
+  LPrevToken: TToken = tkNone;
+  LExpression: utf8string;
+
+  procedure NextValue;
+  begin
+    Inc(LValueIdx);
+    if LValueIdx > MAX_VALUES - 1 then
+      raise Exception.Create('Too many values');
+    LValue := @LValues[LValueIdx];
+  end;
+
+begin
+  if AExpression = '' then
+    Exit;
+
+  // more simple parsing loop
+  if AExpressionKind in [ekSet, ekNum] then
+    LExpression:=Trim(AExpression)
+  else
+    LExpression:=AExpression;
+
+  c := @LExpression[1];
+  if FindInvalidUTF8Character(c, Length(LExpression)) <> -1 then
+    raise Exception.Create('Invalid UTF8 string expression');
+  AExpressionRecord := Default(TExpressionRecord);
+
+  NextValue;
+  repeat
+    GetChar(c, LChar, @c);
+    if LChar.Length = 1 then
+      case LChar.Char[0] of
+        #0: Break;
+        #1..#32:
+          case AExpressionKind of
+            ekSet, ekUnknown:
+              begin
+                while c^ in [#1..#32] do Inc(c);
+                LToken:=tkWhiteChar;
+              end;
+            ekText:
+              begin
+                LValue^:=LValue^+LChar.Char[0];
+                LToken:=tkText;
+              end;
+            ekNum: raise  Exception.Create('Bad numeric expression');
+          end;
+        '0'..'9':
+          begin
+            repeat
+              LValue^:=LValue^+c^;
+              Inc(c);
+            until not (c^ in ['0'..'9', '.']);
+            case AExpressionKind of
+              ekUnknown, ekSet: LToken:=tkNum;
+              ekText:
+                begin
+                  LValue^:=LValue^+LChar.Char[0];
+                  LToken:=tkText;
+                end;
+              ekNum: raise  Exception.Create('Bad numeric expression');
+            end;
+
+          end;
+        '%':
+          begin
+            if not (AExpressionKind in [ekText,ekUnknown]) then
+              Exception.Create('Bad numeric expression');
+            if c^ = '%' then
+            begin
+              LToken := tkText;
+              LValue^ := LValue^ + '%';
+              GetChar(c, LChar, @c);
+            end
+            else
+              LToken := tkPercent;
+
+          end;
+        '<':
+          if c^ = '=' then
+          begin
+            LToken := tkLessOrEqual;
+            GetChar(c, LChar, @c);
+          end
+          else
+            LToken := tkLess;
+        '>':
+          if c^ = '=' then
+          begin
+            LToken := tkGreaterOrEqual;
+            GetChar(c, LChar, @c);
+          end
+          else
+            LToken := tkGreater;
+        '=': LToken := tkEqual;
+        '(': LToken := tkOpeningParenthesis;
+        ')': LToken := tkClosingParenthesis;
+        '[': LToken := tkOpeningBracket;
+        ']': LToken := tkClosingBracket;
+      else
+        LValue^ := LValue^ + LChar.Char[0];
+        LToken:=tkText;
+      end
+    else
+    begin
+      if not (AExpressionKind in [ekUnknown, ekText]) then
+        raise Exception.Create('Unexpected char in expression');
+      SetLength(LValue^, Length(LValue^) + LChar.Length);
+      Move(LChar.Char[0], LValue^[Length(LValue^) - LChar.Length], LChar.Length);
+      LToken:=tkText;
+    end;
+
+    // parser is able to deduce expression kind
+    if AExpressionKind = ekUnknown then
+    case LToken of
+      tkPercent, tkText: AExpressionKind:=ekText;
+      tkOpeningBracket, tkOpeningParenthesis: AExpressionKind:=ekSet;
+      tkLess..tkGreaterOrEqual, tkNum: AExpressionKind:=ekNum;
+    else
+      raise Exception.Create('Unexpected char in expression');
+    end;
+
+    case LToken of
+      tkPercent:
+        case LPrevToken of
+          tkText:
+            if (AExpressionRecord.TextMatchKind = tmkUnknown) then
+              AExpressionRecord.TextMatchKind:=tmkMatchTextEnd
+            else
+              AExpressionRecord.TextMatchKind:=tmkMatchTextAnywhere;
+          tkNone:
+            AExpressionRecord.TextMatchKind:=tmkMatchTextBeginning;
+        end;
+    end;
+    LPrevToken := LToken;
+  until (LChar.Length=0) or (c^ = #0);
+
+  if (AExpressionKind = ekText) and (AExpressionRecord.TextMatchKind = tmkUnknown) then
+    AExpressionRecord.TextMatchKind:=tmkMatchTextExact;
+
+  AExpressionRecord.Kind := AExpressionKind;
+end;
+
+class function TVisualGridSearchParser.Parse(const AExpression: utf8string
+  ): TExpressionRecord;
+begin
+  Result.Kind := ekUnknown;
+  Parse(AExpression, Result.Kind, Result);
 end;
 
 { TVisualColumn }
@@ -738,7 +948,7 @@ begin
       BevelOuter := bvNone;
       Align := alRight;
       Height := 40;
-      Width := 200;
+      Width := 300;
 
       FSearchButton := TSpeedButton.Create(Self);
       FSearchButton.Parent := FTopPanelRight;
@@ -773,6 +983,24 @@ begin
         Width := 121;
         TextHint := 'Search expression';
         PopupMenu:=FSearchKindPopupMenu;
+      end;
+
+      FSearchColumnComboBox := TComboBox.Create(Self);
+      FSearchColumnComboBox.Parent := FTopPanelRight;
+      with FSearchColumnComboBox do
+      begin
+        AnchorSideTop.Control := FTopPanelRight;
+        AnchorSideRight.Control := FSearchEdit;
+        AnchorSideRight.Side := asrLeft;
+        AnchorSideBottom.Control := FTopPanelRight;
+        AnchorSideBottom.Side := asrBottom;
+        Anchors := [akTop, akRight, akBottom];
+        BorderSpacing.Top := 6;
+        BorderSpacing.Right := 2;
+        BorderSpacing.Bottom := 6;
+        Width := 90;
+        PopupMenu:=FSearchKindPopupMenu;
+        Text:='Name';
       end;
     end;
   end;

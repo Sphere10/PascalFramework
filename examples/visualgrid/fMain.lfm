@@ -32,7 +32,7 @@ object Form1: TForm1
     TabOrder = 1
     object TIPropertyGrid1: TTIPropertyGrid
       Left = 1
-      Height = 379
+      Height = 273
       Top = 173
       Width = 304
       Align = alLeft
@@ -175,6 +175,34 @@ object Form1: TForm1
       Caption = 'Refresh inspector'
       OnClick = bRefreshClick
       TabOrder = 2
+    end
+    object Panel3: TPanel
+      Left = 1
+      Height = 106
+      Top = 446
+      Width = 302
+      Align = alBottom
+      Caption = 'Panel3'
+      ClientHeight = 106
+      ClientWidth = 302
+      TabOrder = 3
+      object eSearchParser: TEdit
+        Left = 23
+        Height = 33
+        Top = 28
+        Width = 193
+        TabOrder = 0
+        Text = 'eSearchParser'
+      end
+      object bSearchParser: TButton
+        Left = 224
+        Height = 33
+        Top = 28
+        Width = 51
+        Caption = 'bSearchParser'
+        OnClick = bSearchParserClick
+        TabOrder = 1
+      end
     end
   end
   object PopupMenu1: TPopupMenu
