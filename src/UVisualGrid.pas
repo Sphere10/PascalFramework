@@ -370,7 +370,7 @@ type
   TVisualGridSearchParser = class
   public
     class procedure Parse(const AExpression: utf8string;
-      var AExpressionKind: TExpressionKind; out AExpressionRecord: TExpressionRecord); overload;
+      AExpressionKind: TExpressionKind; out AExpressionRecord: TExpressionRecord); overload;
     class function Parse(const AExpression: utf8string): TExpressionRecord; overload;
   end;
 
@@ -404,8 +404,7 @@ end;
 { TVisualGridSearchParser }
 
 class procedure TVisualGridSearchParser.Parse(const AExpression: utf8string;
-  var AExpressionKind: TExpressionKind; out AExpressionRecord: TExpressionRecord
-  );
+  AExpressionKind: TExpressionKind; out AExpressionRecord: TExpressionRecord);
 const
   MAX_VALUES = 2;
 type
@@ -418,6 +417,9 @@ type
     Char: array [0..3] of AnsiChar;
   end;
 
+const
+  CONVERTABLE_TOKENS_TO_STR = [tkLess..tkClosingBracket, tkComma];
+
   procedure GetChar(APos: PAnsiChar; out AChar: TUTF8Char);
   begin
     AChar.Length := UTF8CharacterLength(APos);
@@ -428,6 +430,16 @@ type
     if AChar.Length = 4 then AChar.Char[3] := APos[3];
 
     Inc(APos, AChar.Length);
+  end;
+
+  function TokenToStr(AToken: TToken): utf8string;
+  const
+    CONVERTER: array[TToken] of utf8string = (
+      '', '', '<', '>', '=', '<=', '>=', '(', ')', '[', ']', '', '', '', ','
+    );
+  begin
+    Assert(AToken in CONVERTABLE_TOKENS_TO_STR);
+    Result := CONVERTER[AToken];
   end;
 
 var
@@ -450,6 +462,7 @@ var
   end;
 
 begin
+  AExpressionRecord := Default(TExpressionRecord);
   if AExpression = '' then
     Exit;
 
@@ -461,8 +474,7 @@ begin
 
   c := @LExpression[1];
   if FindInvalidUTF8Character(c, Length(LExpression)) <> -1 then
-    raise Exception.Create('Invalid UTF8 string expression');
-  AExpressionRecord := Default(TExpressionRecord);
+    raise Exception.Create('Invalid UTF8 string');
 
   NextValue;
   repeat
@@ -491,17 +503,10 @@ begin
               LValue^:=LValue^+c^;
               Inc(c);
             until not (c^ in ['0'..'9', '.']);
-            Dec(c);
             case AExpressionKind of
               ekUnknown, ekSet, ekNum: LToken:=tkNum;
-              ekText:
-                begin
-                  LValue^:=LValue^+LChar.Char[0];
-                  LToken:=tkText;
-                end;
-              //ekNum: LToken//raise Exception.Create('Bad numeric expression');
+              ekText: LToken:=tkText;
             end;
-            LToken:=tkNum;
           end;
         '%':
           begin
@@ -551,7 +556,7 @@ begin
       LToken:=tkText;
     end;
 
-    // parser is able to deduce expression kind
+    // parser is able to deduce expression kind (if needed)
     if AExpressionKind = ekUnknown then
     case LToken of
       tkPercent, tkText: AExpressionKind:=ekText;
@@ -561,6 +566,9 @@ begin
       raise Exception.Create('Unexpected char in expression');
     end;
 
+    if (AExpressionKind = ekText) and (LToken in CONVERTABLE_TOKENS_TO_STR) then
+      LValue^:=LValue^+TokenToStr(LToken);
+
     if LPrevToken in [tkClosingBracket, tkClosingParenthesis] then
       raise Exception.Create('Invaild expression (char detected after closing bracket)');
 
@@ -569,16 +577,16 @@ begin
         if AExpressionKind in [ekSet, ekNum] then
           raise Exception.Create('Unexpected string literal in expression');
       tkClosingBracket:
-        if AExpressionRecord.SetKind<>skNumericBetweenInclusive then
+        if (AExpressionKind = ekSet) and (AExpressionRecord.SetKind<>skNumericBetweenInclusive) then
           raise Exception.Create('Badly closed "between" expression');
       tkClosingParenthesis:
-        if AExpressionRecord.SetKind<>skNumericBetweenExclusive then
+        if (AExpressionKind = ekSet) and (AExpressionRecord.SetKind<>skNumericBetweenExclusive) then
           raise Exception.Create('Badly closed "between" expression');
       tkComma:
-        begin
+        if AExpressionKind = ekSet then
           NextValue;
-        end;
       tkPercent:
+        if AExpressionKind = ekText then
         case LPrevToken of
           tkText:
             if (AExpressionRecord.TextMatchKind = tmkUnknown) then
@@ -589,26 +597,28 @@ begin
             AExpressionRecord.TextMatchKind:=tmkMatchTextBeginning;
         end;
       tkLess..tkGreaterOrEqual:
-        if LPrevToken <> tkNone then
-          raise Exception.Create('Bad numeric expression')
-        else
+        if AExpressionKind = ekNum then
+          if LPrevToken <> tkNone then
+            raise Exception.Create('Bad numeric expression')
+          else
+            with AExpressionRecord do
+            case LToken of
+              tkLess: NumericComparisionKind:=nckNumericLT;
+              tkGreater: NumericComparisionKind:=nckNumericGT;
+              tkEqual: NumericComparisionKind:=nckNumericEQ;
+              tkLessOrEqual: NumericComparisionKind:=nckNumericLTE;
+              tkGreaterOrEqual: NumericComparisionKind:=nckNumericGTE;
+            end;
+      tkOpeningParenthesis, tkOpeningBracket:
+        if AExpressionKind = ekSet then
+          if LPrevToken <> tkNone then
+            raise Exception.Create('Bad "between" expression')
+          else
           with AExpressionRecord do
           case LToken of
-            tkLess: NumericComparisionKind:=nckNumericLT;
-            tkGreater: NumericComparisionKind:=nckNumericGT;
-            tkEqual: NumericComparisionKind:=nckNumericEQ;
-            tkLessOrEqual: NumericComparisionKind:=nckNumericLTE;
-            tkGreaterOrEqual: NumericComparisionKind:=nckNumericGTE;
+            tkOpeningParenthesis: SetKind:=skNumericBetweenExclusive;
+            tkOpeningBracket: SetKind:=skNumericBetweenInclusive;
           end;
-      tkOpeningParenthesis, tkOpeningBracket:
-        if LPrevToken <> tkNone then
-          raise Exception.Create('Bad "between" expression')
-        else
-        with AExpressionRecord do
-        case LToken of
-          tkOpeningParenthesis: SetKind:=skNumericBetweenExclusive;
-          tkOpeningBracket: SetKind:=skNumericBetweenInclusive;
-        end;
     end;
     LPrevToken := LToken;
     Inc(c);
@@ -629,8 +639,8 @@ begin
       end;
   end;
 
-  if LValueIdx = -1 then
-    raise Exception.Create('Expression have not a value');
+  if (LValueIdx = 0) and (LValue^='') then
+    raise Exception.Create('Expression error (no value)');
 
   SetLength(AExpressionRecord.Values, LValueIdx + 1);
   for i := 0 to LValueIdx do
