@@ -7,7 +7,7 @@ interface
 uses
   SysUtils, Classes, Forms, Controls, Graphics, Dialogs, Math, PropEdits,
   LCLType, UVisualGrid, StdCtrls, Menus, Types, Grids, ExtCtrls, CheckLst,
-  RTTIGrids, UCommon;
+  RTTIGrids, UCommon, TypInfo;
 
 type
 
@@ -17,6 +17,7 @@ type
     AddDelayCheckBox: TCheckBox;
     bSetWidth: TButton;
     bSearchParser: TButton;
+    cbExpectedKind: TComboBox;
     ColumnsAutoFillCheckBox: TCheckBox;
     eCol: TEdit;
     eSearchParser: TEdit;
@@ -24,6 +25,8 @@ type
     FirstColumnStretchedCheckBox: TCheckBox;
     bRefresh: TButton;
     GridPanel: TPanel;
+    Label1: TLabel;
+    lExpectedKind: TLabel;
     lWidth: TLabel;
     lSelection: TLabel;
     miUpdateCell: TMenuItem;
@@ -192,8 +195,33 @@ begin
 end;
 
 procedure TForm1.bSearchParserClick(Sender: TObject);
+var
+  er: TExpressionRecord;
+  i: Integer;
+  LExpressionKind, LSubKind, LValues: string;
+  LMsg: string;
+  LExpectedKind: TExpressionKind;
 begin
-  WriteLn(TVisualGridSearchParser.Parse(eSearchParser.Text).TextMatchKind);
+  LExpectedKind := TExpressionKind(cbExpectedKind.ItemIndex);
+  TVisualGridSearchParser.Parse(eSearchParser.Text, LExpectedKind, er);
+
+  LExpressionKind := GetEnumName(TypeInfo(TExpressionKind), Ord(er.Kind));
+  case er.Kind of
+    ekNum: LSubKind := GetEnumName(TypeInfo(TNumericComparisionKind), Ord(er.NumericComparisionKind));
+    ekText: LSubKind := GetEnumName(TypeInfo(TTextMatchKind), Ord(er.TextMatchKind));
+    ekSet: LSubKind := GetEnumName(TypeInfo(TSetKind), Ord(er.SetKind));
+  end;
+
+  for i := 0 to High(er.Values) do
+    LValues:=(er.Values[i]) + sLineBreak;
+  SetLength(LValues, Length(LValues) - Length(sLineBreak));
+
+  LMsg := Format('Kind : %s'+sLineBreak+'SubKind : %s'+sLineBreak+'Values:'+sLineBreak+'%s',
+    [LExpressionKind, LSubKind, LValues]);
+  if IsConsole then
+    WriteLn(LMsg, sLineBreak)
+  else
+    ShowMessage(LMsg);
 end;
 
 procedure TForm1.DrawVisualCell(Sender: TObject; ACol,

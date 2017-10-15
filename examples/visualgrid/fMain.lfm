@@ -1,16 +1,16 @@
 object Form1: TForm1
   Left = 439
-  Height = 553
+  Height = 587
   Top = 210
   Width = 988
   Caption = 'Form1'
-  ClientHeight = 553
+  ClientHeight = 587
   ClientWidth = 988
   OnCreate = FormCreate
   LCLVersion = '1.6.4.0'
   object GridPanel: TPanel
     Left = 304
-    Height = 553
+    Height = 587
     Top = 0
     Width = 684
     Align = alClient
@@ -22,17 +22,17 @@ object Form1: TForm1
   end
   object Panel2: TPanel
     Left = 0
-    Height = 553
+    Height = 587
     Top = 0
     Width = 304
     Align = alLeft
     Caption = 'Panel2'
-    ClientHeight = 553
+    ClientHeight = 587
     ClientWidth = 304
     TabOrder = 1
     object TIPropertyGrid1: TTIPropertyGrid
       Left = 1
-      Height = 273
+      Height = 275
       Top = 173
       Width = 304
       Align = alLeft
@@ -178,30 +178,70 @@ object Form1: TForm1
     end
     object Panel3: TPanel
       Left = 1
-      Height = 106
-      Top = 446
+      Height = 138
+      Top = 448
       Width = 302
       Align = alBottom
-      Caption = 'Panel3'
-      ClientHeight = 106
+      ClientHeight = 138
       ClientWidth = 302
       TabOrder = 3
       object eSearchParser: TEdit
-        Left = 23
+        Left = 16
         Height = 33
-        Top = 28
+        Top = 80
         Width = 193
         TabOrder = 0
         Text = 'eSearchParser'
       end
       object bSearchParser: TButton
-        Left = 224
+        Left = 214
         Height = 33
-        Top = 28
-        Width = 51
-        Caption = 'bSearchParser'
+        Top = 80
+        Width = 75
+        Caption = 'Test'
         OnClick = bSearchParserClick
         TabOrder = 1
+      end
+      object Label1: TLabel
+        AnchorSideLeft.Control = Panel3
+        AnchorSideLeft.Side = asrCenter
+        AnchorSideTop.Control = Panel3
+        Left = 81
+        Height = 25
+        Top = 1
+        Width = 141
+        Caption = 'Expressions tester'
+        ParentColor = False
+      end
+      object lExpectedKind: TLabel
+        AnchorSideTop.Control = cbExpectedKind
+        AnchorSideTop.Side = asrCenter
+        AnchorSideRight.Control = cbExpectedKind
+        Left = 18
+        Height = 25
+        Top = 40
+        Width = 124
+        Anchors = [akTop, akRight]
+        BorderSpacing.Right = 2
+        Caption = 'Expected kind : '
+        ParentColor = False
+      end
+      object cbExpectedKind: TComboBox
+        Left = 144
+        Height = 33
+        Top = 36
+        Width = 145
+        ItemHeight = 25
+        ItemIndex = 0
+        Items.Strings = (
+          'Unknown'
+          'Text'
+          'Num'
+          'Set'
+        )
+        Style = csDropDownList
+        TabOrder = 2
+        Text = 'Unknown'
       end
     end
   end
