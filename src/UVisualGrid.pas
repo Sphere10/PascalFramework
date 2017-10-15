@@ -367,6 +367,7 @@ type
     ekSet: (SetKind: TSetKind);
   end;
 
+  EVisualGridParserException = class(Exception);
   TVisualGridSearchParser = class
   public
     class procedure Parse(const AExpression: utf8string;
@@ -456,7 +457,7 @@ var
   begin
     Inc(LValueIdx);
     if LValueIdx > MAX_VALUES - 1 then
-      raise Exception.Create('Too many values');
+      raise EVisualGridParserException.Create('Too many values');
     LValue := @LValues[LValueIdx];
   end;
 
@@ -473,7 +474,7 @@ begin
 
   c := @LExpression[1];
   if FindInvalidUTF8Character(c, Length(LExpression)) <> -1 then
-    raise Exception.Create('Invalid UTF8 string');
+    raise EVisualGridParserException.Create('Invalid UTF8 string');
 
   NextValue;
   repeat
@@ -496,7 +497,7 @@ begin
               end;
             ekNum:
               if not (LPrevToken in NUM_OPERATORS) then
-                raise Exception.Create('Bad numeric expression')
+                raise EVisualGridParserException.Create('Bad numeric expression')
               else
               begin
                 while c^ in [#1..#32] do Inc(c);
@@ -508,7 +509,7 @@ begin
             repeat
               if c^ = '.' then
                 if LDot then
-                  raise Exception.Create('Unexpected number format')
+                  raise EVisualGridParserException.Create('Unexpected number format')
                 else
                   LDot:=true;
               LValue^:=LValue^+c^;
@@ -523,7 +524,7 @@ begin
         '%':
           begin
             if not (AExpressionKind in [ekText,ekUnknown]) then
-              Exception.Create('Bad numeric expression');
+              EVisualGridParserException.Create('Bad numeric expression');
             if (c+1)^ = '%' then
             begin
               LToken := tkText;
@@ -562,7 +563,7 @@ begin
     else
     begin
       if not (AExpressionKind in [ekUnknown, ekText]) then
-        raise Exception.Create('Unexpected char in expression');
+        raise EVisualGridParserException.Create('Unexpected char in expression');
       SetLength(LValue^, Length(LValue^) + LChar.Length);
       Move(LChar.Char[0], LValue^[Length(LValue^) - LChar.Length], LChar.Length);
       LToken:=tkText;
@@ -575,7 +576,7 @@ begin
       tkOpeningBracket, tkOpeningParenthesis: AExpressionKind:=ekSet;
       tkLess..tkGreaterOrEqual, tkNum: AExpressionKind:=ekNum;
     else
-      raise Exception.Create('Unexpected char in expression');
+      raise EVisualGridParserException.Create('Unexpected char in expression');
     end;
 
     // text mode is special so part of tokens are used as normal characters
@@ -583,33 +584,33 @@ begin
       LValue^:=LValue^+TokenToStr(LToken);
 
     if LPrevToken in [tkClosingBracket, tkClosingParenthesis] then
-      raise Exception.Create('Invaild expression (char detected after closing bracket)');
+      raise EVisualGridParserException.Create('Invaild expression (char detected after closing bracket)');
 
     // rules
     case LToken of
       tkNum:
         if AExpressionKind = ekSet then
           if not (LPrevToken in [tkOpeningBracket, tkOpeningParenthesis, tkComma]) then
-            raise Exception.CreateFmt('Unexpected token found : "%s"', [TokenToStr(LToken)]);
+            raise EVisualGridParserException.CreateFmt('Unexpected token found : "%s"', [TokenToStr(LToken)]);
       tkText:
         if AExpressionKind in [ekSet, ekNum] then
-          raise Exception.Create('Unexpected string literal in expression');
+          raise EVisualGridParserException.Create('Unexpected string literal in expression');
       tkClosingBracket:
         if (AExpressionKind = ekSet) then
           if (AExpressionRecord.SetKind<>skNumericBetweenInclusive) then
-            raise Exception.Create('Badly closed "between" expression')
+            raise EVisualGridParserException.Create('Badly closed "between" expression')
           else if LPrevToken <> tkNum then
-            raise Exception.Create('Missing number in expression');
+            raise EVisualGridParserException.Create('Missing number in expression');
       tkClosingParenthesis:
         if (AExpressionKind = ekSet) then
           if (AExpressionRecord.SetKind<>skNumericBetweenExclusive) then
-            raise Exception.Create('Badly closed "between" expression')
+            raise EVisualGridParserException.Create('Badly closed "between" expression')
           else if LPrevToken <> tkNum then
-            raise Exception.Create('Missing number in expression');
+            raise EVisualGridParserException.Create('Missing number in expression');
       tkComma:
         if AExpressionKind = ekSet then
           if not (LPrevToken = tkNum) then
-            raise Exception.Create('Unexpected occurrence of comma found')
+            raise EVisualGridParserException.Create('Unexpected occurrence of comma found')
           else
             NextValue;
       tkPercent:
@@ -627,7 +628,7 @@ begin
         case AExpressionKind of
           ekNum:
             if LPrevToken <> tkNone then
-              raise Exception.Create('Bad numeric expression')
+              raise EVisualGridParserException.Create('Bad numeric expression')
             else
               with AExpressionRecord do
               case LToken of
@@ -638,12 +639,12 @@ begin
                 tkGreaterOrEqual: NumericComparisionKind:=nckNumericGTE;
               end;
           ekSet:
-            raise Exception.CreateFmt('Unexpected token found : "%s"', [TokenToStr(LToken)]);
+            raise EVisualGridParserException.CreateFmt('Unexpected token found : "%s"', [TokenToStr(LToken)]);
         end;
       tkOpeningParenthesis, tkOpeningBracket:
         if AExpressionKind = ekSet then
           if LPrevToken <> tkNone then
-            raise Exception.CreateFmt('Bad "between" expression. Unexpected "%s"', [TokenToStr(LToken)])
+            raise EVisualGridParserException.CreateFmt('Bad "between" expression. Unexpected "%s"', [TokenToStr(LToken)])
           else
           with AExpressionRecord do
           case LToken of
@@ -663,15 +664,15 @@ begin
       case AExpressionRecord.SetKind of
         skNumericBetweenInclusive:
           if LPrevToken <> tkClosingBracket then
-            raise Exception.Create('Badly closed "between" expression');
+            raise EVisualGridParserException.Create('Badly closed "between" expression');
         skNumericBetweenExclusive:
           if LPrevToken <> tkClosingParenthesis then
-            raise Exception.Create('Badly closed "between" expression');
+            raise EVisualGridParserException.Create('Badly closed "between" expression');
       end;
   end;
 
   if (LValueIdx = 0) and (LValue^='') then
-    raise Exception.Create('Expression error (no value)');
+    raise EVisualGridParserException.Create('Expression error (no value)');
 
   SetLength(AExpressionRecord.Values, LValueIdx + 1);
   for i := 0 to LValueIdx do
