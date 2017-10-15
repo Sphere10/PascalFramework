@@ -410,7 +410,7 @@ const
 type
   TToken = (tkNone, tkPercent, tkLess, tkGreater, tkEqual, tkLessOrEqual,
     tkGreaterOrEqual, tkOpeningParenthesis, tkClosingParenthesis,
-    tkOpeningBracket, tkClosingBracket,  tkText, tkNum, tkWhiteChar, tkComma);
+    tkOpeningBracket, tkClosingBracket,  tkText, tkNum, tkComma);
 
   TUTF8Char = record
     Length: byte;
@@ -419,6 +419,7 @@ type
 
 const
   CONVERTABLE_TOKENS_TO_STR = [tkLess..tkClosingBracket, tkComma];
+  NUM_OPERATORS = [tkLess..tkGreaterOrEqual];
 
   procedure GetChar(APos: PAnsiChar; out AChar: TUTF8Char);
   begin
@@ -433,19 +434,19 @@ const
   function TokenToStr(AToken: TToken): utf8string;
   const
     CONVERTER: array[TToken] of utf8string = (
-      '', '', '<', '>', '=', '<=', '>=', '(', ')', '[', ']', '', '', '', ','
+      'NONE', '%', '<', '>', '=', '<=', '>=', '(', ')', '[', ']', 'TEXT', 'NUMBER', ','
     );
   begin
-    Assert(AToken in CONVERTABLE_TOKENS_TO_STR);
     Result := CONVERTER[AToken];
   end;
 
 var
   c, nc: PAnsiChar;
   i: Integer;
+  LDot: boolean = false;
   LChar: TUTF8Char;
   LValueIdx: Integer = -1;
-  LValues: array[0..MAX_VALUES-1] of utf8string; // for now only 2 values for set
+  LValues: array[0..MAX_VALUES-1] of utf8string; // for now only 2 values for set "between"
   LValue: PUTF8String;
   LToken: TToken = tkNone;
   LPrevToken: TToken = tkNone;
@@ -476,28 +477,40 @@ begin
 
   NextValue;
   repeat
+    // simple scanner
     GetChar(c, LChar);
     if LChar.Length = 1 then
       case LChar.Char[0] of
         #0: Break;
         #1..#32:
           case AExpressionKind of
-            ekSet, ekUnknown:
+            ekSet:
               begin
                 while c^ in [#1..#32] do Inc(c);
-                Dec(c);
-                LToken:=tkWhiteChar;
+                Continue;
               end;
-            ekText:
+            ekText, ekUnknown:
               begin
                 LValue^:=LValue^+LChar.Char[0];
                 LToken:=tkText;
               end;
-            ekNum: raise  Exception.Create('Bad numeric expression');
+            ekNum:
+              if not (LPrevToken in NUM_OPERATORS) then
+                raise Exception.Create('Bad numeric expression')
+              else
+              begin
+                while c^ in [#1..#32] do Inc(c);
+                continue;
+              end;
           end;
         '0'..'9':
           begin
             repeat
+              if c^ = '.' then
+                if LDot then
+                  raise Exception.Create('Unexpected number format')
+                else
+                  LDot:=true;
               LValue^:=LValue^+c^;
               Inc(c);
             until not (c^ in ['0'..'9', '.']);
@@ -565,25 +578,40 @@ begin
       raise Exception.Create('Unexpected char in expression');
     end;
 
+    // text mode is special so part of tokens are used as normal characters
     if (AExpressionKind = ekText) and (LToken in CONVERTABLE_TOKENS_TO_STR) then
       LValue^:=LValue^+TokenToStr(LToken);
 
     if LPrevToken in [tkClosingBracket, tkClosingParenthesis] then
       raise Exception.Create('Invaild expression (char detected after closing bracket)');
 
+    // rules
     case LToken of
+      tkNum:
+        if AExpressionKind = ekSet then
+          if not (LPrevToken in [tkOpeningBracket, tkOpeningParenthesis, tkComma]) then
+            raise Exception.CreateFmt('Unexpected token found : "%s"', [TokenToStr(LToken)]);
       tkText:
         if AExpressionKind in [ekSet, ekNum] then
           raise Exception.Create('Unexpected string literal in expression');
       tkClosingBracket:
-        if (AExpressionKind = ekSet) and (AExpressionRecord.SetKind<>skNumericBetweenInclusive) then
-          raise Exception.Create('Badly closed "between" expression');
+        if (AExpressionKind = ekSet) then
+          if (AExpressionRecord.SetKind<>skNumericBetweenInclusive) then
+            raise Exception.Create('Badly closed "between" expression')
+          else if LPrevToken <> tkNum then
+            raise Exception.Create('Missing number in expression');
       tkClosingParenthesis:
-        if (AExpressionKind = ekSet) and (AExpressionRecord.SetKind<>skNumericBetweenExclusive) then
-          raise Exception.Create('Badly closed "between" expression');
+        if (AExpressionKind = ekSet) then
+          if (AExpressionRecord.SetKind<>skNumericBetweenExclusive) then
+            raise Exception.Create('Badly closed "between" expression')
+          else if LPrevToken <> tkNum then
+            raise Exception.Create('Missing number in expression');
       tkComma:
         if AExpressionKind = ekSet then
-          NextValue;
+          if not (LPrevToken = tkNum) then
+            raise Exception.Create('Unexpected occurrence of comma found')
+          else
+            NextValue;
       tkPercent:
         if AExpressionKind = ekText then
         case LPrevToken of
@@ -596,22 +624,26 @@ begin
             AExpressionRecord.TextMatchKind:=tmkMatchTextBeginning;
         end;
       tkLess..tkGreaterOrEqual:
-        if AExpressionKind = ekNum then
-          if LPrevToken <> tkNone then
-            raise Exception.Create('Bad numeric expression')
-          else
-            with AExpressionRecord do
-            case LToken of
-              tkLess: NumericComparisionKind:=nckNumericLT;
-              tkGreater: NumericComparisionKind:=nckNumericGT;
-              tkEqual: NumericComparisionKind:=nckNumericEQ;
-              tkLessOrEqual: NumericComparisionKind:=nckNumericLTE;
-              tkGreaterOrEqual: NumericComparisionKind:=nckNumericGTE;
-            end;
+        case AExpressionKind of
+          ekNum:
+            if LPrevToken <> tkNone then
+              raise Exception.Create('Bad numeric expression')
+            else
+              with AExpressionRecord do
+              case LToken of
+                tkLess: NumericComparisionKind:=nckNumericLT;
+                tkGreater: NumericComparisionKind:=nckNumericGT;
+                tkEqual: NumericComparisionKind:=nckNumericEQ;
+                tkLessOrEqual: NumericComparisionKind:=nckNumericLTE;
+                tkGreaterOrEqual: NumericComparisionKind:=nckNumericGTE;
+              end;
+          ekSet:
+            raise Exception.CreateFmt('Unexpected token found : "%s"', [TokenToStr(LToken)]);
+        end;
       tkOpeningParenthesis, tkOpeningBracket:
         if AExpressionKind = ekSet then
           if LPrevToken <> tkNone then
-            raise Exception.Create('Bad "between" expression')
+            raise Exception.CreateFmt('Bad "between" expression. Unexpected "%s"', [TokenToStr(LToken)])
           else
           with AExpressionRecord do
           case LToken of
