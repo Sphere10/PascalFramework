@@ -213,7 +213,7 @@ begin
   end;
 
   for i := 0 to High(er.Values) do
-    LValues:=(er.Values[i]) + sLineBreak;
+    LValues:=LValues + (er.Values[i]) + sLineBreak;
   SetLength(LValues, Length(LValues) - Length(sLineBreak));
 
   LMsg := Format('Kind : %s'+sLineBreak+'SubKind : %s'+sLineBreak+'Values:'+sLineBreak+'%s',
