@@ -428,8 +428,6 @@ const
     if AChar.Length >= 2 then AChar.Char[1] := APos[1];
     if AChar.Length >= 3 then AChar.Char[2] := APos[2];
     if AChar.Length = 4 then AChar.Char[3] := APos[3];
-
-    Inc(APos, AChar.Length);
   end;
 
   function TokenToStr(AToken: TToken): utf8string;
@@ -503,6 +501,7 @@ begin
               LValue^:=LValue^+c^;
               Inc(c);
             until not (c^ in ['0'..'9', '.']);
+            Dec(c);
             case AExpressionKind of
               ekUnknown, ekSet, ekNum: LToken:=tkNum;
               ekText: LToken:=tkText;
@@ -621,7 +620,7 @@ begin
           end;
     end;
     LPrevToken := LToken;
-    Inc(c);
+    Inc(c, LChar.Length);
   until (LChar.Length=0) or (c^ = #0);
 
   case AExpressionKind of
