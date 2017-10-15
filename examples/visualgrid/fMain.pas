@@ -19,8 +19,8 @@ type
     bSearchParser: TButton;
     cbExpectedKind: TComboBox;
     ColumnsAutoFillCheckBox: TCheckBox;
+    cbSearchParser: TComboBox;
     eCol: TEdit;
-    eSearchParser: TEdit;
     eWidth: TEdit;
     FirstColumnStretchedCheckBox: TCheckBox;
     bRefresh: TButton;
@@ -203,7 +203,7 @@ var
   LExpectedKind: TExpressionKind;
 begin
   LExpectedKind := TExpressionKind(cbExpectedKind.ItemIndex);
-  TVisualGridSearchParser.Parse(eSearchParser.Text, LExpectedKind, er);
+  TVisualGridSearchParser.Parse(cbSearchParser.Text, LExpectedKind, er);
 
   LExpressionKind := GetEnumName(TypeInfo(TExpressionKind), Ord(er.Kind));
   case er.Kind of

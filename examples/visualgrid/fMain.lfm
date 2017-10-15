@@ -185,14 +185,6 @@ object Form1: TForm1
       ClientHeight = 138
       ClientWidth = 302
       TabOrder = 3
-      object eSearchParser: TEdit
-        Left = 16
-        Height = 33
-        Top = 80
-        Width = 193
-        TabOrder = 0
-        Text = 'eSearchParser'
-      end
       object bSearchParser: TButton
         Left = 214
         Height = 33
@@ -200,7 +192,7 @@ object Form1: TForm1
         Width = 75
         Caption = 'Test'
         OnClick = bSearchParserClick
-        TabOrder = 1
+        TabOrder = 0
       end
       object Label1: TLabel
         AnchorSideLeft.Control = Panel3
@@ -240,8 +232,27 @@ object Form1: TForm1
           'Set'
         )
         Style = csDropDownList
-        TabOrder = 2
+        TabOrder = 1
         Text = 'Unknown'
+      end
+      object cbSearchParser: TComboBox
+        Left = 18
+        Height = 33
+        Top = 79
+        Width = 190
+        ItemHeight = 25
+        ItemIndex = 0
+        Items.Strings = (
+          '(123, 2)'
+          '[321, 3]'
+          '%foo'
+          '%%foo%'
+          '=10'
+          '3'
+          '>=10'
+        )
+        TabOrder = 2
+        Text = '(123, 2)'
       end
     end
   end
