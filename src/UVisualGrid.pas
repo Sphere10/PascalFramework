@@ -435,7 +435,8 @@ const
   function TokenToStr(AToken: TToken): utf8string;
   const
     CONVERTER: array[TToken] of utf8string = (
-      'NONE', '%', '<', '>', '=', '<=', '>=', '(', ')', '[', ']', 'TEXT', 'NUMBER', ','
+      'NONE', '%', '<', '>', '=', '<=', '>=', '(', ')', '[', ']', 'TEXT',
+      'NUMBER', ','
     );
   begin
     Result := CONVERTER[AToken];
@@ -525,14 +526,28 @@ begin
           begin
             if not (AExpressionKind in [ekText,ekUnknown]) then
               EVisualGridParserException.Create('Bad numeric expression');
-            if (c+1)^ = '%' then
-            begin
-              LToken := tkText;
-              LValue^ := LValue^ + '%';
-              Inc(c);
-            end
+            LToken := tkPercent;
+          end;
+        '\':
+          begin
+            if not (AExpressionKind in [ekText,ekUnknown]) then
+              EVisualGridParserException.Create('Bad numeric expression');
+            case (c+1)^ of
+              '%':
+                begin
+                  LToken := tkText;
+                  LValue^ := LValue^ + '%';
+                  Inc(c);
+                end;
+              '\':
+                begin
+                  LToken := tkText;
+                  LValue^ := LValue^ + '\';
+                  Inc(c);
+                end;
             else
-              LToken := tkPercent;
+              raise EVisualGridParserException.Create('Bad syntax for escape character "\"');
+            end
           end;
         '<':
           if (c+1)^ = '=' then

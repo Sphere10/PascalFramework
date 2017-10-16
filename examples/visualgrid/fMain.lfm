@@ -241,18 +241,20 @@ object Form1: TForm1
         Top = 79
         Width = 190
         ItemHeight = 25
-        ItemIndex = 0
+        ItemIndex = 1
         Items.Strings = (
+          '%\%'
+          '%\%%'
           '(123, 2)'
           '[321, 3]'
           '%foo'
-          '%%foo%'
+          '%\%foo%'
           '=10'
           '3'
           '>=10'
         )
         TabOrder = 2
-        Text = '(123, 2)'
+        Text = '%\%%'
       end
     end
   end
