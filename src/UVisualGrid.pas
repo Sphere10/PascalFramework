@@ -565,7 +565,7 @@ begin
       if not (AExpressionKind in [ekUnknown, ekText]) then
         raise EVisualGridParserException.Create('Unexpected char in expression');
       SetLength(LValue^, Length(LValue^) + LChar.Length);
-      Move(LChar.Char[0], LValue^[Length(LValue^) - LChar.Length], LChar.Length);
+      Move(LChar.Char[0], LValue^[Succ(Length(LValue^) - LChar.Length)], LChar.Length);
       LToken:=tkText;
     end;
 
