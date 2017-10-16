@@ -453,6 +453,7 @@ var
   LToken: TToken = tkNone;
   LPrevToken: TToken = tkNone;
   LExpression: utf8string;
+  LLastPercent: boolean = false;
 
   procedure NextValue;
   begin
@@ -526,6 +527,7 @@ begin
           begin
             if not (AExpressionKind in [ekText,ekUnknown]) then
               EVisualGridParserException.Create('Bad numeric expression');
+
             LToken := tkPercent;
           end;
         '\':
@@ -630,15 +632,26 @@ begin
             NextValue;
       tkPercent:
         if AExpressionKind = ekText then
-        case LPrevToken of
-          tkText:
-            if (AExpressionRecord.TextMatchKind = tmkUnknown) then
-              AExpressionRecord.TextMatchKind:=tmkMatchTextEnd
-            else
-              AExpressionRecord.TextMatchKind:=tmkMatchTextAnywhere;
-          tkNone:
-            AExpressionRecord.TextMatchKind:=tmkMatchTextBeginning;
-        end;
+        begin
+          if LLastPercent then
+            raise EVisualGridParserException.Create('Unexpected occurrence of % found');
+          case LPrevToken of
+            tkText:
+              begin
+                if (AExpressionRecord.TextMatchKind = tmkUnknown) then
+                  AExpressionRecord.TextMatchKind:=tmkMatchTextEnd
+                else
+                  AExpressionRecord.TextMatchKind:=tmkMatchTextAnywhere;
+                LLastPercent:=true;
+              end;
+            tkNone:
+              AExpressionRecord.TextMatchKind:=tmkMatchTextBeginning;
+            tkPercent:
+              raise EVisualGridParserException.Create('Unexpected occurrence of % found');
+          end;
+        end
+        else
+          raise EVisualGridParserException.Create('Unexpected occurrence of % found');
       tkLess..tkGreaterOrEqual:
         case AExpressionKind of
           ekNum:
