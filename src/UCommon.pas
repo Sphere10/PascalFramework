@@ -23,7 +23,7 @@ interface
 
 uses
   Classes, SysUtils, Controls, FGL, Generics.Collections, Generics.Defaults,
-  Variants;
+  Variants, LazUTF8;
 
 { GLOBAL FUNCTIONS }
 
@@ -138,6 +138,30 @@ type
   public
     vcolumnmap: TTableRow.TColumnMapToIndex;
     vvalues: TArray<Variant>;
+  end;
+
+  TExpressionKind = (ekUnknown, ekText, ekNum, ekSet);
+  TTextMatchKind = (tmkUnknown, tmkMatchTextExact, tmkMatchTextBeginning, tmkMatchTextEnd,
+    tmkMatchTextAnywhere);
+  TNumericComparisionKind = (nckUnknown, nckNumericEQ, nckNumericLT, nckNumericLTE,
+    nckNumericGT, nckNumericGTE);
+  TSetKind = (skUnknown, skNumericBetweenInclusive, skNumericBetweenExclusive);
+
+  TExpressionRecord = record
+    Values: array of utf8string;
+  case Kind: TExpressionKind of
+    ekUnknown: ();
+    ekText: (TextMatchKind: TTextMatchKind);
+    ekNum: (NumericComparisionKind: TNumericComparisionKind);
+    ekSet: (SetKind: TSetKind);
+  end;
+
+  ESearchExpressionParserException = class(Exception);
+  TSearchExpressionService = class
+  public
+    class procedure Parse(const AExpression: utf8string;
+      AExpressionKind: TExpressionKind; out AExpressionRecord: TExpressionRecord); overload;
+    class function Parse(const AExpression: utf8string): TExpressionRecord; overload;
   end;
 
 implementation
@@ -532,6 +556,321 @@ begin
 end;
 
 {%endregion}
+
+{ TSearchExpressionService }
+
+class procedure TSearchExpressionService.Parse(const AExpression: utf8string;
+  AExpressionKind: TExpressionKind; out AExpressionRecord: TExpressionRecord);
+const
+  MAX_VALUES = 2;
+type
+  TToken = (tkNone, tkPercent, tkLess, tkGreater, tkEqual, tkLessOrEqual,
+    tkGreaterOrEqual, tkOpeningParenthesis, tkClosingParenthesis,
+    tkOpeningBracket, tkClosingBracket,  tkText, tkNum, tkComma);
+
+  TUTF8Char = record
+    Length: byte;
+    Char: array [0..3] of AnsiChar;
+  end;
+
+const
+  CONVERTABLE_TOKENS_TO_STR = [tkLess..tkClosingBracket, tkComma];
+  NUM_OPERATORS = [tkLess..tkGreaterOrEqual];
+
+  procedure GetChar(APos: PAnsiChar; out AChar: TUTF8Char);
+  begin
+    AChar.Length := UTF8CharacterLength(APos);
+
+    if AChar.Length >= 1 then AChar.Char[0] := APos[0];
+    if AChar.Length >= 2 then AChar.Char[1] := APos[1];
+    if AChar.Length >= 3 then AChar.Char[2] := APos[2];
+    if AChar.Length = 4 then AChar.Char[3] := APos[3];
+  end;
+
+  function TokenToStr(AToken: TToken): utf8string;
+  const
+    CONVERTER: array[TToken] of utf8string = (
+      'NONE', '%', '<', '>', '=', '<=', '>=', '(', ')', '[', ']', 'TEXT',
+      'NUMBER', ','
+    );
+  begin
+    Result := CONVERTER[AToken];
+  end;
+
+var
+  c, nc: PAnsiChar;
+  i: Integer;
+  LDot: boolean = false;
+  LChar: TUTF8Char;
+  LValueIdx: Integer = -1;
+  LValues: array[0..MAX_VALUES-1] of utf8string; // for now only 2 values for set "between"
+  LValue: PUTF8String;
+  LToken: TToken = tkNone;
+  LPrevToken: TToken = tkNone;
+  LExpression: utf8string;
+  LLastPercent: boolean = false;
+
+  procedure NextValue;
+  begin
+    Inc(LValueIdx);
+    if LValueIdx > MAX_VALUES - 1 then
+      raise ESearchExpressionParserException.Create('Too many values');
+    LValue := @LValues[LValueIdx];
+  end;
+
+begin
+  AExpressionRecord := Default(TExpressionRecord);
+  if AExpression = '' then
+    Exit;
+
+  // more simple parsing loop
+  if AExpressionKind in [ekSet, ekNum] then
+    LExpression:=Trim(AExpression)
+  else
+    LExpression:=AExpression;
+
+  c := @LExpression[1];
+  if FindInvalidUTF8Character(c, Length(LExpression)) <> -1 then
+    raise ESearchExpressionParserException.Create('Invalid UTF8 string');
+
+  NextValue;
+  repeat
+    // simple scanner
+    GetChar(c, LChar);
+    if LChar.Length = 1 then
+      case LChar.Char[0] of
+        #0: Break;
+        #1..#32:
+          case AExpressionKind of
+            ekSet:
+              begin
+                while c^ in [#1..#32] do Inc(c);
+                Continue;
+              end;
+            ekText, ekUnknown:
+              begin
+                LValue^:=LValue^+LChar.Char[0];
+                LToken:=tkText;
+              end;
+            ekNum:
+              if not (LPrevToken in NUM_OPERATORS) then
+                raise ESearchExpressionParserException.Create('Bad numeric expression')
+              else
+              begin
+                while c^ in [#1..#32] do Inc(c);
+                continue;
+              end;
+          end;
+        '0'..'9':
+          begin
+            repeat
+              if c^ = '.' then
+                if LDot then
+                  raise ESearchExpressionParserException.Create('Unexpected number format')
+                else
+                  LDot:=true;
+              LValue^:=LValue^+c^;
+              Inc(c);
+            until not (c^ in ['0'..'9', '.']);
+            Dec(c);
+            case AExpressionKind of
+              ekUnknown, ekSet, ekNum: LToken:=tkNum;
+              ekText: LToken:=tkText;
+            end;
+          end;
+        '%':
+          begin
+            if not (AExpressionKind in [ekText,ekUnknown]) then
+              ESearchExpressionParserException.Create('Bad numeric expression');
+
+            LToken := tkPercent;
+          end;
+        '\':
+          begin
+            if not (AExpressionKind in [ekText,ekUnknown]) then
+              ESearchExpressionParserException.Create('Bad numeric expression');
+            case (c+1)^ of
+              '%':
+                begin
+                  LToken := tkText;
+                  LValue^ := LValue^ + '%';
+                  Inc(c);
+                end;
+              '\':
+                begin
+                  LToken := tkText;
+                  LValue^ := LValue^ + '\';
+                  Inc(c);
+                end;
+            else
+              raise ESearchExpressionParserException.Create('Bad syntax for escape character "\"');
+            end
+          end;
+        '<':
+          if (c+1)^ = '=' then
+          begin
+            LToken := tkLessOrEqual;
+            Inc(c);
+          end
+          else
+            LToken := tkLess;
+        '>':
+          if (c+1)^ = '=' then
+          begin
+            LToken := tkGreaterOrEqual;
+            Inc(c);
+          end
+          else
+            LToken := tkGreater;
+        '=': LToken := tkEqual;
+        '(': LToken := tkOpeningParenthesis;
+        ')': LToken := tkClosingParenthesis;
+        '[': LToken := tkOpeningBracket;
+        ']': LToken := tkClosingBracket;
+        ',': LToken := tkComma;
+      else
+        LValue^ := LValue^ + LChar.Char[0];
+        LToken:=tkText;
+      end
+    else
+    begin
+      if not (AExpressionKind in [ekUnknown, ekText]) then
+        raise ESearchExpressionParserException.Create('Unexpected char in expression');
+      SetLength(LValue^, Length(LValue^) + LChar.Length);
+      Move(LChar.Char[0], LValue^[Succ(Length(LValue^) - LChar.Length)], LChar.Length);
+      LToken:=tkText;
+    end;
+
+    // parser is able to deduce expression kind (if needed)
+    if AExpressionKind = ekUnknown then
+    case LToken of
+      tkPercent, tkText: AExpressionKind:=ekText;
+      tkOpeningBracket, tkOpeningParenthesis: AExpressionKind:=ekSet;
+      tkLess..tkGreaterOrEqual, tkNum: AExpressionKind:=ekNum;
+    else
+      raise ESearchExpressionParserException.Create('Unexpected char in expression');
+    end;
+
+    // text mode is special so part of tokens are used as normal characters
+    if (AExpressionKind = ekText) and (LToken in CONVERTABLE_TOKENS_TO_STR) then
+      LValue^:=LValue^+TokenToStr(LToken);
+
+    if LPrevToken in [tkClosingBracket, tkClosingParenthesis] then
+      raise ESearchExpressionParserException.Create('Invaild expression (char detected after closing bracket)');
+
+    // rules
+    case LToken of
+      tkNum:
+        if AExpressionKind = ekSet then
+          if not (LPrevToken in [tkOpeningBracket, tkOpeningParenthesis, tkComma]) then
+            raise ESearchExpressionParserException.CreateFmt('Unexpected token found : "%s"', [TokenToStr(LToken)]);
+      tkText:
+        if AExpressionKind in [ekSet, ekNum] then
+          raise ESearchExpressionParserException.Create('Unexpected string literal in expression');
+      tkClosingBracket:
+        if (AExpressionKind = ekSet) then
+          if (AExpressionRecord.SetKind<>skNumericBetweenInclusive) then
+            raise ESearchExpressionParserException.Create('Badly closed "between" expression')
+          else if LPrevToken <> tkNum then
+            raise ESearchExpressionParserException.Create('Missing number in expression');
+      tkClosingParenthesis:
+        if (AExpressionKind = ekSet) then
+          if (AExpressionRecord.SetKind<>skNumericBetweenExclusive) then
+            raise ESearchExpressionParserException.Create('Badly closed "between" expression')
+          else if LPrevToken <> tkNum then
+            raise ESearchExpressionParserException.Create('Missing number in expression');
+      tkComma:
+        if AExpressionKind = ekSet then
+          if not (LPrevToken = tkNum) then
+            raise ESearchExpressionParserException.Create('Unexpected occurrence of comma found')
+          else
+            NextValue;
+      tkPercent:
+        if AExpressionKind = ekText then
+        begin
+          if LLastPercent then
+            raise ESearchExpressionParserException.Create('Unexpected occurrence of % found');
+          case LPrevToken of
+            tkText:
+              begin
+                if (AExpressionRecord.TextMatchKind = tmkUnknown) then
+                  AExpressionRecord.TextMatchKind:=tmkMatchTextEnd
+                else
+                  AExpressionRecord.TextMatchKind:=tmkMatchTextAnywhere;
+                LLastPercent:=true;
+              end;
+            tkNone:
+              AExpressionRecord.TextMatchKind:=tmkMatchTextBeginning;
+            tkPercent:
+              raise ESearchExpressionParserException.Create('Unexpected occurrence of % found');
+          end;
+        end
+        else
+          raise ESearchExpressionParserException.Create('Unexpected occurrence of % found');
+      tkLess..tkGreaterOrEqual:
+        case AExpressionKind of
+          ekNum:
+            if LPrevToken <> tkNone then
+              raise ESearchExpressionParserException.Create('Bad numeric expression')
+            else
+              with AExpressionRecord do
+              case LToken of
+                tkLess: NumericComparisionKind:=nckNumericLT;
+                tkGreater: NumericComparisionKind:=nckNumericGT;
+                tkEqual: NumericComparisionKind:=nckNumericEQ;
+                tkLessOrEqual: NumericComparisionKind:=nckNumericLTE;
+                tkGreaterOrEqual: NumericComparisionKind:=nckNumericGTE;
+              end;
+          ekSet:
+            raise ESearchExpressionParserException.CreateFmt('Unexpected token found : "%s"', [TokenToStr(LToken)]);
+        end;
+      tkOpeningParenthesis, tkOpeningBracket:
+        if AExpressionKind = ekSet then
+          if LPrevToken <> tkNone then
+            raise ESearchExpressionParserException.CreateFmt('Bad "between" expression. Unexpected "%s"', [TokenToStr(LToken)])
+          else
+          with AExpressionRecord do
+          case LToken of
+            tkOpeningParenthesis: SetKind:=skNumericBetweenExclusive;
+            tkOpeningBracket: SetKind:=skNumericBetweenInclusive;
+          end;
+    end;
+    LPrevToken := LToken;
+    Inc(c, LChar.Length);
+  until (LChar.Length=0) or (c^ = #0);
+
+  case AExpressionKind of
+    ekText:
+      if AExpressionRecord.TextMatchKind = tmkUnknown then
+        AExpressionRecord.TextMatchKind:=tmkMatchTextExact;
+    ekSet:
+      case AExpressionRecord.SetKind of
+        skNumericBetweenInclusive:
+          if LPrevToken <> tkClosingBracket then
+            raise ESearchExpressionParserException.Create('Badly closed "between" expression');
+        skNumericBetweenExclusive:
+          if LPrevToken <> tkClosingParenthesis then
+            raise ESearchExpressionParserException.Create('Badly closed "between" expression');
+      end;
+  end;
+
+  if (LValueIdx = 0) and (LValue^='') then
+    raise ESearchExpressionParserException.Create('Expression error (no value)');
+
+  SetLength(AExpressionRecord.Values, LValueIdx + 1);
+  for i := 0 to LValueIdx do
+    AExpressionRecord.Values[i] := LValues[i];
+
+  AExpressionRecord.Kind := AExpressionKind;
+end;
+
+class function TSearchExpressionService.Parse(const AExpression: utf8string
+  ): TExpressionRecord;
+begin
+  Result.Kind := ekUnknown;
+  Parse(AExpression, Result.Kind, Result);
+end;
+
 
 initialization
   TableRowType := TTableRow.Create;

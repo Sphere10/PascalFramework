@@ -203,7 +203,7 @@ var
   LExpectedKind: TExpressionKind;
 begin
   LExpectedKind := TExpressionKind(cbExpectedKind.ItemIndex);
-  TVisualGridSearchParser.Parse(cbSearchParser.Text, LExpectedKind, er);
+  TSearchExpressionService.Parse(cbSearchParser.Text, LExpectedKind, er);
 
   LExpressionKind := GetEnumName(TypeInfo(TExpressionKind), Ord(er.Kind));
   case er.Kind of
