@@ -264,6 +264,7 @@ type
     FDataTable: TDataTable;
     FCachedDataTable: PDataTable;
     FDataSource: IDataSource;
+    FStrFilter: UTF8String;
     FFilter: TFilterCriteria;
     FSearchCapabilities: TSearchCapabilities;
     FPageSize: Integer;
@@ -938,7 +939,7 @@ begin
     if ACol < Length(FDataTable.Columns) then
       LText := FDataTable.Columns[ACol]
     else
-      raise EVisualGridError.CreateFmt('Improper column index. Max expected is %d but %d found.', [Length(FDataTable.Columns),ACol]);
+      raise EVisualGridError.CreateFmt('Improper column index. Max expected is %d but %d found.', [Length(FDataTable.Columns)-1,ACol]);
     FDrawGrid.Canvas.TextRect(Rect, Rect.Left+2, Rect.Top+2, LText)
   end
   else
@@ -983,6 +984,7 @@ var
   LExpressionRecord: TExpressionRecord;
   LSearchCapability: TSearchCapability;
   //LFormat: TFormatSettings;
+  LNewStrFilter: utf8string;
   LAccepted: TVisualGridFilters;
   LCandidates: TVisualGridFilters = [];
   LFilter: TVisualGridFilter;
@@ -991,80 +993,88 @@ begin
   if not Assigned(FDataSource) then
     exit;
 
-  //LFormat.DecimalSeparator:='.';
-  LExpressionRecord := TSearchExpressionService.Parse(FSearchEdit.Text);
-  with LExpressionRecord do
-  begin
-    case Kind of
-      ekUnknown:
-        Exit;
-      ekNum:
-        case NumericComparisionKind of
-          // nckUnknown is special case - pure number can be text and num
-          nckUnknown: LCandidates := [vgfNumericEQ, vgfMatchTextExact];
-          nckNumericEQ: LCandidates := [vgfNumericEQ];
-          nckNumericLT: LCandidates := [vgfNumericLT];
-          nckNumericLTE: LCandidates := [vgfNumericLTE];
-          nckNumericGT: LCandidates := [vgfNumericGT];
-          nckNumericGTE: LCandidates := [vgfNumericGTE];
-        else
-          Assert(false);
-        end;
-      ekText:
-        case TextMatchKind of
-          tmkMatchTextExact: LCandidates := [vgfMatchTextExact];
-          tmkMatchTextBeginning: LCandidates := [vgfMatchTextBeginning];
-          tmkMatchTextEnd: LCandidates := [vgfMatchTextEnd];
-          tmkMatchTextAnywhere: LCandidates := [vgfMatchTextAnywhere]
-        else
-          Assert(false);
-        end;
-      ekSet:
-        case SetKind of
-          skNumericBetweenInclusive: LCandidates := [vgfNumericBetweenInclusive];
-          skNumericBetweenExclusive: LCandidates := [vgfNumericBetweenExclusive];
-        else
-          Assert(false);
-        end;
-    else
-      Assert(false);
-    end;
-    Assert(LCandidates<>[]);
-  end;
-
   SetLength(FFilter, 0);
-  for LSearchCapability in FSearchCapabilities do
-  begin
-    LAccepted := LSearchCapability.SupportedFilters * LCandidates;
-    if LAccepted <> [] then
-      for LFilter in LAccepted do
-      begin
-        LColumnFilter:=Default(TColumnFilter);
-        LColumnFilter.ColumnName := LSearchCapability.ColumnName;
-        LColumnFilter.Filter := LFilter;
-
-        if LFilter in TEXT_FILTER then
-        begin
-          SetLength(LColumnFilter.Values, 1);
-          LColumnFilter.Values[0]:=LExpressionRecord.Values[0];
-        end
-        else if LFilter in (NUMERIC_FILTER - [vgfNumericBetweenInclusive, vgfNumericBetweenExclusive]) then
-        begin
-          SetLength(LColumnFilter.Values, 1);
-          LColumnFilter.Values[0]:=StrToInt(LExpressionRecord.Values[0]);
-        end
-        else if LFilter in [vgfNumericBetweenInclusive, vgfNumericBetweenExclusive] then
-        begin
-          SetLength(LColumnFilter.Values, 2);
-          LColumnFilter.Values[0]:=StrToInt(LExpressionRecord.Values[0]);
-          LColumnFilter.Values[1]:=StrToInt(LExpressionRecord.Values[1]);
-        end;
-
-        SetLength(FFilter, Length(FFilter)+1);
-        FFilter[High(FFilter)] := LColumnFilter;
+  //LFormat.DecimalSeparator:='.';
+  try
+    LExpressionRecord := TSearchExpressionService.Parse(FSearchEdit.Text);
+    with LExpressionRecord do
+    begin
+      case Kind of
+        ekUnknown:
+          Exit;
+        ekNum:
+          case NumericComparisionKind of
+            // nckUnknown is special case - pure number can be text and num
+            nckUnknown: LCandidates := [vgfNumericEQ, vgfMatchTextExact];
+            nckNumericEQ: LCandidates := [vgfNumericEQ];
+            nckNumericLT: LCandidates := [vgfNumericLT];
+            nckNumericLTE: LCandidates := [vgfNumericLTE];
+            nckNumericGT: LCandidates := [vgfNumericGT];
+            nckNumericGTE: LCandidates := [vgfNumericGTE];
+          else
+            Assert(false);
+          end;
+        ekText:
+          case TextMatchKind of
+            tmkMatchTextExact: LCandidates := [vgfMatchTextExact];
+            tmkMatchTextBeginning: LCandidates := [vgfMatchTextBeginning];
+            tmkMatchTextEnd: LCandidates := [vgfMatchTextEnd];
+            tmkMatchTextAnywhere: LCandidates := [vgfMatchTextAnywhere]
+          else
+            Assert(false);
+          end;
+        ekSet:
+          case SetKind of
+            skNumericBetweenInclusive: LCandidates := [vgfNumericBetweenInclusive];
+            skNumericBetweenExclusive: LCandidates := [vgfNumericBetweenExclusive];
+          else
+            Assert(false);
+          end;
+      else
+        Assert(false);
       end;
+      Assert(LCandidates<>[]);
+    end;
+
+    for LSearchCapability in FSearchCapabilities do
+    begin
+      LAccepted := LSearchCapability.SupportedFilters * LCandidates;
+      if LAccepted <> [] then
+        for LFilter in LAccepted do
+        begin
+          LColumnFilter:=Default(TColumnFilter);
+          LColumnFilter.ColumnName := LSearchCapability.ColumnName;
+          LColumnFilter.Filter := LFilter;
+
+          if LFilter in TEXT_FILTER then
+          begin
+            SetLength(LColumnFilter.Values, 1);
+            LColumnFilter.Values[0]:=LExpressionRecord.Values[0];
+          end
+          else if LFilter in (NUMERIC_FILTER - [vgfNumericBetweenInclusive, vgfNumericBetweenExclusive]) then
+          begin
+            SetLength(LColumnFilter.Values, 1);
+            LColumnFilter.Values[0]:=StrToInt(LExpressionRecord.Values[0]);
+          end
+          else if LFilter in [vgfNumericBetweenInclusive, vgfNumericBetweenExclusive] then
+          begin
+            SetLength(LColumnFilter.Values, 2);
+            LColumnFilter.Values[0]:=StrToInt(LExpressionRecord.Values[0]);
+            LColumnFilter.Values[1]:=StrToInt(LExpressionRecord.Values[1]);
+          end;
+
+          SetLength(FFilter, Length(FFilter)+1);
+          FFilter[High(FFilter)] := LColumnFilter;
+        end;
+    end;
+  finally
+    LNewStrFilter := QuotedStr(FSearchEdit.Text);
+    if FStrFilter <> LNewStrFilter then
+    begin
+      FStrFilter:=LNewStrFilter;
+      RefreshPageIndexData(false);
+    end;
   end;
-  RefreshPageIndexData(false);
 end;
 
 procedure TCustomVisualGrid.ControlsEnable(AEnable: boolean);
