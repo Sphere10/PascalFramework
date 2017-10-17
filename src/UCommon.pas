@@ -759,13 +759,16 @@ begin
       raise ESearchExpressionParserException.Create('Unexpected char in expression');
     end;
 
+    // text mode has precedence (parsing the expressions like: 123abs)
+    if (LExpressionKind = ekNum) and (AExpressionKind = ekUnknown)
+      and (LToken=tkText) and (AExpressionRecord.NumericComparisionKind = nckUnknown) then
+    begin
+      LExpressionKind := ekText;
+    end;
+
     // text mode is special so part of tokens are used as normal characters
     if (LExpressionKind = ekText) and (LToken in CONVERTABLE_TOKENS_TO_STR) then
       LValue^:=LValue^+TokenToStr(LToken);
-
-    // text mode has precedence (parsing the expressions like: 123abs)
-    if (LExpressionKind = ekNum) and (AExpressionKind = ekUnknown) then
-      LExpressionKind := ekText;
 
     if LPrevToken in [tkClosingBracket, tkClosingParenthesis] then
       raise ESearchExpressionParserException.Create('Invaild expression (char detected after closing bracket)');
