@@ -761,7 +761,7 @@ begin
 
     // text mode has precedence (parsing the expressions like: 123abs)
     if (LExpressionKind = ekNum) and (AExpressionKind = ekUnknown)
-      and (LToken=tkText) and (AExpressionRecord.NumericComparisionKind = nckUnknown) then
+      and (LToken in [tkText, tkPercent]) and (AExpressionRecord.NumericComparisionKind = nckUnknown) then
     begin
       LExpressionKind := ekText;
     end;
@@ -806,7 +806,7 @@ begin
           if LLastPercent then
             raise ESearchExpressionParserException.Create('Unexpected occurrence of % found');
           case LPrevToken of
-            tkText:
+            tkText, tkNum: // tkNum is here because is possible to parse: 123%
               begin
                 if (AExpressionRecord.TextMatchKind = tmkUnknown) then
                   AExpressionRecord.TextMatchKind:=tmkMatchTextEnd
