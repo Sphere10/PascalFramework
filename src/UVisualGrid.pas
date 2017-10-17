@@ -981,22 +981,63 @@ end;
 
 procedure TCustomVisualGrid.SearchButtonClick(Sender: TObject);
 var
-  LExpressionRecord: TExpressionRecord;
-  LSearchCapability: TSearchCapability;
   //LFormat: TFormatSettings;
   LNewStrFilter: utf8string;
-  LAccepted: TVisualGridFilters;
-  LCandidates: TVisualGridFilters = [];
-  LFilter: TVisualGridFilter;
-  LColumnFilter: TColumnFilter;
-begin
-  if not Assigned(FDataSource) then
-    exit;
+  LException: boolean = false;
+  e: TSearchEdit;
 
-  SetLength(FFilter, 0);
-  //LFormat.DecimalSeparator:='.';
-  try
-    LExpressionRecord := TSearchExpressionService.Parse(FSearchEdit.Text);
+  procedure AddExpression(const AExpression: utf8string;
+    ASearchCapability: PSearchCapability);
+  var
+    LSearchCapability: TSearchCapability;
+    LAccepted: TVisualGridFilters;
+    LColumnFilter: TColumnFilter;
+    LCandidates: TVisualGridFilters = [];
+    LExpressionRecord: TExpressionRecord;
+
+    procedure AddFilter(ASearchCapability: PSearchCapability);
+    var
+      LFilter: TVisualGridFilter;
+    begin
+      LAccepted := ASearchCapability.SupportedFilters * LCandidates;
+      if LAccepted = [] then
+        Exit;
+      for LFilter in LAccepted do
+      begin
+        LColumnFilter:=Default(TColumnFilter);
+        LColumnFilter.ColumnName := ASearchCapability.ColumnName;
+        LColumnFilter.Filter := LFilter;
+
+        if LFilter in TEXT_FILTER then
+        begin
+          SetLength(LColumnFilter.Values, 1);
+          LColumnFilter.Values[0]:=LExpressionRecord.Values[0];
+        end
+        else if LFilter in (NUMERIC_FILTER - [vgfNumericBetweenInclusive, vgfNumericBetweenExclusive]) then
+        begin
+          SetLength(LColumnFilter.Values, 1);
+          LColumnFilter.Values[0]:=StrToInt(LExpressionRecord.Values[0]);
+        end
+        else if LFilter in [vgfNumericBetweenInclusive, vgfNumericBetweenExclusive] then
+        begin
+          SetLength(LColumnFilter.Values, 2);
+          LColumnFilter.Values[0]:=StrToInt(LExpressionRecord.Values[0]);
+          LColumnFilter.Values[1]:=StrToInt(LExpressionRecord.Values[1]);
+        end;
+
+        SetLength(FFilter, Length(FFilter)+1);
+        FFilter[High(FFilter)] := LColumnFilter;
+      end;
+    end;
+
+  begin
+    try
+      LExpressionRecord := TSearchExpressionService.Parse(AExpression);
+    except
+      LException:=true;
+      raise;
+    end;
+
     with LExpressionRecord do
     begin
       case Kind of
@@ -1036,40 +1077,31 @@ begin
       Assert(LCandidates<>[]);
     end;
 
-    for LSearchCapability in FSearchCapabilities do
-    begin
-      LAccepted := LSearchCapability.SupportedFilters * LCandidates;
-      if LAccepted <> [] then
-        for LFilter in LAccepted do
-        begin
-          LColumnFilter:=Default(TColumnFilter);
-          LColumnFilter.ColumnName := LSearchCapability.ColumnName;
-          LColumnFilter.Filter := LFilter;
+    if Assigned(ASearchCapability) then
+      AddFilter(ASearchCapability)
+    else
+      for LSearchCapability in FSearchCapabilities do
+        AddFilter(@LSearchCapability);
 
-          if LFilter in TEXT_FILTER then
-          begin
-            SetLength(LColumnFilter.Values, 1);
-            LColumnFilter.Values[0]:=LExpressionRecord.Values[0];
-          end
-          else if LFilter in (NUMERIC_FILTER - [vgfNumericBetweenInclusive, vgfNumericBetweenExclusive]) then
-          begin
-            SetLength(LColumnFilter.Values, 1);
-            LColumnFilter.Values[0]:=StrToInt(LExpressionRecord.Values[0]);
-          end
-          else if LFilter in [vgfNumericBetweenInclusive, vgfNumericBetweenExclusive] then
-          begin
-            SetLength(LColumnFilter.Values, 2);
-            LColumnFilter.Values[0]:=StrToInt(LExpressionRecord.Values[0]);
-            LColumnFilter.Values[1]:=StrToInt(LExpressionRecord.Values[1]);
-          end;
+    LNewStrFilter := LNewStrFilter + QuotedStr(AExpression) + ',';
+  end;
 
-          SetLength(FFilter, Length(FFilter)+1);
-          FFilter[High(FFilter)] := LColumnFilter;
-        end;
-    end;
+begin
+  if not Assigned(FDataSource) then
+    exit;
+
+  SetLength(FFilter, 0);
+  //LFormat.DecimalSeparator:='.';
+  try
+    AddExpression(FSearchEdit.Text, nil);
+    // multi column search
+    for e in FMultiSearchEdits do
+      if Assigned(e.SearchCapability) then
+        AddExpression(e.FEdit.Text, e.SearchCapability);
   finally
-    LNewStrFilter := QuotedStr(FSearchEdit.Text);
-    if FStrFilter <> LNewStrFilter then
+    // delete last comma
+    SetLength(LNewStrFilter, Length(LNewStrFilter)-1);
+    if not LException and (FStrFilter <> LNewStrFilter) then
     begin
       FStrFilter:=LNewStrFilter;
       RefreshPageIndexData(false);
