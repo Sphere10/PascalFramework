@@ -165,7 +165,6 @@ type
     FCaptionLabel: TLabel;
     FSearchLabel: TLabel;
     FSearchEdit: TEdit;
-    FSearchColumnComboBox: TComboBox;
     FSearchButton: TSpeedButton;
     FMultiSearchCheckComboBox: TCheckComboBox;
     FTopPanel: TPanel;
@@ -217,6 +216,7 @@ type
     procedure MultiSearchCheckComboBoxChange(Sender: TObject; AIndex: Integer);
     procedure DelayedBoundsChange(Sender: TObject);
     procedure FetchDataThreadProgress(Sender: TObject);
+    procedure SearchButtonClick(Sender: TObject);
   private
     FFetchDataInThread: boolean;
     FOnPreparePopupMenu: TPreparePopupMenuEvent;
@@ -348,6 +348,9 @@ type
     property OnDrawVisualCell;
     property OnSelection;
     property OnPreparePopupMenu;
+  end;
+
+  TVisualGridSearchExpressionService = class
   end;
 
 procedure Register;
@@ -757,6 +760,7 @@ begin
         BorderSpacing.Bottom := 6;
         Width := 23;
         PopupMenu:=FSearchKindPopupMenu;
+        OnClick:=SearchButtonClick;
       end;
 
       FSearchEdit := TEdit.Create(Self);
@@ -774,24 +778,6 @@ begin
         Width := 121;
         TextHint := 'Search expression';
         PopupMenu:=FSearchKindPopupMenu;
-      end;
-
-      FSearchColumnComboBox := TComboBox.Create(Self);
-      FSearchColumnComboBox.Parent := FTopPanelRight;
-      with FSearchColumnComboBox do
-      begin
-        AnchorSideTop.Control := FTopPanelRight;
-        AnchorSideRight.Control := FSearchEdit;
-        AnchorSideRight.Side := asrLeft;
-        AnchorSideBottom.Control := FTopPanelRight;
-        AnchorSideBottom.Side := asrBottom;
-        Anchors := [akTop, akRight, akBottom];
-        BorderSpacing.Top := 6;
-        BorderSpacing.Right := 2;
-        BorderSpacing.Bottom := 6;
-        Width := 90;
-        PopupMenu:=FSearchKindPopupMenu;
-        Text:='Name';
       end;
     end;
   end;
@@ -991,6 +977,11 @@ begin
   Inc(PROGRESS);
   if PROGRESS > High(PROGRESS_CHARS) then
     PROGRESS := 0;
+end;
+
+procedure TCustomVisualGrid.SearchButtonClick(Sender: TObject);
+begin
+
 end;
 
 procedure TCustomVisualGrid.ControlsEnable(AEnable: boolean);
