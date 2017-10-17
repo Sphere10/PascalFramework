@@ -27,6 +27,7 @@ type
     GridPanel: TPanel;
     Label1: TLabel;
     lExpectedKind: TLabel;
+    lbSearchCriteria: TListBox;
     lWidth: TLabel;
     lSelection: TLabel;
     miUpdateCell: TMenuItem;
@@ -81,7 +82,30 @@ function TForm1.FetchPage(constref AParams: TPageFetchParams;
 var
   i, delta: Integer;
   LCount: Integer;
+  LFilter: TColumnFilter;
+
+  function FilterToStr(const AFilter: TColumnFilter): string;
+  var
+    LValues: utf8string;
+    LValue: Variant;
+  begin
+    for LValue in AFilter.Values do
+      LValues := LValues + QuotedStr(LValue) + ',';
+    SetLength(LValues, Length(LValues) - 1);
+    Result := Format('Col: ''%s'' :: Kind: %s :: Sort: %s :: Values(%s)', [
+      AFilter.ColumnName,
+      GetEnumName(TypeInfo(TVisualGridFilter), Ord(AFilter.Filter)),
+      GetEnumName(TypeInfo(TSortDirection), Ord(AFilter.Sort)),
+      LValues]);
+  end;
+
 begin
+  // show in GUI search criteria
+  lbSearchCriteria.Clear;
+  for LFilter in AParams.Filter do
+    lbSearchCriteria.AddItem(FilterToStr(LFilter), nil);
+
+
   Result.TotalDataCount:=10001;
   Result.PageCount:=Result.TotalDataCount div AParams.PageSize;
   if Result.TotalDataCount mod AParams.PageSize <> 0 then
