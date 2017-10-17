@@ -20,17 +20,15 @@ type
 const
   TEXT_FILTER = [vgfMatchTextExact, vgfMatchTextBeginning, vgfMatchTextEnd, vgfMatchTextAnywhere];
   NUMERIC_FILTER = [vgfNumericEQ, vgfNumericLT, vgfNumericLTE, vgfNumericGT, vgfNumericGTE, vgfNumericBetweenInclusive, vgfNumericBetweenExclusive];
-  SORTABLE_TEXT_FILTER = [vgfMatchTextExact, vgfMatchTextBeginning, vgfMatchTextEnd, vgfMatchTextAnywhere, vgfSortable];
-  SORTABLE_NUMERIC_FILTER = [vgfNumericEQ, vgfNumericLT, vgfNumericLTE, vgfNumericGT, vgfNumericGTE, vgfNumericBetweenInclusive, vgfNumericBetweenExclusive, vgfSortable];
+  SORTABLE_TEXT_FILTER = TEXT_FILTER + [vgfSortable];
+  SORTABLE_NUMERIC_FILTER = NUMERIC_FILTER + [vgfSortable];
 
 type
   TColumnFilter = record
     ColumnName: utf8string;
     Sort: TSortDirection;
-    Filter: TVisualGridFilters;
-    FilterText: utf8string;
-    FilterNumeric1: Int64;
-    FilterNumeric2: Int64;
+    Filter: TVisualGridFilter;
+    Values: array of Variant;
   end;
 
   TFilterCriteria = TArray<TColumnFilter>;
@@ -266,6 +264,7 @@ type
     FDataTable: TDataTable;
     FCachedDataTable: PDataTable;
     FDataSource: IDataSource;
+    FFilter: TFilterCriteria;
     FSearchCapabilities: TSearchCapabilities;
     FPageSize: Integer;
     FPageIndex: Integer;
@@ -980,8 +979,91 @@ begin
 end;
 
 procedure TCustomVisualGrid.SearchButtonClick(Sender: TObject);
+var
+  LExpressionRecord: TExpressionRecord;
+  LSearchCapability: TSearchCapability;
+  //LFormat: TFormatSettings;
+  LAccepted: TVisualGridFilters;
+  LCandidates: TVisualGridFilters = [];
+  LFilter: TVisualGridFilter;
+  LColumnFilter: TColumnFilter;
 begin
+  if not Assigned(FDataSource) then
+    exit;
 
+  //LFormat.DecimalSeparator:='.';
+  LExpressionRecord := TSearchExpressionService.Parse(FSearchEdit.Text);
+  with LExpressionRecord do
+  begin
+    case Kind of
+      ekUnknown:
+        Exit;
+      ekNum:
+        case NumericComparisionKind of
+          // nckUnknown is special case - pure number can be text and num
+          nckUnknown: LCandidates := [vgfNumericEQ, vgfMatchTextExact];
+          nckNumericEQ: LCandidates := [vgfNumericEQ];
+          nckNumericLT: LCandidates := [vgfNumericLT];
+          nckNumericLTE: LCandidates := [vgfNumericLTE];
+          nckNumericGT: LCandidates := [vgfNumericGT];
+          nckNumericGTE: LCandidates := [vgfNumericGTE];
+        else
+          Assert(false);
+        end;
+      ekText:
+        case TextMatchKind of
+          tmkMatchTextExact: LCandidates := [vgfMatchTextExact];
+          tmkMatchTextBeginning: LCandidates := [vgfMatchTextBeginning];
+          tmkMatchTextEnd: LCandidates := [vgfMatchTextEnd];
+          tmkMatchTextAnywhere: LCandidates := [vgfMatchTextAnywhere]
+        else
+          Assert(false);
+        end;
+      ekSet:
+        case SetKind of
+          skNumericBetweenInclusive: LCandidates := [vgfNumericBetweenInclusive];
+          skNumericBetweenExclusive: LCandidates := [vgfNumericBetweenExclusive];
+        else
+          Assert(false);
+        end;
+    else
+      Assert(false);
+    end;
+    Assert(LCandidates<>[]);
+  end;
+
+  SetLength(FFilter, 0);
+  for LSearchCapability in FSearchCapabilities do
+  begin
+    LAccepted := LSearchCapability.SupportedFilters * LCandidates;
+    if LAccepted <> [] then
+      for LFilter in LAccepted do
+      begin
+        LColumnFilter:=Default(TColumnFilter);
+        LColumnFilter.ColumnName := LSearchCapability.ColumnName;
+        LColumnFilter.Filter := LFilter;
+
+        if LFilter in TEXT_FILTER then
+        begin
+          SetLength(LColumnFilter.Values, 1);
+          LColumnFilter.Values[0]:=LExpressionRecord.Values[0];
+        end
+        else if LFilter in (NUMERIC_FILTER - [vgfNumericBetweenInclusive, vgfNumericBetweenExclusive]) then
+        begin
+          SetLength(LColumnFilter.Values, 1);
+          LColumnFilter.Values[0]:=StrToInt(LExpressionRecord.Values[0]);
+        end
+        else if LFilter in [vgfNumericBetweenInclusive, vgfNumericBetweenExclusive] then
+        begin
+          SetLength(LColumnFilter.Values, 2);
+          LColumnFilter.Values[0]:=StrToInt(LExpressionRecord.Values[0]);
+          LColumnFilter.Values[1]:=StrToInt(LExpressionRecord.Values[1]);
+        end;
+
+        SetLength(FFilter, Length(FFilter)+1);
+        FFilter[High(FFilter)] := LColumnFilter;
+      end;
+  end;
 end;
 
 procedure TCustomVisualGrid.ControlsEnable(AEnable: boolean);
@@ -1475,7 +1557,7 @@ procedure TCustomVisualGrid.FetchPage(out AResult: TPageFetchResult);
 begin
   if Assigned(FDataSource) then
     AResult := FDataSource.FetchPage(
-      TPageFetchParams.Create(FPageIndex, FPageSize, nil), FDataTable)
+      TPageFetchParams.Create(FPageIndex, FPageSize, FFilter), FDataTable)
   else
     FillChar(AResult, SizeOf(AResult), #0);
 end;
