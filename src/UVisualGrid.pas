@@ -995,6 +995,7 @@ begin
   FPageSizeEdit.ReadOnly:=LReadOnly;
   FPageIndexEdit.ReadOnly:=LReadOnly;
   FDrawGrid.Enabled:=AEnable;
+  FBottomRightPanel.Enabled:=AEnable;
   for e in FMultiSearchEdits do
     e.FEdit.ReadOnly:=LReadOnly;
 end;
