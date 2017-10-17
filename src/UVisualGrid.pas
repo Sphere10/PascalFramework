@@ -1064,6 +1064,7 @@ begin
         FFilter[High(FFilter)] := LColumnFilter;
       end;
   end;
+  RefreshPageIndexData(false);
 end;
 
 procedure TCustomVisualGrid.ControlsEnable(AEnable: boolean);
