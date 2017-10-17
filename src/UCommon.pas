@@ -623,6 +623,13 @@ var
     LValue := @LValues[LValueIdx];
   end;
 
+  procedure EscapeSequence(AChar: Char);
+  begin
+    LToken := tkText;
+    LValue^ := LValue^ + AChar;
+    Inc(c);
+  end;
+
 begin
   AExpressionRecord := Default(TExpressionRecord);
   if AExpression = '' then
@@ -696,18 +703,13 @@ begin
             if not (LExpressionKind in [ekText,ekUnknown]) then
               ESearchExpressionParserException.Create('Bad numeric expression');
             case (c+1)^ of
-              '%':
-                begin
-                  LToken := tkText;
-                  LValue^ := LValue^ + '%';
-                  Inc(c);
-                end;
-              '\':
-                begin
-                  LToken := tkText;
-                  LValue^ := LValue^ + '\';
-                  Inc(c);
-                end;
+              '%': EscapeSequence('%');
+              '\': EscapeSequence('\');
+              '[': EscapeSequence('[');
+              '(': EscapeSequence('(');
+              '<': EscapeSequence('<');
+              '>': EscapeSequence('>');
+              '=': EscapeSequence('=');
             else
               raise ESearchExpressionParserException.Create('Bad syntax for escape character "\"');
             end
