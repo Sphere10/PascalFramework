@@ -231,6 +231,7 @@ type
     function GetCells(ACol, ARow: Integer): Variant;
     function GetColCount: Integer; inline;
     function GetColumns(Index: Integer): TVisualColumn;
+    function GetActiveDataTable: PDataTable;
     function GetRowCount: Integer; inline;
     function GetRows(ARow: Integer): Variant;
     function GetSelection: TVisualGridSelection;
@@ -295,6 +296,7 @@ type
     procedure BeforeFetchPage;
     procedure FetchPage(out AResult: TPageFetchResult);
     procedure AfterFetchPage;
+    property ActiveDataTable: PDataTable read GetActiveDataTable;
   public
     constructor Create(Owner: TComponent); override;
     destructor Destroy; override;
@@ -936,10 +938,10 @@ var
 begin
   if ARow = 0 then
   begin
-    if ACol < Length(FDataTable.Columns) then
-      LText := FDataTable.Columns[ACol]
+    if ACol < Length(ActiveDataTable.Columns) then
+      LText := ActiveDataTable.Columns[ACol]
     else
-      raise EVisualGridError.CreateFmt('Improper column index. Max expected is %d but %d found.', [Length(FDataTable.Columns)-1,ACol]);
+      raise EVisualGridError.CreateFmt('Improper column index. Max expected is %d but %d found.', [Length(ActiveDataTable.Columns)-1,ACol]);
     FDrawGrid.Canvas.TextRect(Rect, Rect.Left+2, Rect.Top+2, LText)
   end
   else
@@ -1127,7 +1129,7 @@ end;
 
 function TCustomVisualGrid.GetCells(ACol, ARow: Integer): Variant;
 begin
-  Result := FDataTable.Rows[ARow]._(ACol);
+  Result := ActiveDataTable.Rows[ARow]._(ACol);
 end;
 
 function TCustomVisualGrid.GetColCount: Integer;
@@ -1140,9 +1142,17 @@ begin
   Result := FColumns[Index];
 end;
 
+function TCustomVisualGrid.GetActiveDataTable: PDataTable;
+begin
+  if FFetchDataThreadTimer.Enabled then
+    Result := FCachedDataTable
+  else
+    Result := @FDataTable;
+end;
+
 function TCustomVisualGrid.GetRowCount: Integer;
 begin
-  Result := Length(FDataTable.Rows);
+  Result := Length(ActiveDataTable.Rows);
 end;
 
 function TCustomVisualGrid.GetCaption: TCaption;
@@ -1162,7 +1172,7 @@ end;
 
 function TCustomVisualGrid.GetRows(ARow: Integer): Variant;
 begin
-  Result := FDataTable.Rows[ARow];
+  Result := ActiveDataTable.Rows[ARow];
 end;
 
 function TCustomVisualGrid.GetSelection: TVisualGridSelection;
@@ -1672,7 +1682,6 @@ procedure TCustomVisualGrid.StandardDrawCell(Sender: TObject; ACol,
   ARow: Longint; Rect: TRect; State: TGridDrawState);
 var
   LHandled: boolean;
-  LSource: PDataTable;
   LCellData: Variant;
 begin
   LHandled := False;
@@ -1680,14 +1689,7 @@ begin
   if ARow = 0 then
     ResizeSearchEdit(ACol);
   if (ARow > 0) and Assigned(FDataSource) then
-  begin
-    if FFetchDataThreadTimer.Enabled then
-      LSource := FCachedDataTable
-    else
-      LSource := @FDataTable;
-
-    LCellData := LSource^.Rows[ARow-1]._(ACol);
-  end;
+    LCellData := ActiveDataTable^.Rows[ARow-1]._(ACol);
 
   if Assigned(FOnDrawVisualCell) then
     FOnDrawVisualCell(Self, ACol, ARow, Canvas, Rect, State, LCellData, LHandled);
