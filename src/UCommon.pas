@@ -78,6 +78,11 @@ type
       class procedure Remove(var Values : TArray<T>; const Item : T; const Comparer : IEqualityComparer<T>); overload; static;
       class procedure Remove(var Values : TArray<T>; const Item : T); overload; static;
       class procedure RemoveAt(var Values : TArray<T>; ItemIndex : SizeInt); static;
+      class procedure Append(var Arr: TArray<T>; Value: T);
+      class procedure Prepend(var Arr: TArray<T>; Value: T);
+      class procedure InsertAt(var Values : TArray<T>; ItemIndex : SizeInt; const Item : T);
+      class procedure Swap(var Values : array of T; Item1Index, Item2Index : SizeInt);
+      class procedure MoveItem(var Values : array of T; FromIndex, ToIndex : SizeInt);
       class function Concat(const Arrays: array of TArray<T>): TArray<T>; static;
       class function Create(const a : T; const b : T) : TArray<T>; static;
       class function ToArray(Enumerable: TEnumerable<T>; Count: SizeInt): TArray<T>; static;
@@ -378,6 +383,61 @@ begin
   for i := ItemIndex + 1 to High(Values) do
     Values[i - 1] := Values[i];
   SetLength(Values, Length(Values) - 1);
+end;
+
+class procedure TArrayTool<T>.Append(var Arr: TArray<T>; Value: T);
+begin
+  SetLength(Arr, Length(Arr)+1);
+  Arr[High(Arr)] := Value;
+end;
+
+class procedure TArrayTool<T>.Prepend(var Arr: TArray<T>; Value: T);
+var i : Integer;
+begin
+  SetLength(Arr, Length(Arr)+1);
+  for i := High(Arr)-1 downto Low(Arr) do
+    Arr[i+1] := Arr[i];
+  Arr[Low(Arr)] := Value;
+end;
+
+class procedure TArrayTool<T>.InsertAt(var Values : TArray<T>; ItemIndex : SizeInt; const Item : T);
+var i : Integer;
+begin
+  if (ItemIndex < Low(Values)) OR (ItemIndex > High(Values)) then Raise Exception.Create('Invalid Parameter: ItemIndex out of bounds');
+  SetLength(Values, Length(Values)+1);
+  for i := High(Values)-1 downto ItemIndex do
+    Values[i+1] := Values[i];
+  Values[ItemIndex] := Item;
+end;
+
+class procedure TArrayTool<T>.Swap(var Values : array of T; Item1Index, Item2Index : SizeInt);
+var temp : T; len, recSize : SizeInt; itemSize : SizeInt;
+begin
+  len := Length(Values);
+  recSize := SizeOf(T);
+  if (Item1Index < 0) OR (Item1Index > len) then Raise Exception.Create('Invalid Parameter: Item1Index out of bounds');
+  if (Item2Index < 0) OR (Item2Index > len) then Raise Exception.Create('Invalid Parameter: Item2Index out of bounds');
+  temp := Values[Item1Index];
+  Values[Item1Index] := Values[Item2Index];
+  Values[Item2Index] := temp;
+end;
+
+class procedure TArrayTool<T>.MoveItem(var Values : array of T; FromIndex, ToIndex : SizeInt);
+var i : Integer; item : T;
+begin
+  if (FromIndex < Low(Values)) OR (FromIndex > High(Values)) then Raise Exception.Create('Invalid Parameter: FromIndex out of bounds');
+  if (ToIndex < Low(Values)) OR (ToIndex > High(Values)) then Raise Exception.Create('Invalid Parameter: ToIndex out of bounds');
+
+  item := Values[FromIndex];
+  if FromIndex < ToIndex then begin
+    for i := FromIndex + 1 to ToIndex do
+      Values[i - 1] := Values[i];
+    Values[ToIndex] := item;
+  end else if FromIndex > ToIndex then begin
+    for i := FromIndex - 1 downto ToIndex do
+      Values[i + 1] := Values[i];
+    Values[ToIndex] := item;
+  end;
 end;
 
 class function TArrayTool<T>.Concat(const Arrays: array of TArray<T>): TArray<T>;
