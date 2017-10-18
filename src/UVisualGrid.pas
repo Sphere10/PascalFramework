@@ -963,6 +963,9 @@ end;
 
 procedure TCustomVisualGrid.DelayedBoundsChange(Sender: TObject);
 begin
+  // check data loading. try in next cycle
+  if FFetchDataThreadTimer.Enabled then
+    Exit;
   FDelayedBoundsChangeTimer.Enabled:=false;
   if AutoPageSize then
     PageSize := ClientRowCount;
