@@ -1,4 +1,17 @@
-﻿unit UVisualGrid;
+﻿{
+  Copyright (c) 2017 Sphere 10 Software
+
+  TVisualGrid is an enterprise-class grid component with datasource, paging, searching capability.
+
+  Distributed under the MIT software license, see the accompanying file LICENSE
+  or visit http://www.opensource.org/licenses/mit-license.php.
+
+  Credits:
+     Herman Schoenfeld (designer)
+     Maciej Izak (hnb) (developer)
+}
+
+unit UVisualGrid;
 
 {$MODE DELPHI}
 {.$DEFINE VISUALGRID_DEBUG}

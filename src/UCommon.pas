@@ -1,15 +1,13 @@
 {
   Copyright (c) 2017 Sphere 10 Software
 
-  Author: Herman Schoenfeld <herman@sphere10.com>
+  Common unit usable across all tiers.
 
   Distributed under the MIT software license, see the accompanying file LICENSE
   or visit http://www.opensource.org/licenses/mit-license.php.
 
-  This unit is a part of Pascal Coin, a P2P crypto currency without need of
-  historical operations.
-
-  Additional Credits:
+  Credits:
+    Herman Schoenfeld
     Maciej Izak (hnb)
 }
 
