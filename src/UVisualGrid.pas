@@ -936,7 +936,11 @@ begin
   end;
   {$ENDIF}
 
+  FetchDataInThread := true;
+
   { set single search mode as default }
+  FTopPanelMultiSearch.Visible := False;
+  FMultiSearchCheckComboBox.AddItem('Expression', cbChecked);
   SearchKindPopupMenuClick(FSingleSearchMenuItem);
 end;
 
@@ -1529,6 +1533,7 @@ begin
     begin
       FMultiSearchCheckComboBox.AddItem(p^.ColumnName, cbChecked);
       FMultiSearchCheckComboBox.Objects[FMultiSearchCheckComboBox.Items.Count-1] := LEdit;
+      FMultiSearchCheckComboBox.Checked[FMultiSearchCheckComboBox.Items.Count-1] := FMultiSearchMenuItem.Checked;
     end;
   end;
   if FDrawGrid.Columns.Count > 0 then
@@ -1762,8 +1767,7 @@ begin
   //   false: check only expression
   for i := 0 to FMultiSearchCheckComboBox.Items.Count - 2 do
     FMultiSearchCheckComboBox.Checked[i] := LIsMultiSearch;
-  if FMultiSearchCheckComboBox.Items.Count >= 1 then
-    FMultiSearchCheckComboBox.Checked[FMultiSearchCheckComboBox.Items.Count-1] := not LIsMultiSearch;
+  FMultiSearchCheckComboBox.Checked[FMultiSearchCheckComboBox.Items.Count-1] := not LIsMultiSearch;
 end;
 
 procedure TCustomVisualGrid.GridSelection(Sender: TObject; aCol, aRow: Integer);
