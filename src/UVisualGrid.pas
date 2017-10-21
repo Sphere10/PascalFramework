@@ -935,6 +935,9 @@ begin
     Caption := 'Test';
   end;
   {$ENDIF}
+
+  { set single search mode as default }
+  SearchKindPopupMenuClick(FSingleSearchMenuItem);
 end;
 
 destructor TCustomVisualGrid.Destroy;
@@ -1519,7 +1522,7 @@ begin
     LEdit := TSearchEdit.Create(FTopPanelMultiSearchClient, Self);
     FMultiSearchEdits.Add(LEdit);
     p := SearchCapability;
-    LEdit.EditVisible:=Assigned(p);
+    LEdit.EditVisible:=Assigned(p) and FMultiSearchMenuItem.Checked;
     LEdit.SearchCapability := p;
     ResizeSearchEdit(i);
     if Assigned(p) then
@@ -1759,7 +1762,8 @@ begin
   //   false: check only expression
   for i := 0 to FMultiSearchCheckComboBox.Items.Count - 2 do
     FMultiSearchCheckComboBox.Checked[i] := LIsMultiSearch;
-  FMultiSearchCheckComboBox.Checked[FMultiSearchCheckComboBox.Items.Count-1] := not LIsMultiSearch;
+  if FMultiSearchCheckComboBox.Items.Count >= 1 then
+    FMultiSearchCheckComboBox.Checked[FMultiSearchCheckComboBox.Items.Count-1] := not LIsMultiSearch;
 end;
 
 procedure TCustomVisualGrid.GridSelection(Sender: TObject; aCol, aRow: Integer);
