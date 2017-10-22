@@ -765,6 +765,8 @@ begin
               '\': EscapeSequence('\');
               '[': EscapeSequence('[');
               '(': EscapeSequence('(');
+              ']': EscapeSequence(']');
+              ')': EscapeSequence(')');
               '<': EscapeSequence('<');
               '>': EscapeSequence('>');
               '=': EscapeSequence('=');
