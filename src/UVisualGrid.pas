@@ -609,16 +609,6 @@ begin
       Height := 40;
       Align := alRight;
       BevelOuter := bvNone;
-      FPageIndexEdit := TEdit.Create(Self);
-      FPageIndexEdit.Parent := FBottomRightPanel;
-      with FPageIndexEdit do
-      begin
-        Left := 61;
-        Top := 10;
-        Width := 56;
-        Height := 21;
-        OnEditingDone := PageIndexEditingDone;
-      end;
       FPageCountLabel := TLabel.Create(Self);
       FPageCountLabel.Parent := FBottomRightPanel;
       with FPageCountLabel do
@@ -677,6 +667,31 @@ begin
         OnClick := PageNavigationClick;
         Tag := PAGE_NAVIGATION_LAST;
       end;
+
+      FPageIndexEdit := TEdit.Create(Self);
+      FPageIndexEdit.Parent := FBottomRightPanel;
+      with FPageIndexEdit do
+      begin
+        Left := 61;
+        Top := 10;
+        Width := 56;
+        Height := 21;
+
+        AnchorSideLeft.Control := FButtonPrevious;
+        AnchorSideLeft.Side := asrBottom;
+        AnchorSideTop.Control := FBottomRightPanel;
+        AnchorSideRight.Control := FPageCountLabel;
+        AnchorSideBottom.Control := FBottomRightPanel;
+        AnchorSideBottom.Side := asrBottom;
+        Anchors := [akLeft, akTop, akRight, akBottom];
+        BorderSpacing.Top := 10;
+        BorderSpacing.Right := 2;
+        BorderSpacing.Left := 2;
+        BorderSpacing.Bottom := 8;
+
+        OnEditingDone := PageIndexEditingDone;
+      end;
+
     end;
 
     FBottomCenterPanel := TPanel.Create(Self);
@@ -713,6 +728,17 @@ begin
         Top := 10;
         Width := 52;
         Height := 21;
+
+        AnchorSideLeft.Control := FPageSizeLabel;
+        AnchorSideLeft.Side := asrBottom;
+        AnchorSideTop.Control := FBottomCenterPanel;
+        AnchorSideBottom.Control := FBottomCenterPanel;
+        AnchorSideBottom.Side := asrBottom;
+        Anchors := [akLeft, akTop, akBottom];
+        BorderSpacing.Top := 10;
+        BorderSpacing.Left := 2;
+        BorderSpacing.Bottom := 8;
+
         OnEditingDone:=PageSizeEditingDone;
       end;
     end;
