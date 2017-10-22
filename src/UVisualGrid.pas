@@ -20,7 +20,8 @@ interface
 
 uses
   Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, Types, Graphics,
-  UCommon, Generics.Collections, Menus, ComboEx, Buttons, Math;
+  UCommon, Generics.Collections, Menus, ComboEx, Buttons, Math
+  {$IFNDEF WINDOWS}, LResources{$ENDIF};
 
 type
   TSelectionType = (stNone, stCell, stRow, stMultiRow);
@@ -372,7 +373,9 @@ procedure Register;
 
 implementation
 
+{$IFDEF WINDOWS}
 {$R *.rc}
+{$ENDIF}
 
 type
   TDrawGridAccess = class(TDrawGrid);
@@ -761,7 +764,11 @@ begin
 
       FSearchButton := TSpeedButton.Create(Self);
       FSearchButton.Parent := FTopPanelRight;
+      {$IFDEF WINDOWS}
       FSearchButton.LoadGlyphFromResourceName(HINSTANCE, 'VISUALGRID_SEARCH');
+      {$ELSE}
+      FSearchButton.LoadGlyphFromLazarusResource('VISUALGRID_SEARCH');
+      {$ENDIF}
       with FSearchButton do
       begin
         AnchorSideTop.Control := FTopPanelRight;
@@ -1776,5 +1783,9 @@ begin
     FOnSelection(Self, Selection);
 end;
 
+{$IFNDEF WINDOWS}
+initialization
+  {$I *.inc}
+{$ENDIF}
 end.
 
