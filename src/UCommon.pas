@@ -170,6 +170,25 @@ type
     class function Parse(const AExpression: utf8string): TExpressionRecord; overload;
   end;
 
+resourcestring
+  sNotImplemented = 'Not implemented';
+  sInvalidParameter_OutOfBounds = 'Invalid Parameter: %s out of bounds';
+  sAColumnsCantBeNil = 'AColumns can''t be nil!';
+  sTooManyValues = 'Too many values';
+  sInvalidUTF8String = 'Invalid UTF8 string';
+  sBadNumericExpression = 'Bad numeric expression';
+  sUnexpectedNumberFormat = 'Unexpected number format';
+  sBadSyntaxForEscapeCharacter = 'Bad syntax for escape character "\"';
+  sUnexpectedCharInExpression = 'Unexpected char in expression';
+  sInvaildExpression_CharDetectedAfterClosingBracket = 'Invaild expression (char detected after closing bracket)';
+  sUnexpectedTokenFound = 'Unexpected token found : "%s"';
+  sUnexpectedStringLiteralInExpression = 'Unexpected string literal in expression';
+  sBadlyClosedBetweenExpression = 'Badly closed "between" expression';
+  sMissingNumberInExpression = 'Missing number in expression';
+  sUnexpectedOccurrenceOf_Found = 'Unexpected occurrence of "%s" found';
+  sBadBetweenExpression_UnexpectedToken = 'Bad "between" expression. Unexpected "%s"';
+  sExpressionError_NoValue = 'Expression error (no value)';
+
 implementation
 
 var
@@ -285,7 +304,7 @@ end;
 
 function UtcTimeStamp : AnsiString;
 begin
-  raise Exception.Create('Not implemented');
+  raise Exception.Create(sNotImplemented);
 end;
 
 {%endregion}
@@ -401,7 +420,7 @@ end;
 class procedure TArrayTool<T>.InsertAt(var Values : TArray<T>; ItemIndex : SizeInt; const Item : T);
 var i : Integer;
 begin
-  if (ItemIndex < Low(Values)) OR (ItemIndex > High(Values)) then Raise Exception.Create('Invalid Parameter: ItemIndex out of bounds');
+  if (ItemIndex < Low(Values)) OR (ItemIndex > High(Values)) then Raise Exception.CreateFmt(sInvalidParameter_OutOfBounds, ['ItemIndex']);
   SetLength(Values, Length(Values)+1);
   for i := High(Values)-1 downto ItemIndex do
     Values[i+1] := Values[i];
@@ -413,8 +432,8 @@ var temp : T; len, recSize : SizeInt; itemSize : SizeInt;
 begin
   len := Length(Values);
   recSize := SizeOf(T);
-  if (Item1Index < 0) OR (Item1Index > len) then Raise Exception.Create('Invalid Parameter: Item1Index out of bounds');
-  if (Item2Index < 0) OR (Item2Index > len) then Raise Exception.Create('Invalid Parameter: Item2Index out of bounds');
+  if (Item1Index < 0) OR (Item1Index > len) then Raise Exception.CreateFmt(sInvalidParameter_OutOfBounds, ['Item1Index']);
+  if (Item2Index < 0) OR (Item2Index > len) then Raise Exception.CreateFmt(sInvalidParameter_OutOfBounds, ['Item2Index']);
   temp := Values[Item1Index];
   Values[Item1Index] := Values[Item2Index];
   Values[Item2Index] := temp;
@@ -423,8 +442,8 @@ end;
 class procedure TArrayTool<T>.MoveItem(var Values : array of T; FromIndex, ToIndex : SizeInt);
 var i : Integer; item : T;
 begin
-  if (FromIndex < Low(Values)) OR (FromIndex > High(Values)) then Raise Exception.Create('Invalid Parameter: FromIndex out of bounds');
-  if (ToIndex < Low(Values)) OR (ToIndex > High(Values)) then Raise Exception.Create('Invalid Parameter: ToIndex out of bounds');
+  if (FromIndex < Low(Values)) OR (FromIndex > High(Values)) then Raise Exception.CreateFmt(sInvalidParameter_OutOfBounds, ['FromIndex']);
+  if (ToIndex < Low(Values)) OR (ToIndex > High(Values)) then Raise Exception.CreateFmt(sInvalidParameter_OutOfBounds, ['ToIndex']);
 
   item := Values[FromIndex];
   if FromIndex < ToIndex then begin
@@ -558,7 +577,7 @@ var
   LColumnMap: TColumnMapToIndex;
 begin
   if not Assigned(AColumns) then
-    raise ETableRow.Create('AColumns can''t be nil!');
+    raise ETableRow.Create(sAColumnsCantBeNil);
 
   VarClear(Result);
   FillChar(Result, SizeOf(Result), #0);
@@ -677,7 +696,7 @@ var
   begin
     Inc(LValueIdx);
     if LValueIdx > MAX_VALUES - 1 then
-      raise ESearchExpressionParserException.Create('Too many values');
+      raise ESearchExpressionParserException.Create(sTooManyValues);
     LValue := @LValues[LValueIdx];
   end;
 
@@ -702,7 +721,7 @@ begin
 
   c := @LExpression[1];
   if FindInvalidUTF8Character(c, Length(LExpression)) <> -1 then
-    raise ESearchExpressionParserException.Create('Invalid UTF8 string');
+    raise ESearchExpressionParserException.Create(sInvalidUTF8String);
 
   NextValue;
   repeat
@@ -725,7 +744,7 @@ begin
               end;
             ekNum:
               if not (LPrevToken in NUM_OPERATORS) then
-                raise ESearchExpressionParserException.Create('Bad numeric expression')
+                raise ESearchExpressionParserException.Create(sBadNumericExpression)
               else
               begin
                 while c^ in [#1..#32] do Inc(c);
@@ -737,7 +756,7 @@ begin
             repeat
               if c^ = '.' then
                 if LDot then
-                  raise ESearchExpressionParserException.Create('Unexpected number format')
+                  raise ESearchExpressionParserException.Create(sUnexpectedNumberFormat)
                 else
                   LDot:=true;
               LValue^:=LValue^+c^;
@@ -752,14 +771,14 @@ begin
         '%':
           begin
             if not (LExpressionKind in [ekText,ekUnknown]) then
-              ESearchExpressionParserException.Create('Bad numeric expression');
+              ESearchExpressionParserException.Create(sBadNumericExpression);
 
             LToken := tkPercent;
           end;
         '\':
           begin
             if not (LExpressionKind in [ekText,ekUnknown]) then
-              ESearchExpressionParserException.Create('Bad numeric expression');
+              ESearchExpressionParserException.Create(sBadNumericExpression);
             case (c+1)^ of
               '%': EscapeSequence('%');
               '\': EscapeSequence('\');
@@ -771,7 +790,7 @@ begin
               '>': EscapeSequence('>');
               '=': EscapeSequence('=');
             else
-              raise ESearchExpressionParserException.Create('Bad syntax for escape character "\"');
+              raise ESearchExpressionParserException.Create(sBadSyntaxForEscapeCharacter);
             end
           end;
         '<':
@@ -803,7 +822,7 @@ begin
     else
     begin
       if not (LExpressionKind in [ekUnknown, ekText]) then
-        raise ESearchExpressionParserException.Create('Unexpected char in expression');
+        raise ESearchExpressionParserException.Create(sUnexpectedCharInExpression);
       SetLength(LValue^, Length(LValue^) + LChar.Length);
       Move(LChar.Char[0], LValue^[Succ(Length(LValue^) - LChar.Length)], LChar.Length);
       LToken:=tkText;
@@ -816,7 +835,7 @@ begin
       tkOpeningBracket, tkOpeningParenthesis: LExpressionKind:=ekSet;
       tkLess..tkGreaterOrEqual, tkNum: LExpressionKind:=ekNum;
     else
-      raise ESearchExpressionParserException.Create('Unexpected char in expression');
+      raise ESearchExpressionParserException.Create(sUnexpectedCharInExpression);
     end;
 
     // text mode has precedence (parsing the expressions like: 123abs)
@@ -831,40 +850,40 @@ begin
       LValue^:=LValue^+TokenToStr(LToken);
 
     if LPrevToken in [tkClosingBracket, tkClosingParenthesis] then
-      raise ESearchExpressionParserException.Create('Invaild expression (char detected after closing bracket)');
+      raise ESearchExpressionParserException.Create(sInvaildExpression_CharDetectedAfterClosingBracket);
 
     // rules
     case LToken of
       tkNum:
         if LExpressionKind = ekSet then
           if not (LPrevToken in [tkOpeningBracket, tkOpeningParenthesis, tkComma]) then
-            raise ESearchExpressionParserException.CreateFmt('Unexpected token found : "%s"', [TokenToStr(LToken)]);
+            raise ESearchExpressionParserException.CreateFmt(sUnexpectedTokenFound, [TokenToStr(LToken)]);
       tkText:
         if LExpressionKind in [ekSet, ekNum] then
-          raise ESearchExpressionParserException.Create('Unexpected string literal in expression');
+          raise ESearchExpressionParserException.Create(sUnexpectedStringLiteralInExpression);
       tkClosingBracket:
         if (LExpressionKind = ekSet) then
           if (AExpressionRecord.SetKind<>skNumericBetweenInclusive) then
-            raise ESearchExpressionParserException.Create('Badly closed "between" expression')
+            raise ESearchExpressionParserException.Create(sBadlyClosedBetweenExpression)
           else if LPrevToken <> tkNum then
-            raise ESearchExpressionParserException.Create('Missing number in expression');
+            raise ESearchExpressionParserException.Create(sMissingNumberInExpression);
       tkClosingParenthesis:
         if (LExpressionKind = ekSet) then
           if (AExpressionRecord.SetKind<>skNumericBetweenExclusive) then
-            raise ESearchExpressionParserException.Create('Badly closed "between" expression')
+            raise ESearchExpressionParserException.Create(sBadlyClosedBetweenExpression)
           else if LPrevToken <> tkNum then
-            raise ESearchExpressionParserException.Create('Missing number in expression');
+            raise ESearchExpressionParserException.Create(sMissingNumberInExpression);
       tkComma:
         if LExpressionKind = ekSet then
           if not (LPrevToken = tkNum) then
-            raise ESearchExpressionParserException.Create('Unexpected occurrence of comma found')
+            raise ESearchExpressionParserException.CreateFmt(sUnexpectedOccurrenceOf_Found, [','])
           else
             NextValue;
       tkPercent:
         if LExpressionKind = ekText then
         begin
           if LLastPercent then
-            raise ESearchExpressionParserException.Create('Unexpected occurrence of % found');
+            raise ESearchExpressionParserException.CreateFmt(sUnexpectedOccurrenceOf_Found, ['%']);
           case LPrevToken of
             tkText, tkNum: // tkNum is here because is possible to parse: 123%
               begin
@@ -877,16 +896,16 @@ begin
             tkNone:
               AExpressionRecord.TextMatchKind:=tmkMatchTextBeginning;
             tkPercent:
-              raise ESearchExpressionParserException.Create('Unexpected occurrence of % found');
+              raise ESearchExpressionParserException.CreateFmt(sUnexpectedOccurrenceOf_Found, ['%']);
           end;
         end
         else
-          raise ESearchExpressionParserException.Create('Unexpected occurrence of % found');
+          raise ESearchExpressionParserException.CreateFmt(sUnexpectedOccurrenceOf_Found, ['%']);
       tkLess..tkGreaterOrEqual:
         case LExpressionKind of
           ekNum:
             if LPrevToken <> tkNone then
-              raise ESearchExpressionParserException.Create('Bad numeric expression')
+              raise ESearchExpressionParserException.Create(sBadNumericExpression)
             else
               with AExpressionRecord do
               case LToken of
@@ -897,12 +916,12 @@ begin
                 tkGreaterOrEqual: NumericComparisionKind:=nckNumericGTE;
               end;
           ekSet:
-            raise ESearchExpressionParserException.CreateFmt('Unexpected token found : "%s"', [TokenToStr(LToken)]);
+            raise ESearchExpressionParserException.CreateFmt(sUnexpectedTokenFound, [TokenToStr(LToken)]);
         end;
       tkOpeningParenthesis, tkOpeningBracket:
         if LExpressionKind = ekSet then
           if LPrevToken <> tkNone then
-            raise ESearchExpressionParserException.CreateFmt('Bad "between" expression. Unexpected "%s"', [TokenToStr(LToken)])
+            raise ESearchExpressionParserException.CreateFmt(sBadBetweenExpression_UnexpectedToken, [TokenToStr(LToken)])
           else
           with AExpressionRecord do
           case LToken of
@@ -922,15 +941,15 @@ begin
       case AExpressionRecord.SetKind of
         skNumericBetweenInclusive:
           if LPrevToken <> tkClosingBracket then
-            raise ESearchExpressionParserException.Create('Badly closed "between" expression');
+            raise ESearchExpressionParserException.Create(sBadlyClosedBetweenExpression);
         skNumericBetweenExclusive:
           if LPrevToken <> tkClosingParenthesis then
-            raise ESearchExpressionParserException.Create('Badly closed "between" expression');
+            raise ESearchExpressionParserException.Create(sBadlyClosedBetweenExpression);
       end;
   end;
 
   if (LValueIdx = 0) and (LValue^='') then
-    raise ESearchExpressionParserException.Create('Expression error (no value)');
+    raise ESearchExpressionParserException.Create(sExpressionError_NoValue);
 
   SetLength(AExpressionRecord.Values, LValueIdx + 1);
   for i := 0 to LValueIdx do
