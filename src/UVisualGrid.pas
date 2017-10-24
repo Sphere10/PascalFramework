@@ -388,6 +388,16 @@ implementation
 {$R *.rc}
 {$ENDIF}
 
+resourcestring
+  sTotal = 'Total: %d';
+  sStandardSearch = 'Standard Search';
+  sMultiColumnSearch = 'Multi-Column Search';
+  sPageSize = 'Page size:';
+  sSearchExpression = 'Search expression';
+  sDataLoading = 'DATA LOADING';
+  sExpression = 'Expression';
+  sImproperColumnIndex = 'Improper column index. Max expected is %d but %d found.';
+
 type
   TDrawGridAccess = class(TDrawGrid);
   //TScrollBarAccess = class(TScrollBar);
@@ -649,11 +659,11 @@ begin
   FSearchKindPopupMenu := TPopupMenu.Create(Self);
   FSingleSearchMenuItem := TMenuItem.Create(Self);
   FSingleSearchMenuItem.RadioItem:=True;
-  FSingleSearchMenuItem.Caption:='Standard Search';
+  FSingleSearchMenuItem.Caption:=sStandardSearch;
   FSingleSearchMenuItem.OnClick:=SearchKindPopupMenuClick;
   FMultiSearchMenuItem := TMenuItem.Create(Self);
   FMultiSearchMenuItem.RadioItem:=True;
-  FMultiSearchMenuItem.Caption:='Multi-Column Search';
+  FMultiSearchMenuItem.Caption:=sMultiColumnSearch;
   FMultiSearchMenuItem.OnClick:=SearchKindPopupMenuClick;
 
   FSearchKindPopupMenu.Items.Add([FSingleSearchMenuItem, FMultiSearchMenuItem]);
@@ -781,7 +791,7 @@ begin
         Top := 13;
         Width := 31;
         Height := 13;
-        Caption := 'Total: ';
+        Caption := Format(sTotal, [0]);
       end;
       FPageSizeLabel := TLabel.Create(Self);
       FPageSizeLabel.Parent := FBottomCenterPanel;
@@ -791,7 +801,7 @@ begin
         Top := 13;
         Width := 31;
         Height := 13;
-        Caption := 'Page size:'
+        Caption := sPageSize;
       end;
       FPageSizeEdit := TEdit.Create(Self);
       FPageSizeEdit.Parent := FBottomCenterPanel;
@@ -891,8 +901,8 @@ begin
         BorderSpacing.Right := 2;
         BorderSpacing.Bottom := 6;
         Width := 121;
-        TextHint := 'Search expression';
-        PopupMenu:=FSearchKindPopupMenu;
+        TextHint := sSearchExpression;
+        PopupMenu := FSearchKindPopupMenu;
       end;
     end;
   end;
@@ -981,7 +991,7 @@ begin
       AnchorSideLeft.Side := asrCenter;
       AnchorSideTop.Control := FLoadDataPanel;
       AnchorSideTop.Side := asrCenter;
-      Caption := 'DATA LOADING';
+      Caption := sDataLoading;
     end;
     FLoadDataProgressLabel := TLabel.Create(Self);
     FLoadDataProgressLabel.Parent := FLoadDataPanel;
@@ -1040,7 +1050,7 @@ begin
 
   { set single search mode as default }
   FTopPanelMultiSearch.Visible := False;
-  FMultiSearchCheckComboBox.AddItem('Expression', cbChecked);
+  FMultiSearchCheckComboBox.AddItem(sExpression, cbChecked);
   SearchKindPopupMenuClick(FSingleSearchMenuItem);
 end;
 
@@ -1062,7 +1072,7 @@ begin
     if ACol < Length(ActiveDataTable.Columns) then
       LText := ActiveDataTable.Columns[ACol]
     else
-      raise EVisualGridError.CreateFmt('Improper column index. Max expected is %d but %d found.', [Length(ActiveDataTable.Columns)-1,ACol]);
+      raise EVisualGridError.CreateFmt(sImproperColumnIndex, [Length(ActiveDataTable.Columns)-1,ACol]);
     FDrawGrid.Canvas.TextRect(Rect, Rect.Left+2, Rect.Top+2, LText)
   end
   else
@@ -1598,7 +1608,7 @@ begin
     FTopPanelMultiSearch.Height:=FMultiSearchEdits.Last.FPanel.Height;
 
   // last item doesn't need to store object
-  FMultiSearchCheckComboBox.AddItem('Expression', cbChecked);
+  FMultiSearchCheckComboBox.AddItem(sExpression, cbChecked);
 end;
 
 procedure TCustomVisualGrid.LayoutChanged;
@@ -1719,7 +1729,7 @@ begin
       FTotalDataCount := -1;
 
     FAllRecordsCountLabel.Visible := FTotalDataCount<>-1;
-    FAllRecordsCountLabel.Caption:=Format('Total: %d', [FTotalDataCount]);
+    FAllRecordsCountLabel.Caption:=Format(sTotal, [FTotalDataCount]);
 
     FPageIndex := FetchResult.PageIndex;
 
