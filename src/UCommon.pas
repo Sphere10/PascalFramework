@@ -6,7 +6,7 @@
   Distributed under the MIT software license, see the accompanying file LICENSE
   or visit http://www.opensource.org/licenses/mit-license.php.
 
-  Credits:
+  Acknowledgements:
     Herman Schoenfeld
     Maciej Izak (hnb)
 }
@@ -96,11 +96,7 @@ type
     procedure Invoke(sender : TObject);
   end;
 
-  { Controls Helpers }
-  TWinControlHelper = class helper for TWinControl
-    procedure RemoveAllControls(destroy : boolean);
-    procedure AddDockCenter(constref AControl: TWinControl);
-  end;
+  { TTable types }
 
   TTableColumns = TArray<utf8string>;
   PTableColumns = ^TTableColumns;
@@ -120,15 +116,11 @@ type
   protected
     class function MapColumns(AColumns: PTableColumns): TColumnMapToIndex;
   public
-    function GetProperty(var Dest: TVarData; const V: TVarData;
-      const Name: string): Boolean; override;
-    function SetProperty(var V: TVarData; const Name: string;
-      const Value: TVarData): Boolean; override;
+    function GetProperty(var Dest: TVarData; const V: TVarData; const Name: string): Boolean; override;
+    function SetProperty(var V: TVarData; const Name: string; const Value: TVarData): Boolean; override;
     procedure Clear(var V: TVarData); override;
     procedure Copy(var Dest: TVarData; const Source: TVarData; const Indirect: Boolean); override;
-    function DoFunction(var Dest: TVarData; const V: TVarData;
-      const Name: string; const Arguments: TVarDataArray): Boolean; override;
-
+    function DoFunction(var Dest: TVarData; const V: TVarData; const Name: string; const Arguments: TVarDataArray): Boolean; override;
     class function New(AColumns: PTableColumns): Variant;
   end;
 
@@ -144,10 +136,8 @@ type
   end;
 
   TExpressionKind = (ekUnknown, ekText, ekNum, ekSet);
-  TTextMatchKind = (tmkUnknown, tmkMatchTextExact, tmkMatchTextBeginning, tmkMatchTextEnd,
-    tmkMatchTextAnywhere);
-  TNumericComparisionKind = (nckUnknown, nckNumericEQ, nckNumericLT, nckNumericLTE,
-    nckNumericGT, nckNumericGTE);
+  TTextMatchKind = (tmkUnknown, tmkMatchTextExact, tmkMatchTextBeginning, tmkMatchTextEnd, tmkMatchTextAnywhere);
+  TNumericComparisionKind = (nckUnknown, nckNumericEQ, nckNumericLT, nckNumericLTE, nckNumericGT, nckNumericGTE);
   TSetKind = (skUnknown, skNumericBetweenInclusive, skNumericBetweenExclusive);
 
   TExpressionRecord = record
@@ -165,8 +155,7 @@ type
 
   TSearchExpressionService = class
   public
-    class procedure Parse(const AExpression: utf8string;
-      const AExpressionKind: TExpressionKind; out AExpressionRecord: TExpressionRecord); overload;
+    class procedure Parse(const AExpression: utf8string; const AExpressionKind: TExpressionKind; out AExpressionRecord: TExpressionRecord); overload;
     class function Parse(const AExpression: utf8string): TExpressionRecord; overload;
   end;
 
@@ -590,30 +579,6 @@ var i : Integer;
 begin
   for i := 0 to high(self) do
     self[i](sender);
-end;
-
-{%endregion}
-
-{%region TWinControlHelper }
-
-procedure TWinControlHelper.RemoveAllControls(destroy : boolean);
-var
-  control : TControl;
-begin
-  while self.ControlCount > 0 do begin
-    control := self.Controls[0];
-    self.RemoveControl(control);
-    if destroy then control.Destroy;
-  end;
-end;
-
-
-procedure TWinControlHelper.AddDockCenter(constref AControl: TWinControl);
-begin
-  with AControl do begin
-     Align := alClient;
-     Parent := self;
-  end;
 end;
 
 {%endregion}
