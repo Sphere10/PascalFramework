@@ -6,9 +6,6 @@
   Distributed under the MIT software license, see the accompanying file LICENSE
   or visit http://www.opensource.org/licenses/mit-license.php.
 
-  This unit is a part of Pascal Coin, a P2P crypto currency without need of
-  historical operations.
-
   Additional Credits:
     <contributors add yourselves here>
 }
@@ -161,6 +158,9 @@ type
 implementation
 
 {$R *.lfm}
+
+uses
+  UCommonUI;
 
 {%region TWizardForm }
 

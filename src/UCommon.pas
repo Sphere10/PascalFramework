@@ -41,6 +41,9 @@ function IIF(const ACondition: Boolean; const ATrueResult, AFalseResult: string)
 function IIF(const ACondition: Boolean; const ATrueResult, AFalseResult: TObject): TObject; overload;
 function IIF(const ACondition: Boolean; const ATrueResult, AFalseResult: variant): variant; overload;
 
+{ Clip Value }
+function ClipValue( AValue, MinValue, MaxValue: Integer) : Integer;
+
 { DateTime functions }
 function TimeStamp : AnsiString;
 function UtcTimeStamp : AnsiString;
@@ -284,6 +287,19 @@ begin
   else
     Result := AFalseResult;
 end;
+
+{ Clip Value }
+
+function ClipValue( AValue, MinValue, MaxValue: Integer) : Integer;
+begin
+  if AValue < MinValue then
+    Result := MinValue
+  else if AValue > MaxValue then
+    Result := MaxValue
+  else
+    Result := AValue
+end;
+
 
 { DateTime functions }
 function TimeStamp : AnsiString;
