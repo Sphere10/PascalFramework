@@ -20,7 +20,7 @@ unit UCommon;
 interface
 
 uses
-  Classes, SysUtils, Controls, FGL, Generics.Collections, Generics.Defaults,
+  Classes, SysUtils, Generics.Collections, Generics.Defaults,
   Variants, LazUTF8;
 
 { GLOBAL FUNCTIONS }
