@@ -8,7 +8,6 @@
 
   Acknowledgements:
     Herman Schoenfeld
-    Maciej Izak (hnb)
 }
 
 unit UCommonUI;
