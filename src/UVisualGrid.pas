@@ -20,7 +20,8 @@ interface
 
 uses
   Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, Types, Graphics,
-  UCommon, Generics.Collections, Menus, ComboEx, Buttons, Math;
+  UCommon, Generics.Collections, Menus, ComboEx, Buttons, Math
+  {$IFNDEF WINDOWS}, LResources{$ENDIF};
 
 type
   TSelectionType = (stNone, stCell, stRow, stMultiRow);
@@ -132,6 +133,32 @@ type
 
   TVisualGridOptions = set of (vgoColAutoFill, vgoColSizing, vgoMultiSearchCheckComboBox);
 
+  TCustomVisualGrid = class;
+
+  { TVisualGridCaption }
+
+  TVisualGridCaption = class(TPersistent)
+  private
+    FOwner: TCustomVisualGrid;
+    FLabel: TLabel;
+
+    function GetText: TCaption;
+    function GetAlignment: TAlignment;
+    function GetFont: TFont;
+    function GetVisible: boolean;
+    procedure SetText(AValue: TCaption);
+    procedure SetAlignment(AValue: TAlignment);
+    procedure SetFont(AValue: TFont);
+    procedure SetVisible(AValue: boolean);
+  public
+    constructor Create(AOwner: TCustomVisualGrid);
+  published
+    property Text: TCaption read GetText write SetText;
+    property Visible: boolean read GetVisible write SetVisible;
+    property Font: TFont read GetFont write SetFont;
+    property Alignment: TAlignment read GetAlignment write SetAlignment default taLeftJustify;
+  end;
+
   { TCustomVisualGrid }
 
   TCustomVisualGrid = class(TCustomControl)
@@ -173,7 +200,6 @@ type
     PAGE_NAVIGATION_LAST     = 4;
   protected { component interface part }
     FMainPanel: TPanel;
-    FCaptionLabel: TLabel;
     FSearchLabel: TLabel;
     FSearchEdit: TEdit;
     FSearchButton: TSpeedButton;
@@ -229,6 +255,7 @@ type
     procedure FetchDataThreadProgress(Sender: TObject);
     procedure SearchButtonClick(Sender: TObject);
   private
+    FCaption: TVisualGridCaption;
     FFetchDataInThread: boolean;
     FOnPreparePopupMenu: TPreparePopupMenuEvent;
     FOnSelection: TSelectionEvent;
@@ -238,9 +265,6 @@ type
     FCanPage: boolean;
     FCanSearch: boolean;
     FSelectionType: TSelectionType;
-    function GetCaption: TCaption;
-    function GetCaptionAlignment: TAlignment;
-    function GetCaptionFont: TFont;
     function GetCells(ACol, ARow: Integer): Variant;
     function GetColCount: Integer; inline;
     function GetColumns(Index: Integer): TVisualColumn;
@@ -248,13 +272,8 @@ type
     function GetRowCount: Integer; inline;
     function GetRows(ARow: Integer): Variant;
     function GetSelection: TVisualGridSelection;
-    function GetCaptionVisible: boolean;
     procedure ControlsEnable(AEnable: boolean);
     function GetCanvas: TCanvas;
-    procedure SetCaption(AValue: TCaption);
-    procedure SetCaptionAlignment(AValue: TAlignment);
-    procedure SetCaptionFont(AValue: TFont);
-    procedure SetCaptionVisible(AValue: boolean);
     procedure SetCells(ACol, ARow: Integer; AValue: Variant);
     procedure SetFetchDataInThread(AValue: boolean);
     procedure SetOptions(AValue: TVisualGridOptions);
@@ -327,11 +346,7 @@ type
     property SelectionType: TSelectionType read FSelectionType write SetSelectionType;
     property Selection: TVisualGridSelection read GetSelection;
 
-    property Caption: TCaption read GetCaption write SetCaption;
-    property CaptionVisible: boolean read GetCaptionVisible write SetCaptionVisible;
-    property CaptionFont: TFont read GetCaptionFont write SetCaptionFont;
-    property CaptionAlignment: TAlignment read GetCaptionAlignment write SetCaptionAlignment default taLeftJustify;
-
+    property Caption: TVisualGridCaption read FCaption write FCaption;
     property ColCount: Integer read GetColCount;
     property Columns[Index: Integer]: TVisualColumn read GetColumns;
     property Cells[ACol, ARow: Integer]: Variant read GetCells write SetCells;
@@ -346,9 +361,6 @@ type
   TVisualGrid = class(TCustomVisualGrid)
   published
     property Caption;
-    property CaptionVisible;
-    property CaptionFont;
-    property CaptionAlignment;
 
     property Align;
     property PageSize;
@@ -372,7 +384,19 @@ procedure Register;
 
 implementation
 
+{$IFDEF WINDOWS}
 {$R *.rc}
+{$ENDIF}
+
+resourcestring
+  sTotal = 'Total: %d';
+  sStandardSearch = 'Standard Search';
+  sMultiColumnSearch = 'Multi-Column Search';
+  sPageSize = 'Page size:';
+  sSearchExpression = 'Search expression';
+  sDataLoading = 'DATA LOADING';
+  sExpression = 'Expression';
+  sImproperColumnIndex = 'Improper column index. Max expected is %d but %d found.';
 
 type
   TDrawGridAccess = class(TDrawGrid);
@@ -393,6 +417,68 @@ type
 procedure Register;
 begin
   RegisterComponents('Pascal Framework', [TVisualGrid]);
+end;
+
+{ TVisualGridCaption }
+
+function TVisualGridCaption.GetText: TCaption;
+begin
+  Result := FLabel.Caption;
+end;
+
+function TVisualGridCaption.GetAlignment: TAlignment;
+begin
+  Result := FLabel.Alignment;
+end;
+
+function TVisualGridCaption.GetFont: TFont;
+begin
+  Result := FLabel.Font;
+end;
+
+function TVisualGridCaption.GetVisible: boolean;
+begin
+  Result := FLabel.Visible;
+end;
+
+procedure TVisualGridCaption.SetText(AValue: TCaption);
+begin
+  if FLabel.Caption = AValue then Exit;
+  FLabel.Caption:=AValue;
+  FOwner.LayoutChanged;
+end;
+
+procedure TVisualGridCaption.SetAlignment(AValue: TAlignment);
+begin
+  if FLabel.Alignment = AValue then Exit;
+  FLabel.Alignment:=AValue;
+end;
+
+procedure TVisualGridCaption.SetFont(AValue: TFont);
+begin
+  if FLabel.Font.IsEqual(AValue) then Exit;
+  FLabel.Font.Assign(AValue);
+  FOwner.LayoutChanged;
+end;
+
+procedure TVisualGridCaption.SetVisible(AValue: boolean);
+begin
+  if FLabel.Visible = AValue then Exit;
+  FLabel.Visible:=AValue;
+  FOwner.LayoutChanged;
+end;
+
+constructor TVisualGridCaption.Create(AOwner: TCustomVisualGrid);
+begin
+  FOwner := AOwner;
+
+  FLabel := TLabel.Create(AOwner);
+  FLabel.Parent := AOwner;
+  with FLabel do
+  begin
+    Align := alTop;
+    Visible := false;
+  end;
 end;
 
 { TVisualColumn }
@@ -573,11 +659,11 @@ begin
   FSearchKindPopupMenu := TPopupMenu.Create(Self);
   FSingleSearchMenuItem := TMenuItem.Create(Self);
   FSingleSearchMenuItem.RadioItem:=True;
-  FSingleSearchMenuItem.Caption:='Standard Search';
+  FSingleSearchMenuItem.Caption:=sStandardSearch;
   FSingleSearchMenuItem.OnClick:=SearchKindPopupMenuClick;
   FMultiSearchMenuItem := TMenuItem.Create(Self);
   FMultiSearchMenuItem.RadioItem:=True;
-  FMultiSearchMenuItem.Caption:='Multi-Column Search';
+  FMultiSearchMenuItem.Caption:=sMultiColumnSearch;
   FMultiSearchMenuItem.OnClick:=SearchKindPopupMenuClick;
 
   FSearchKindPopupMenu.Items.Add([FSingleSearchMenuItem, FMultiSearchMenuItem]);
@@ -606,16 +692,6 @@ begin
       Height := 40;
       Align := alRight;
       BevelOuter := bvNone;
-      FPageIndexEdit := TEdit.Create(Self);
-      FPageIndexEdit.Parent := FBottomRightPanel;
-      with FPageIndexEdit do
-      begin
-        Left := 61;
-        Top := 10;
-        Width := 56;
-        Height := 21;
-        OnEditingDone := PageIndexEditingDone;
-      end;
       FPageCountLabel := TLabel.Create(Self);
       FPageCountLabel.Parent := FBottomRightPanel;
       with FPageCountLabel do
@@ -674,6 +750,31 @@ begin
         OnClick := PageNavigationClick;
         Tag := PAGE_NAVIGATION_LAST;
       end;
+
+      FPageIndexEdit := TEdit.Create(Self);
+      FPageIndexEdit.Parent := FBottomRightPanel;
+      with FPageIndexEdit do
+      begin
+        Left := 61;
+        Top := 10;
+        Width := 56;
+        Height := 21;
+
+        AnchorSideLeft.Control := FButtonPrevious;
+        AnchorSideLeft.Side := asrBottom;
+        AnchorSideTop.Control := FBottomRightPanel;
+        AnchorSideRight.Control := FPageCountLabel;
+        AnchorSideBottom.Control := FBottomRightPanel;
+        AnchorSideBottom.Side := asrBottom;
+        Anchors := [akLeft, akTop, akRight, akBottom];
+        BorderSpacing.Top := 10;
+        BorderSpacing.Right := 2;
+        BorderSpacing.Left := 2;
+        BorderSpacing.Bottom := 8;
+
+        OnEditingDone := PageIndexEditingDone;
+      end;
+
     end;
 
     FBottomCenterPanel := TPanel.Create(Self);
@@ -690,7 +791,7 @@ begin
         Top := 13;
         Width := 31;
         Height := 13;
-        Caption := 'Total: ';
+        Caption := Format(sTotal, [0]);
       end;
       FPageSizeLabel := TLabel.Create(Self);
       FPageSizeLabel.Parent := FBottomCenterPanel;
@@ -700,7 +801,7 @@ begin
         Top := 13;
         Width := 31;
         Height := 13;
-        Caption := 'Page size:'
+        Caption := sPageSize;
       end;
       FPageSizeEdit := TEdit.Create(Self);
       FPageSizeEdit.Parent := FBottomCenterPanel;
@@ -710,18 +811,23 @@ begin
         Top := 10;
         Width := 52;
         Height := 21;
+
+        AnchorSideLeft.Control := FPageSizeLabel;
+        AnchorSideLeft.Side := asrBottom;
+        AnchorSideTop.Control := FBottomCenterPanel;
+        AnchorSideBottom.Control := FBottomCenterPanel;
+        AnchorSideBottom.Side := asrBottom;
+        Anchors := [akLeft, akTop, akBottom];
+        BorderSpacing.Top := 10;
+        BorderSpacing.Left := 2;
+        BorderSpacing.Bottom := 8;
+
         OnEditingDone:=PageSizeEditingDone;
       end;
     end;
   end;
 
-  FCaptionLabel := TLabel.Create(Self);
-  FCaptionLabel.Parent := Self;
-  with FCaptionLabel do
-  begin
-    Align := alTop;
-    Visible := false;
-  end;
+  FCaption := TVisualGridCaption.Create(Self);
 
   FTopPanel := TPanel.Create(Self);
   FTopPanel.Parent := FMainPanel;
@@ -761,7 +867,11 @@ begin
 
       FSearchButton := TSpeedButton.Create(Self);
       FSearchButton.Parent := FTopPanelRight;
+      {$IFDEF WINDOWS}
       FSearchButton.LoadGlyphFromResourceName(HINSTANCE, 'VISUALGRID_SEARCH');
+      {$ELSE}
+      FSearchButton.LoadGlyphFromLazarusResource('VISUALGRID_SEARCH');
+      {$ENDIF}
       with FSearchButton do
       begin
         AnchorSideTop.Control := FTopPanelRight;
@@ -791,8 +901,8 @@ begin
         BorderSpacing.Right := 2;
         BorderSpacing.Bottom := 6;
         Width := 121;
-        TextHint := 'Search expression';
-        PopupMenu:=FSearchKindPopupMenu;
+        TextHint := sSearchExpression;
+        PopupMenu := FSearchKindPopupMenu;
       end;
     end;
   end;
@@ -881,7 +991,7 @@ begin
       AnchorSideLeft.Side := asrCenter;
       AnchorSideTop.Control := FLoadDataPanel;
       AnchorSideTop.Side := asrCenter;
-      Caption := 'DATA LOADING';
+      Caption := sDataLoading;
     end;
     FLoadDataProgressLabel := TLabel.Create(Self);
     FLoadDataProgressLabel.Parent := FLoadDataPanel;
@@ -935,12 +1045,20 @@ begin
     Caption := 'Test';
   end;
   {$ENDIF}
+
+  FetchDataInThread := true;
+
+  { set single search mode as default }
+  FTopPanelMultiSearch.Visible := False;
+  FMultiSearchCheckComboBox.AddItem(sExpression, cbChecked);
+  SearchKindPopupMenuClick(FSingleSearchMenuItem);
 end;
 
 destructor TCustomVisualGrid.Destroy;
 begin
   FColumns.Free;
   FMultiSearchEdits.Free;
+  FCaption.Free;
   inherited;
 end;
 
@@ -954,7 +1072,7 @@ begin
     if ACol < Length(ActiveDataTable.Columns) then
       LText := ActiveDataTable.Columns[ACol]
     else
-      raise EVisualGridError.CreateFmt('Improper column index. Max expected is %d but %d found.', [Length(ActiveDataTable.Columns)-1,ACol]);
+      raise EVisualGridError.CreateFmt(sImproperColumnIndex, [Length(ActiveDataTable.Columns)-1,ACol]);
     FDrawGrid.Canvas.TextRect(Rect, Rect.Left+2, Rect.Top+2, LText)
   end
   else
@@ -1171,21 +1289,6 @@ begin
   Result := Length(ActiveDataTable.Rows);
 end;
 
-function TCustomVisualGrid.GetCaption: TCaption;
-begin
-  Result := FCaptionLabel.Caption;
-end;
-
-function TCustomVisualGrid.GetCaptionAlignment: TAlignment;
-begin
-  Result := FCaptionLabel.Alignment;
-end;
-
-function TCustomVisualGrid.GetCaptionFont: TFont;
-begin
-  Result := FCaptionLabel.Font;
-end;
-
 function TCustomVisualGrid.GetRows(ARow: Integer): Variant;
 begin
   Result := ActiveDataTable.Rows[ARow];
@@ -1202,11 +1305,6 @@ begin
     Result.Selections[i].Top:=Result.Selections[i].Top-1; // - fixed row
     Result.Selections[i].Bottom:=Result.Selections[i].Bottom-1; // - fixed row
   end;
-end;
-
-function TCustomVisualGrid.GetCaptionVisible: boolean;
-begin
-  Result := FCaptionLabel.Visible;
 end;
 
 procedure TCustomVisualGrid.PageIndexEditingDone(Sender: TObject);
@@ -1290,29 +1388,6 @@ end;
 function TCustomVisualGrid.GetCanvas: TCanvas;
 begin
   Result := FDrawGrid.Canvas;
-end;
-
-procedure TCustomVisualGrid.SetCaption(AValue: TCaption);
-begin
-  FCaptionLabel.Caption:=AValue;
-  LayoutChanged;
-end;
-
-procedure TCustomVisualGrid.SetCaptionAlignment(AValue: TAlignment);
-begin
-  FCaptionLabel.Alignment:=AValue;
-end;
-
-procedure TCustomVisualGrid.SetCaptionFont(AValue: TFont);
-begin
-  FCaptionLabel.Font:=AValue;
-  LayoutChanged;
-end;
-
-procedure TCustomVisualGrid.SetCaptionVisible(AValue: boolean);
-begin
-  FCaptionLabel.Visible:=AValue;
-  LayoutChanged;
 end;
 
 procedure TCustomVisualGrid.SetCells(ACol, ARow: Integer; AValue: Variant);
@@ -1519,20 +1594,21 @@ begin
     LEdit := TSearchEdit.Create(FTopPanelMultiSearchClient, Self);
     FMultiSearchEdits.Add(LEdit);
     p := SearchCapability;
-    LEdit.EditVisible:=Assigned(p);
+    LEdit.EditVisible:=Assigned(p) and FMultiSearchMenuItem.Checked;
     LEdit.SearchCapability := p;
     ResizeSearchEdit(i);
     if Assigned(p) then
     begin
       FMultiSearchCheckComboBox.AddItem(p^.ColumnName, cbChecked);
       FMultiSearchCheckComboBox.Objects[FMultiSearchCheckComboBox.Items.Count-1] := LEdit;
+      FMultiSearchCheckComboBox.Checked[FMultiSearchCheckComboBox.Items.Count-1] := FMultiSearchMenuItem.Checked;
     end;
   end;
   if FDrawGrid.Columns.Count > 0 then
     FTopPanelMultiSearch.Height:=FMultiSearchEdits.Last.FPanel.Height;
 
   // last item doesn't need to store object
-  FMultiSearchCheckComboBox.AddItem('Expression', cbChecked);
+  FMultiSearchCheckComboBox.AddItem(sExpression, cbChecked);
 end;
 
 procedure TCustomVisualGrid.LayoutChanged;
@@ -1653,7 +1729,7 @@ begin
       FTotalDataCount := -1;
 
     FAllRecordsCountLabel.Visible := FTotalDataCount<>-1;
-    FAllRecordsCountLabel.Caption:=Format('Total: %d', [FTotalDataCount]);
+    FAllRecordsCountLabel.Caption:=Format(sTotal, [FTotalDataCount]);
 
     FPageIndex := FetchResult.PageIndex;
 
@@ -1768,5 +1844,9 @@ begin
     FOnSelection(Self, Selection);
 end;
 
+{$IFNDEF WINDOWS}
+initialization
+  {$I *.inc}
+{$ENDIF}
 end.
 
