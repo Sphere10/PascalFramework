@@ -359,6 +359,7 @@ begin
       raise Exception.Create('Supplied type was not correct TWizardForm<T> type');
     Result.UpdatePath := UpdatePath;
     FScreenInstances.Add(AType, Result);
+    Result.Initialize;
   end else Result := FScreenInstances[AType];
 end;
 
@@ -407,6 +408,8 @@ begin
   self.FHost.SetContentSize ( CalculateFitSize );
   self.FScreenPathBackup.Add(0, TList<TComponentClass>.Create(FScreenPath));
   self.PresentScreen(FScreenInstances[FScreenPath[FCurrentScreenIndex]]);
+  //self.FHost.NextEvent.Remove(NextHandler);
+  //self.FHost.PreviousEvent.Remove(PreviousHandler);
   self.FHost.ShowModal;
   self.FHost.Destroy;
   self.FHost := nil;
@@ -428,9 +431,8 @@ begin
     // Backup current path in case user goes back
     if FScreenPathBackup.ContainsKey(FCurrentScreenIndex) then begin
       FScreenPathBackup[FCurrentScreenIndex].Destroy;
-      FScreenPathBackup.Remove(FCurrentScreenIndex);
     end;
-    FScreenPathBackup.Add(FCurrentScreenIndex, TList<TComponentClass>.Create(FScreenPath));
+    FScreenPathBackup.AddOrSetValue(FCurrentScreenIndex, TList<TComponentClass>.Create(FScreenPath));
     PresentScreen(FScreenInstances[FScreenPath[FCurrentScreenIndex]]);
     exit;
   end;
@@ -492,7 +494,6 @@ begin
   end;
 end;
 
-
 procedure TWizard<T>.RemoveScreen(screen : TWizardForm<T>);
 begin
   CheckStarted;
@@ -505,7 +506,6 @@ procedure TWizard<T>.PresentScreen(screen : TWizardForm<T>);
 begin
   FCurrentScreen := screen;
   FCurrentScreen.Model := Model;
-  FCurrentScreen.Initialize;
   FHost.HidePrevious := NOT HasPrevious;
   FHost.NextText := IIF( NOT HasNext, FinishText, NextText);
   FHost.SetContent(screen);
