@@ -24,8 +24,8 @@ type
     procedure _wizardTestButtonClick(Sender: TObject);
   private
     { private declarations }
-    function CancelCallback( screenIndex:integer; constref bag : TGenericWizardBag; out message : AnsiString ) : boolean;
-    function FinishCallback(constref bag  : TGenericWizardBag; out message : AnsiString) : boolean;
+    function CancelCallback(screenIndex:integer; constref model : TGenericWizardBag; out message : AnsiString ) : boolean;
+    function FinishCallback(constref model  : TGenericWizardBag; out message : AnsiString) : boolean;
   public
     { public declarations }
   end;
@@ -54,7 +54,7 @@ begin
       'My Test Action Wizard',
       'Finish Test',
       propertyBag,
-      [ TWIZName_Step1.Create(nil), TWIZName_Step2.Create(nil)],
+      [TWIZName_Step1, TWIZName_Step2],
       CancelCallback,
       FinishCallback
     );
@@ -88,7 +88,7 @@ begin
   end;
 end;
 
-function TFRMMain.CancelCallback( screenIndex:integer; constref bag : TGenericWizardBag; out message : AnsiString ) : boolean;
+function TFRMMain.CancelCallback( screenIndex:integer; constref model : TGenericWizardBag; out message : AnsiString ) : boolean;
 begin
   if screenIndex <> 0 then begin
     Result := false;
@@ -98,13 +98,13 @@ begin
   end;
 end;
 
-function TFRMMain.FinishCallback(constref bag  : TGenericWizardBag; out message : AnsiString) : boolean;
+function TFRMMain.FinishCallback(constref model : TGenericWizardBag; out message : AnsiString) : boolean;
 begin
-  if PChar(bag['Name']) = 'fail' then begin
+  if PChar(Model['Name']) = 'fail' then begin
     message := 'Name cannot be ''fail''';
     Result := false;
   end else begin
-    ShowMessage('Finish: ' + TStringObject(bag['Name']).Value);
+    ShowMessage('Finish: ' + TStringObject(Model['Name']).Value);
     Result := true;
   end;
 end;

@@ -18,6 +18,8 @@ type
     FNameEdit: TEdit;
     FDimensionLabel: TLabel;
     Label1: TLabel;
+    rbPathA: TRadioButton;
+    rbPathB: TRadioButton;
     StaticText1: TStaticText;
     procedure FNameEditEditingDone(Sender: TObject);
     procedure UpdateDimensionLabel(Sender: TObject);
@@ -34,13 +36,17 @@ type
 
 
 implementation
+
 {$R *.lfm}
+
+uses UWIZName_Step1A, UWIZName_Step1B, UWIZName_Step2;
+
 {%region TWIZName_Step1}
 
 procedure TWIZName_Step1.FNameEditEditingDone(Sender: TObject);
 begin
-  self.Bag['Name'].Destroy; // free existing value
-  self.Bag['Name'] := TStringObject.Create(FNameEdit.Text);
+  self.Model['Name'].Destroy; // free existing value
+  self.Model['Name'] := TStringObject.Create(FNameEdit.Text);
 end;
 
 
@@ -59,7 +65,7 @@ end;
 procedure TWIZName_Step1.OnPresent;
 begin
   // Display value of property bag
-  FNameEdit.Text :=  TStringObject(Bag['Name']).Value;
+  FNameEdit.Text :=  TStringObject(Model['Name']).Value;
 end;
 
 procedure TWIZName_Step1.OnPrevious;
@@ -69,7 +75,10 @@ end;
 
 procedure TWIZName_Step1.OnNext;
 begin
-
+  if rbPathA.Checked then
+    UpdatePath(ptInject, [TWIZName_Step1A, TWIZName_Step1B])
+  else
+    UpdatePath(ptReplaceAllNext, [TWIZName_Step1B, TWIZName_Step1A, TWIZName_Step2]);
 end;
 
 function TWIZName_Step1.Validate(out message : AnsiString) : boolean;

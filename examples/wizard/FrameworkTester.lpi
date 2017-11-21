@@ -32,7 +32,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="14">
+    <Units Count="18">
       <Unit0>
         <Filename Value="FrameworkTester.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -80,32 +80,58 @@
       <Unit7>
         <Filename Value="..\..\src\UWizard.pas"/>
         <IsPartOfProject Value="True"/>
+        <ComponentName Value="WizardHostForm"/>
         <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
       </Unit7>
       <Unit8>
-        <Filename Value="..\..\src\generics\generics.collections.pas"/>
+        <Filename Value="..\..\src\generics.defaults.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="Generics.Defaults"/>
       </Unit8>
       <Unit9>
-        <Filename Value="..\..\src\generics\generics.defaults.pas"/>
+        <Filename Value="..\..\src\generics.collections.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="Generics.Collections"/>
       </Unit9>
       <Unit10>
-        <Filename Value="..\..\src\generics\generics.hashes.pas"/>
+        <Filename Value="..\..\src\generics.hashes.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit10>
       <Unit11>
-        <Filename Value="..\..\src\generics\generics.helpers.pas"/>
+        <Filename Value="..\..\src\generics.helpers.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit11>
       <Unit12>
-        <Filename Value="..\..\src\generics\generics.memoryexpanders.pas"/>
+        <Filename Value="..\..\src\generics.memoryexpanders.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit12>
       <Unit13>
-        <Filename Value="..\..\src\generics\generics.strings.pas"/>
+        <Filename Value="..\..\src\generics.strings.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit13>
+      <Unit14>
+        <Filename Value="UWIZName_Step1A.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="UWIZ_Step1A"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit14>
+      <Unit15>
+        <Filename Value="UWIZName_Step1B.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="UWIZ_Step1B"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit15>
+      <Unit16>
+        <Filename Value="..\..\src\inc\generics.dictionaries.inc"/>
+        <IsPartOfProject Value="True"/>
+      </Unit16>
+      <Unit17>
+        <Filename Value="..\..\src\inc\generics.dictionariesh.inc"/>
+        <IsPartOfProject Value="True"/>
+      </Unit17>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -115,8 +141,8 @@
       <Filename Value="FrameworkTester"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="$(ProjOutDir);..\src\util\generics"/>
-      <OtherUnitFiles Value="..\src\util;..\src\util\generics;..\src\form;..\..\src;..\..\src\generics"/>
+      <IncludeFiles Value="$(ProjOutDir);..\src\util\generics;..\..\src\inc"/>
+      <OtherUnitFiles Value="..\src\util;..\src\util\generics;..\src\form;..\..\src"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <CodeGeneration>
