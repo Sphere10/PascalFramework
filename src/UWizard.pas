@@ -5,9 +5,6 @@
 
   Distributed under the MIT software license, see the accompanying file LICENSE
   or visit http://www.opensource.org/licenses/mit-license.php.
-
-  Additional Credits:
-    <contributors add yourselves here>
 }
 
 unit UWizard;
@@ -26,7 +23,6 @@ const
   CT_WIZARD_DEFAULT_PREVIOUS : AnsiString = '&Previous';
   CT_WIZARD_DEFAULT_FINISH : AnsiString = '&Finish';
   CT_WIZARD_DEFAULT_TITLE : AnsiString = 'Wizard';
-
 
 type
   { Forward Declarations }
@@ -137,7 +133,6 @@ type
         procedure Next; virtual;
         procedure Previous; virtual;
         procedure UpdatePath(APathUpdateType: TPathUpdateType; const screens : array of TComponentClass); virtual;
-        procedure RemoveScreen(screen : TWizardForm<T>); virtual;
   end;
 
   { TActioWizard Delegate Declarations }
@@ -340,13 +335,13 @@ begin
   // screens destroyed as sub-components
   for screen in FScreenInstances.Values do begin
     if screen.Owner = nil then
-      screen.Destroy; // only destroy if dangling screen component
+      screen.Free; // only destroy if dangling screen component
   end;
-  FScreenInstances.Destroy;
-  FScreenPath.Destroy;
+  FScreenInstances.Free;
+  FScreenPath.Free;
   for backup in FScreenPathBackup.Values do
-    backup.Destroy;
-  FScreenPathBackup.Destroy;
+    backup.Free;
+  FScreenPathBackup.Free;
   inherited Destroy;
   // note: Property bag not destroyed, left for user to destroy
 end;
@@ -411,7 +406,7 @@ begin
   //self.FHost.NextEvent.Remove(NextHandler);
   //self.FHost.PreviousEvent.Remove(PreviousHandler);
   self.FHost.ShowModal;
-  self.FHost.Destroy;
+  self.FHost.Free;
   self.FHost := nil;
 end;
 
@@ -430,7 +425,7 @@ begin
     inc(FCurrentScreenIndex);
     // Backup current path in case user goes back
     if FScreenPathBackup.ContainsKey(FCurrentScreenIndex) then begin
-      FScreenPathBackup[FCurrentScreenIndex].Destroy;
+      FScreenPathBackup[FCurrentScreenIndex].Free;
     end;
     FScreenPathBackup.AddOrSetValue(FCurrentScreenIndex, TList<TComponentClass>.Create(FScreenPath));
     PresentScreen(FScreenInstances[FScreenPath[FCurrentScreenIndex]]);
@@ -453,7 +448,7 @@ begin
   dec (FCurrentScreenIndex);
 
   // Restore backup path when this screen was first displayed
-  FScreenPath.Destroy;
+  FScreenPath.Free;
   FScreenPath := TList<TComponentClass>.Create(FScreenPathBackup[FCurrentScreenIndex]);
   PresentScreen(FScreenInstances[FScreenPath[FCurrentScreenIndex]]);
 end;
@@ -494,14 +489,6 @@ begin
   end;
 end;
 
-procedure TWizard<T>.RemoveScreen(screen : TWizardForm<T>);
-begin
-  CheckStarted;
-  //HS
-  //FScreenPath.Remove(screen);
-  //screen.Destroy;
-end;
-
 procedure TWizard<T>.PresentScreen(screen : TWizardForm<T>);
 begin
   FCurrentScreen := screen;
@@ -532,7 +519,6 @@ begin
   Previous;
 end;
 
-
 {%endregion}
 
 {%region TActionWizard }
@@ -556,7 +542,7 @@ begin
   try
     wizard.Start(bag);
   finally
-    wizard.Destroy;
+    wizard.Free;
   end;
 end;
 
