@@ -209,7 +209,7 @@ begin
      Result := 1
    else begin
      Result := 0;
-     For i:= 1 to Str1Len do begin
+     for i:= Low(Str1) to High(Str1) do begin
        if Str1[i] < Str2[i] then begin
          Result := -1;
          break;

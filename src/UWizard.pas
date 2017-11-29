@@ -80,7 +80,6 @@ type
       property Model : T read FModel write FModel;
 
     public
-      destructor Destroy; override;
       procedure Initialize; virtual;
       procedure OnPresent; virtual;
       procedure OnPrevious; virtual;
@@ -122,6 +121,7 @@ type
     public
         constructor Create(AOwner:TComponent; const screens: array of TComponentClass); overload;
         destructor Destroy; override;
+        property CurrentScreen : TWizardForm<T> read FCurrentScreen;
         property Model : T read FModel;
         property HasNext : boolean read DetermineHasNext;
         property HasPrevious : boolean read DetermineHasPrevious;
@@ -165,11 +165,6 @@ uses
   UCommonUI;
 
 {%region TWizardForm }
-
-destructor TWizardForm<T>.Destroy;
-begin
-  inherited Destroy;
-end;
 
 procedure TWizardForm<T>.Initialize;
 begin
@@ -564,4 +559,3 @@ end;
 {%endregion}
 
 end.
-
