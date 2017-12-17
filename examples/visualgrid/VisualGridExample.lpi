@@ -29,7 +29,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="4">
+    <Units Count="5">
       <Unit0>
         <Filename Value="VisualGridExample.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -42,13 +42,17 @@
         <ResourceBaseClass Value="Form"/>
       </Unit1>
       <Unit2>
-        <Filename Value="..\..\src\UVisualGrid.pas"/>
+        <Filename Value="..\..\src\Sphere10\UCommon.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit2>
       <Unit3>
-        <Filename Value="..\..\src\UCommon.pas"/>
+        <Filename Value="..\..\src\Sphere10\UCommonUI.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit3>
+      <Unit4>
+        <Filename Value="..\..\src\Sphere10\UVisualGrid.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit4>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -60,7 +64,7 @@
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir);..\..\src;mORMot"/>
       <Libraries Value="..\..\src\3rd\mORMot\fpc-win32"/>
-      <OtherUnitFiles Value="mORMot;..\..\src"/>
+      <OtherUnitFiles Value="mORMot;..\..\src\Sphere10"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>

@@ -68,6 +68,9 @@ var
 
 implementation
 
+uses
+  UCommonUI;
+
 {$R *.lfm}
 
 function TForm1.GetSearchCapabilities: TSearchCapabilities;
@@ -158,7 +161,7 @@ begin
   FVisualGrid.OnPreparePopupMenu:=PreparePopupMenu;
   FVisualGrid.OnSelection:=Selection;
 
-  GridPanel.AddDockCenter(FVisualGrid);
+  GridPanel.AddControlDockCenter(FVisualGrid);
   TIPropertyGrid1.TIObject := FVisualGrid;
 end;
 

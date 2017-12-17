@@ -32,7 +32,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="14">
+    <Units Count="19">
       <Unit0>
         <Filename Value="FrameworkTester.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -74,38 +74,64 @@
         <ResourceBaseClass Value="Form"/>
       </Unit5>
       <Unit6>
-        <Filename Value="..\..\src\UCommon.pas"/>
+        <Filename Value="UWIZName_Step1A.pas"/>
         <IsPartOfProject Value="True"/>
+        <ComponentName Value="UWIZ_Step1A"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
       </Unit6>
       <Unit7>
-        <Filename Value="..\..\src\UWizard.pas"/>
+        <Filename Value="UWIZName_Step1B.pas"/>
         <IsPartOfProject Value="True"/>
+        <ComponentName Value="WIZName_Step1B"/>
         <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
       </Unit7>
       <Unit8>
-        <Filename Value="..\..\src\generics\generics.collections.pas"/>
+        <Filename Value="..\..\src\Sphere10\UAutoScope.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit8>
       <Unit9>
-        <Filename Value="..\..\src\generics\generics.defaults.pas"/>
+        <Filename Value="..\..\src\Sphere10\UCommon.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit9>
       <Unit10>
-        <Filename Value="..\..\src\generics\generics.hashes.pas"/>
+        <Filename Value="..\..\src\Sphere10\UCommonUI.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit10>
       <Unit11>
-        <Filename Value="..\..\src\generics\generics.helpers.pas"/>
+        <Filename Value="..\..\src\Sphere10\UVisualGrid.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit11>
       <Unit12>
-        <Filename Value="..\..\src\generics\generics.memoryexpanders.pas"/>
+        <Filename Value="..\..\src\Sphere10\UWizard.pas"/>
         <IsPartOfProject Value="True"/>
+        <HasResources Value="True"/>
       </Unit12>
       <Unit13>
-        <Filename Value="..\..\src\generics\generics.strings.pas"/>
+        <Filename Value="..\..\src\Generics.Collections\generics.collections.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit13>
+      <Unit14>
+        <Filename Value="..\..\src\Generics.Collections\generics.defaults.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit14>
+      <Unit15>
+        <Filename Value="..\..\src\Generics.Collections\generics.hashes.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit15>
+      <Unit16>
+        <Filename Value="..\..\src\Generics.Collections\generics.helpers.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit16>
+      <Unit17>
+        <Filename Value="..\..\src\Generics.Collections\generics.memoryexpanders.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit17>
+      <Unit18>
+        <Filename Value="..\..\src\Generics.Collections\generics.strings.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit18>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -116,7 +142,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir);..\src\util\generics"/>
-      <OtherUnitFiles Value="..\src\util;..\src\util\generics;..\src\form;..\..\src;..\..\src\generics"/>
+      <OtherUnitFiles Value="..\src\util;..\src\util\generics;..\src\form;..\..\src\Sphere10;..\..\src\Generics.Collections"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <CodeGeneration>

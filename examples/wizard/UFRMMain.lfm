@@ -1,7 +1,7 @@
 object FRMMain: TFRMMain
   Left = -7
   Height = 240
-  Top = 46
+  Top = 64
   Width = 320
   Caption = 'MainForm'
   ClientHeight = 240
