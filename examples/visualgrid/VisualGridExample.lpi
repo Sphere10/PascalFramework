@@ -62,9 +62,9 @@
       <Filename Value="VisualGridExample"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="$(ProjOutDir);..\..\src;mORMot"/>
+      <IncludeFiles Value="$(ProjOutDir);..\..\src;mORMot;..\..\src\Generics.Collections\inc"/>
       <Libraries Value="..\..\src\3rd\mORMot\fpc-win32"/>
-      <OtherUnitFiles Value="mORMot;..\..\src\Sphere10"/>
+      <OtherUnitFiles Value="mORMot;..\..\src\Sphere10;..\..\src\Generics.Collections"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>
