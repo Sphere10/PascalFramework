@@ -77,7 +77,8 @@ function TForm1.GetSearchCapabilities: TSearchCapabilities;
 begin
   Result := TSearchCapabilities.Create(
     TSearchCapability.From('ID', SORTABLE_NUMERIC_FILTER),
-    TSearchCapability.From('Name', SORTABLE_TEXT_FILTER));
+    TSearchCapability.From('Name', SORTABLE_TEXT_FILTER),
+    TSearchCapability.From('Foo', SORTABLE_FILTER));
 end;
 
 function TForm1.FetchPage(constref AParams: TPageFetchParams;
@@ -98,7 +99,7 @@ var
     Result := Format('Col: ''%s'' :: Kind: %s :: Sort: %s :: Values(%s)', [
       AFilter.ColumnName,
       GetEnumName(TypeInfo(TVisualGridFilter), Ord(AFilter.Filter)),
-      GetEnumName(TypeInfo(TSortDirection), Ord(AFilter.Sort)),
+      GetEnumName(TypeInfo(UVisualGrid.TSortDirection), Ord(AFilter.Sort)),
       LValues]);
   end;
 
