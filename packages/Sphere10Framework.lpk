@@ -13,13 +13,6 @@
         <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
     </CompilerOptions>
-    <Files Count="1">
-      <Item1>
-        <Filename Value="..\src\UVisualGrid.pas"/>
-        <HasRegisterProc Value="True"/>
-        <UnitName Value="UVisualGrid"/>
-      </Item1>
-    </Files>
     <RequiredPkgs Count="2">
       <Item1>
         <PackageName Value="LCLBase"/>
