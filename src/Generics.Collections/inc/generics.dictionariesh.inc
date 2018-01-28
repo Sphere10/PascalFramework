@@ -83,6 +83,8 @@ type
     constructor Create(const AComparer: IEqualityComparer<TKey>); overload;
     constructor Create(ACollection: TEnumerable<TDictionaryPair>); virtual; overload;
     constructor Create(ACollection: TEnumerable<TDictionaryPair>; const AComparer: IEqualityComparer<TKey>); virtual; overload;
+    constructor Create(ACollection: TEnumerableWithPointers<TDictionaryPair>); virtual; overload;
+    constructor Create(ACollection: TEnumerableWithPointers<TDictionaryPair>; const AComparer: IEqualityComparer<TKey>); virtual; overload;
 
     destructor Destroy; override;
   private
@@ -120,30 +122,17 @@ type
   { TDictionaryEnumerable }
 
   TDictionaryEnumerable<TDictionaryEnumerator: TObject; TDictionaryPointersEnumerator, // ... inherits from TCustomDictionaryEnumerator. workaround...
-    T, PT, CUSTOM_DICTIONARY_CONSTRAINTS> = class abstract(TEnumerable<T>)
-  private type
-    TPointersCollection = record
-    private
-      function Dictionary: TCustomDictionary<CUSTOM_DICTIONARY_CONSTRAINTS>; inline;
-      function GetCount: SizeInt; inline;
-    public
-      function GetEnumerator: TDictionaryPointersEnumerator;
-      function ToArray: TArray<PT>;
-      property Count: SizeInt read GetCount;
-    end;
-  public type
-    PPointersCollection = ^TPointersCollection;
+    T, CUSTOM_DICTIONARY_CONSTRAINTS> = class abstract(TEnumerableWithPointers<T>)
   private
-    FPointers: TPointersCollection;
     FDictionary: TCustomDictionary<CUSTOM_DICTIONARY_CONSTRAINTS>;
     function GetCount: SizeInt;
-    function GetPointers: PPointersCollection; inline;
+  protected
+    function GetPtrEnumerator: TEnumerator<PT>; override;
+    function DoGetEnumerator: TDictionaryEnumerator; override;
   public
     constructor Create(ADictionary: TCustomDictionary<CUSTOM_DICTIONARY_CONSTRAINTS>);
-    function DoGetEnumerator: TDictionaryEnumerator; override;
     function ToArray: TArray<T>; override; final;
     property Count: SizeInt read GetCount;
-    property Ptr: PPointersCollection read GetPointers;
   end;
 
   // more info : http://en.wikipedia.org/wiki/Open_addressing
@@ -233,9 +222,9 @@ type
       end;
 
       // Collections
-      TValueCollection = class(TDictionaryEnumerable<TValueEnumerator, TPValueEnumerator, TValue, PValue, CUSTOM_DICTIONARY_CONSTRAINTS>);
+      TValueCollection = class(TDictionaryEnumerable<TValueEnumerator, TPValueEnumerator, TValue, CUSTOM_DICTIONARY_CONSTRAINTS>);
 
-      TKeyCollection = class(TDictionaryEnumerable<TKeyEnumerator, TPKeyEnumerator, TKey, PKey, CUSTOM_DICTIONARY_CONSTRAINTS>);
+      TKeyCollection = class(TDictionaryEnumerable<TKeyEnumerator, TPKeyEnumerator, TKey, CUSTOM_DICTIONARY_CONSTRAINTS>);
 
     // bug #24283 - workaround related to lack of DoGetEnumerator
     function GetEnumerator: TPairEnumerator; reintroduce;
@@ -359,12 +348,15 @@ type
     constructor Create(ACapacity: SizeInt; const AComparer: IEqualityComparer<TKey>); override; overload;
     constructor Create(const AComparer: IEqualityComparer<TKey>); reintroduce; overload;
     constructor Create(ACollection: TEnumerable<TDictionaryPair>; const AComparer: IEqualityComparer<TKey>); override; overload;
+    constructor Create(ACollection: TEnumerableWithPointers<TDictionaryPair>; const AComparer: IEqualityComparer<TKey>); override; overload;
   public // bug #26181 (redundancy of constructors)
     constructor Create(ACapacity: SizeInt); override; overload;
     constructor Create(ACollection: TEnumerable<TDictionaryPair>); override; overload;
+    constructor Create(ACollection: TEnumerableWithPointers<TDictionaryPair>); override; overload;
     constructor Create(ACapacity: SizeInt; const AComparer: IExtendedEqualityComparer<TKey>); virtual; overload;
     constructor Create(const AComparer: IExtendedEqualityComparer<TKey>); overload;
     constructor Create(ACollection: TEnumerable<TDictionaryPair>; const AComparer: IExtendedEqualityComparer<TKey>); virtual; overload;
+    constructor Create(ACollection: TEnumerableWithPointers<TDictionaryPair>; const AComparer: IExtendedEqualityComparer<TKey>); virtual; overload;
   end;
 
   TDeamortizedDArrayCuckooMapEnumerator<T, CUCKOO_CONSTRAINTS> = class abstract(TCustomDictionaryEnumerator<T, CUSTOM_DICTIONARY_CONSTRAINTS>)
@@ -500,9 +492,9 @@ type
       end;
 
       // Collections
-      TValueCollection = class(TDictionaryEnumerable<TValueEnumerator, TPValueEnumerator, TValue, PValue, CUSTOM_DICTIONARY_CONSTRAINTS>);
+      TValueCollection = class(TDictionaryEnumerable<TValueEnumerator, TPValueEnumerator, TValue, CUSTOM_DICTIONARY_CONSTRAINTS>);
 
-      TKeyCollection = class(TDictionaryEnumerable<TKeyEnumerator, TPKeyEnumerator, TKey, PKey, CUSTOM_DICTIONARY_CONSTRAINTS>);
+      TKeyCollection = class(TDictionaryEnumerable<TKeyEnumerator, TPKeyEnumerator, TKey, CUSTOM_DICTIONARY_CONSTRAINTS>);
 
     // bug #24283 - workaround related to lack of DoGetEnumerator
     function GetEnumerator: TPairEnumerator; reintroduce;
@@ -532,15 +524,18 @@ type
     constructor Create(ACapacity: SizeInt; const AComparer: IEqualityComparer<TKey>); override; overload;
     constructor Create(const AComparer: IEqualityComparer<TKey>); reintroduce; overload;
     constructor Create(ACollection: TEnumerable<TDictionaryPair>; const AComparer: IEqualityComparer<TKey>); override; overload;
+    constructor Create(ACollection: TEnumerableWithPointers<TDictionaryPair>; const AComparer: IEqualityComparer<TKey>); override; overload;
   public
     // TODO: function TryFlushQueue(ACount: SizeInt): SizeInt;
 
     constructor Create; override; overload;
     constructor Create(ACapacity: SizeInt); override; overload;
     constructor Create(ACollection: TEnumerable<TDictionaryPair>); override; overload;
+    constructor Create(ACollection: TEnumerableWithPointers<TDictionaryPair>); override; overload;
     constructor Create(ACapacity: SizeInt; const AComparer: IExtendedEqualityComparer<TKey>); virtual; overload;
     constructor Create(const AComparer: IExtendedEqualityComparer<TKey>); overload;
     constructor Create(ACollection: TEnumerable<TDictionaryPair>; const AComparer: IExtendedEqualityComparer<TKey>); virtual; overload;
+    constructor Create(ACollection: TEnumerableWithPointers<TDictionaryPair>; const AComparer: IExtendedEqualityComparer<TKey>); virtual; overload;
     destructor Destroy; override;
 
     procedure Add(constref APair: TPair<TKey, TValue>); override; overload;
