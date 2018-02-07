@@ -17,11 +17,26 @@ unit UCommon;
   {$MODE Delphi}
 {$ENDIF}
 
+{$modeswitch nestedprocvars}
+
 interface
 
 uses
   Classes, SysUtils, Generics.Collections, Generics.Defaults,
-  Variants, LazUTF8;
+  Variants, LazUTF8, math, typinfo;
+
+{ CONSTANTS }
+
+const
+  MillisPerSecond = 1000;
+  MillisPerMinute = 60 * MillisPerSecond;
+  MillisPerHour = 60 * MillisPerMinute;
+  MillisPerDay = 24 * MillisPerHour;
+  MaxMilliseconds = High(Int64);
+  MinMilliseconds = Low(Int64);
+  MaxSeconds = MaxMilliseconds div 60;
+  MinSeconds = MinMilliseconds div 60;
+
 
 { GLOBAL FUNCTIONS }
 
@@ -41,6 +56,11 @@ function IIF(const ACondition: Boolean; const ATrueResult, AFalseResult: string)
 function IIF(const ACondition: Boolean; const ATrueResult, AFalseResult: TObject): TObject; overload;
 function IIF(const ACondition: Boolean; const ATrueResult, AFalseResult: variant): variant; overload;
 
+function GetSetName(const aSet:PTypeInfo; Value: Integer):string;
+function GetSetValue(const aSet:PTypeInfo; Name: String): Integer;
+
+
+
 { Clip Value }
 function ClipValue( AValue, MinValue, MaxValue: Integer) : Integer;
 
@@ -49,7 +69,72 @@ function TimeStamp : AnsiString;
 function UtcTimeStamp : AnsiString;
 
 type
+
+  { TTimeSpan }
+
+  TTimeSpan = record
+    // Naive implementation - only accurate to millisecond scale, needs updating to tick scale.
+    private
+      FMillis: Int64;
+    strict private
+      class constructor Create;
+      function GetDays: Integer;
+      function GetHours: Integer;
+      function GetMinutes: Integer;
+      function GetSeconds: Integer;
+      function GetMilliseconds: Integer;
+      function GetTotalDays: Double;
+      function GetTotalHours: Double;
+      function GetTotalMinutes: Double;
+      function GetTotalSeconds: Double;
+      function GetTotalMilliseconds: Double;
+      class function Normalize(const ADateTime : TDateTime) : Int64; inline; static;
+    public
+      constructor Create(Hours, Minutes, Seconds: Integer); overload;
+      constructor Create(Days, Hours, Minutes, Seconds: Integer); overload;
+      constructor Create(Days, Hours, Minutes, Seconds, Milliseconds: Integer); overload;
+      function Add(const TS: TTimeSpan): TTimeSpan; overload;
+      function Duration: TTimeSpan;
+      function Negate: TTimeSpan;
+      function Subtract(const TS: TTimeSpan): TTimeSpan; overload;
+      function ToString: string;
+      class function FromDays(Value: Double): TTimeSpan; static;
+      class function FromHours(Value: Double): TTimeSpan; static;
+      class function FromMinutes(Value: Double): TTimeSpan; static;
+      class function FromSeconds(Value: Double): TTimeSpan; static;
+      class function FromMilliseconds(Value: Double): TTimeSpan; static;
+      class function Subtract(const D1, D2: TDateTime): TTimeSpan; overload; static;
+      class function Parse(const S: string): TTimeSpan; static;
+      class function TryParse(const S: string; out Value: TTimeSpan): Boolean; static;
+      class operator +(const Left, Right: TTimeSpan) ATimeSpan : TTimeSpan;
+      class operator +(const Left: TTimeSpan; Right: TDateTime) ADateTime: TDateTime;
+      class operator +(const Left: TDateTime; Right: TTimeSpan) ADateTime: TDateTime;
+      class operator -(const Left, Right: TTimeSpan) ATimeSpan : TTimeSpan;
+      class operator -(const Left: TDateTime; Right: TTimeSpan) ADateTime: TDateTime;
+      class operator =(const Left, Right: TTimeSpan) ABool : Boolean;
+      class operator <>(const Left, Right: TTimeSpan) ABool : Boolean;
+      class operator >(const Left, Right: TTimeSpan) ABool : Boolean;
+      class operator >=(const Left, Right: TTimeSpan) ABool : Boolean;
+      class operator <(const Left, Right: TTimeSpan) ABool : Boolean;
+      class operator <=(const Left, Right: TTimeSpan) ABool : Boolean;
+      class operator Negative(const Value: TTimeSpan) ATimeSpan: TTimeSpan;
+      class operator Positive(const Value: TTimeSpan) ATimeSpan : TTimeSpan;
+      class operator Implicit(const Value: TTimeSpan) AString : string;
+      class operator Explicit(const Value: TTimeSpan) AString : string;
+      property Days: Integer read GetDays;
+      property Hours: Integer read GetHours;
+      property Minutes: Integer read GetMinutes;
+      property Seconds: Integer read GetSeconds;
+      property Milliseconds: Integer read GetMilliseconds;
+      property TotalDays: Double read GetTotalDays;
+      property TotalHours: Double read GetTotalHours;
+      property TotalMinutes: Double read GetTotalMinutes;
+      property TotalSeconds: Double read GetTotalSeconds;
+      property TotalMilliseconds: Double read GetTotalMilliseconds;
+    end;
+
   { TBox - a generic wrapper class for wrappying any type, mainly strings and primtives }
+
   TBox<T> = class(TObject)
     type
       TDestroyItemDelegate = procedure (constref val : T) of object;
@@ -65,9 +150,100 @@ type
   end;
 
   { A TObject-wrapped string }
+
   TStringObject = TBox<AnsiString>;
 
-  { TArrayTool }
+  { TDateTimeHelper }
+
+  TDateTimeHelper = record helper for TDateTime
+   private
+     function GetDay: Word; inline;
+     function GetDate: TDateTime; inline;
+     function GetDayOfWeek: Word; inline;
+     function GetDayOfYear: Word; inline;
+     function GetHour: Word; inline;
+     function GetMillisecond: Word; inline;
+     function GetMinute: Word; inline;
+     function GetMonth: Word; inline;
+     function GetSecond: Word; inline;
+     function GetTime: TDateTime; inline;
+     function GetYear: Word; inline;
+     class function GetNow: TDateTime; static; inline;
+     class function GetToday: TDateTime; static; inline;
+     class function GetTomorrow: TDateTime; static; inline;
+     class function GetYesterDay: TDateTime; static; inline;
+   public
+     class function Create(const aYear, aMonth, aDay: Word): TDateTime; overload; static; inline;
+     class function Create(const aYear, aMonth, aDay, aHour, aMinute, aSecond, aMillisecond: Word): TDateTime; overload; static; inline;
+
+     class property Now: TDateTime read GetNow;
+     class property Today: TDateTime read GetToday;
+     class property Yesterday: TDateTime read GetYesterDay;
+     class property Tomorrow: TDateTime read GetTomorrow;
+
+     property Date: TDateTime read GetDate;
+     property Time: TDateTime read GetTime;
+
+     property DayOfWeek: Word read GetDayOfWeek;
+     property DayOfYear: Word read GetDayOfYear;
+
+     property Year: Word read GetYear;
+     property Month: Word read GetMonth;
+     property Day: Word read GetDay;
+     property Hour: Word read GetHour;
+     property Minute: Word read GetMinute;
+     property Second: Word read GetSecond;
+     property Millisecond: Word read GetMillisecond;
+
+     function ToString(const aFormatStr: string = ''): string; inline;
+
+     function StartOfYear: TDateTime; inline;
+     function EndOfYear: TDateTime; inline;
+     function StartOfMonth: TDateTime; inline;
+     function EndOfMonth: TDateTime; inline;
+     function StartOfWeek: TDateTime; inline;
+     function EndOfWeek: TDateTime; inline;
+     function StartOfDay: TDateTime; inline;
+     function EndOfDay: TDateTime; inline;
+
+     function AddYears(const aNumberOfYears: Integer = 1): TDateTime; inline;
+     function AddMonths(const aNumberOfMonths: Integer = 1): TDateTime; inline;
+     function AddDays(const aNumberOfDays: Integer = 1): TDateTime; inline;
+     function AddHours(const aNumberOfHours: Int64 = 1): TDateTime; inline;
+     function AddMinutes(const aNumberOfMinutes: Int64 = 1): TDateTime; inline;
+     function AddSeconds(const aNumberOfSeconds: Int64 = 1): TDateTime; inline;
+     function AddMilliseconds(const aNumberOfMilliseconds: Int64 = 1): TDateTime; inline;
+
+     function CompareTo(const aDateTime: TDateTime): TValueRelationship; inline;
+     function Equals(const aDateTime: TDateTime): Boolean; inline;
+     function IsSameDay(const aDateTime: TDateTime): Boolean; inline;
+     function InRange(const aStartDateTime, aEndDateTime: TDateTime; const aInclusive: Boolean = True): Boolean; inline;
+     function IsInLeapYear: Boolean; inline;
+     function IsToday: Boolean; inline;
+     function IsAM: Boolean; inline;
+     function IsPM: Boolean; inline;
+
+     function YearsBetween(const aDateTime: TDateTime): Integer; inline;
+     function MonthsBetween(const aDateTime: TDateTime): Integer; inline;
+     function WeeksBetween(const aDateTime: TDateTime): Integer; inline;
+     function DaysBetween(const aDateTime: TDateTime): Integer; inline;
+     function HoursBetween(const aDateTime: TDateTime): Int64; inline;
+     function MinutesBetween(const aDateTime: TDateTime): Int64; inline;
+     function SecondsBetween(const aDateTime: TDateTime): Int64; inline;
+     function MilliSecondsBetween(const aDateTime: TDateTime): Int64; inline;
+
+     function WithinYears(const aDateTime: TDateTime; const aYears: Integer): Boolean; inline;
+     function WithinMonths(const aDateTime: TDateTime; const aMonths: Integer): Boolean; inline;
+     function WithinWeeks(const aDateTime: TDateTime; const aWeeks: Integer): Boolean; inline;
+     function WithinDays(const aDateTime: TDateTime; const aDays: Integer): Boolean; inline;
+     function WithinHours(const aDateTime: TDateTime; const aHours: Int64): Boolean; inline;
+     function WithinMinutes(const aDateTime: TDateTime; const aMinutes: Int64): Boolean; inline;
+     function WithinSeconds(const aDateTime: TDateTime; const aSeconds: Int64): Boolean; inline;
+     function WithinMilliseconds(const aDateTime: TDateTime; const AMilliseconds: Int64): Boolean; inline;
+   end;
+
+  { Collection Support }
+
   TArrayTool<T> = class
     public
       class function Contains(const Values: TArray<T>; const Item: T; const Comparer: IEqualityComparer<T>; out ItemIndex: SizeInt): Boolean; overload; static;
@@ -75,6 +251,8 @@ type
       class function Contains(const Values: TArray<T>; const Item: T) : Boolean; overload; static;
       class function IndexOf(const Values: TArray<T>; const Item: T; const Comparer: IEqualityComparer<T>): SizeInt; overload; static;
       class function IndexOf(const Values: TArray<T>; const Item: T): SizeInt; overload; static;
+      class function Copy(const AArray: array of T): TArray<T>; overload;
+      class function Copy(const AArray: array of T; FromIndex, Count: SizeInt ): TArray<T>; overload;
       class procedure Add(var Values: TArray<T>; const AValue : T); static;
       class procedure Remove(var Values : TArray<T>; const Item : T; const Comparer : IEqualityComparer<T>); overload; static;
       class procedure Remove(var Values : TArray<T>; const Item : T); overload; static;
@@ -85,18 +263,69 @@ type
       class procedure Swap(var Values : array of T; Item1Index, Item2Index : SizeInt);
       class procedure MoveItem(var Values : array of T; FromIndex, ToIndex : SizeInt);
       class function Concat(const Arrays: array of TArray<T>): TArray<T>; static;
-      class function Create(const a : T; const b : T) : TArray<T>; static;
+      class function Create(const item0 : T) : TArray<T>; overload; static;
+      class function Create(const item0 : T; const item1 : T) : TArray<T>; overload; static;
+      class function Create(const item0 : T; const item1 : T; const item2 : T) : TArray<T>; overload; static;
+      class function Create(const item0 : T; const item1 : T; const item2 : T; const item3 : T) : TArray<T>; overload; static;
+      class function Create(const item0 : T; const item1 : T; const item2 : T; const item3 : T; const item4 : T) : TArray<T>; overload; static;
+      class function Create(const item0 : T; const item1 : T; const item2 : T; const item3 : T; const item4 : T; const item5 : T) : TArray<T>; overload; static;
       class function ToArray(Enumerable: TEnumerable<T>; Count: SizeInt): TArray<T>; static;
     end;
 
-  { TNotifyManyEvent - support for multiple listeners }
-  TNotifyManyEvent = TArray<TNotifyEvent>;
+  TItemDisposePolicy = (idpNone, idpNil, idpFreeAndNil);
+  TListTool<T> = class
+    public type
+      TPredicate = function (constref Item: T) : boolean of object;
+    class function Filter(const AList: TList<T>; const APredicate: TPredicate) : SizeInt; overload;
+    class function Filter(const AList: TList<T>; const APredicate: TPredicate; AItemDisposePolicy : TItemDisposePolicy) : SizeInt; overload;
+  end;
 
-  { Helper for TNotifyManyEvent }
+
+  { Event Support}
+
+  TNotifyEventEx = procedure (sender : TObject; const args: array of Pointer) of object;
+  TNotifyManyEvent = TArray<TNotifyEvent>;
+  TNotifyManyEventEx = TArray<TNotifyEventEx>;
   TNotifyManyEventHelper = record helper for TNotifyManyEvent
     procedure Add(listener : TNotifyEvent);
     procedure Remove(listener : TNotifyEvent);
     procedure Invoke(sender : TObject);
+  end;
+  TNotifyManyEventExHelper = record helper for TNotifyManyEventEx
+    procedure Add(listener : TNotifyEventEx);
+    procedure Remove(listener : TNotifyEventEx);
+    procedure Invoke(sender : TObject; const args: array of Pointer);
+  end;
+
+  { Comparer Support }
+
+  TNestedComparison<T> = function (constref Left, Right: T): Integer is nested;
+
+  TNestedComparer<T> = class(TComparer<T>)
+    private
+      FComparer: TNestedComparison<T>;
+    public
+      constructor Create(const comparer: TNestedComparison<T>);
+      function Compare(constref Left, Right: T): Integer; override;
+  end;
+
+  TManyComparer<T> = class(TInterfacedObject, IComparer<T>)
+    private type
+      TComparer_T = TComparer<T>;
+      IComparer_T = IComparer<T>;
+      TNestedComparison_T = TNestedComparison<T>;
+      TOnComparison_T = TOnComparison<T>;
+      TComparison_T = TComparisonFunc<T>;
+    private
+      FComparers : TArray<IComparer_T>;
+    public
+      constructor Create(const comparers: TArray<IComparer_T>); overload;
+      destructor Destroy; override;
+      function Compare(constref Left, Right: T): Integer;
+      class function Construct(const comparers: array of TNestedComparison<T>) : IComparer<T>; overload;
+      class function Construct(const comparers: array of TOnComparison<T>) : IComparer<T>; overload;
+      class function Construct(const comparers: array of TComparisonFunc<T>) : IComparer<T>; overload;
+      class function Construct(const comparers: array of TComparer<T>) : IComparer<T>; overload;
   end;
 
   { TTable types }
@@ -162,6 +391,14 @@ type
     class function Parse(const AExpression: utf8string): TExpressionRecord; overload;
   end;
 
+{ COMPLEX CONSTANTS }
+
+const
+    MinTimeSpan : TTimeSpan = (FMillis: Low(Int64));
+    MaxTimeSpan: TTimeSpan = (FMillis: High(Int64));
+    ZeroTimeSpan: TTimeSpan = (FMillis: 0);
+
+{ RESOURCES }
 resourcestring
   sNotImplemented = 'Not implemented';
   sInvalidParameter_OutOfBounds = 'Invalid Parameter: %s out of bounds';
@@ -183,10 +420,26 @@ resourcestring
 
 implementation
 
+uses dateutils;
+
+{ CONSTANTS }
+const
+  IntlDateTimeFormat : TFormatSettings = (
+    DateSeparator : '-';
+    TimeSeparator : ':';
+    ShortDateFormat : 'yyyy/mm/dd';
+    LongDateFormat : ' yyyy/mm/dd';
+    ShortTimeFormat : 'hh:nn:zzz';
+    LongTimeFormat : 'hh:nn:zzz'
+  );
+
+{ VARIABLES }
+
 var
   TableRowType: TTableRow = nil;
+  MinTimeStampDateTime : TDateTime = 0;
 
-{%region Global functions %}
+{%region Global functions }
 
 function String2Hex(const Buffer: AnsiString): AnsiString;
 var
@@ -220,6 +473,224 @@ begin
      end;
    end;
 End;
+
+{%endregion}
+
+{%region TTimeSpan }
+
+class constructor TTimeSpan.Create;
+begin
+end;
+
+function TTimeSpan.GetDays: Integer;
+begin
+  Result :=  FMillis div MillisPerDay;
+end;
+
+function TTimeSpan.GetHours: Integer;
+begin
+  Result := (FMillis div MillisPerHour) mod HoursPerDay;
+end;
+
+function TTimeSpan.GetMinutes: Integer;
+begin
+  Result := (FMillis div MillisPerMinute) mod MinsPerHour;
+end;
+
+function TTimeSpan.GetSeconds: Integer;
+begin
+  Result := (FMillis div MillisPerSecond) mod SecsPerMin;
+end;
+
+function TTimeSpan.GetMilliseconds: Integer;
+begin
+  Result := FMillis mod MillisPerSecond;
+end;
+
+function TTimeSpan.GetTotalDays: Double;
+begin
+  Result := Double(FMillis) / Double(MillisPerDay);
+end;
+
+function TTimeSpan.GetTotalHours: Double;
+begin
+  Result := Double(FMillis) / Double(MillisPerHour);
+end;
+
+function TTimeSpan.GetTotalMinutes: Double;
+begin
+  Result := Double(FMillis) / Double(MillisPerMinute);
+end;
+
+function TTimeSpan.GetTotalSeconds: Double;
+begin
+  Result := Double(FMillis) / Double(MillisPerSecond);
+end;
+
+function TTimeSpan.GetTotalMilliseconds: Double;
+begin
+  Result := Double(FMillis);
+end;
+
+class function TTimeSpan.Normalize(const ADateTime : TDateTime) : Int64; static;
+begin
+  Result := MilliSecondsBetween(ADateTime, MinDateTime);
+end;
+
+constructor TTimeSpan.Create(Hours, Minutes, Seconds: Integer);
+begin
+  Self.FMillis := (Hours*MillisPerHour) + (Minutes*MillisPerMinute) + (Seconds*MillisPerSecond);
+end;
+
+constructor TTimeSpan.Create(Days, Hours, Minutes, Seconds: Integer); overload;
+begin
+  Self.FMillis := Days*MillisPerDay + Hours*MillisPerHour + Minutes*MillisPerMinute + Seconds*MillisPerSecond;
+end;
+
+constructor TTimeSpan.Create(Days, Hours, Minutes, Seconds, Milliseconds: Integer); overload;
+begin
+  Self.FMillis := Days*MillisPerDay + Hours*MillisPerHour + Minutes*MillisPerMinute + Seconds*MillisPerSecond + Milliseconds;
+end;
+
+function TTimeSpan.Add(const TS: TTimeSpan): TTimeSpan;
+begin
+  Result.FMillis := FMillis + TS.FMillis;
+end;
+
+function TTimeSpan.Duration: TTimeSpan;
+begin
+  Result.FMillis := FMillis;
+end;
+
+function TTimeSpan.Negate: TTimeSpan;
+begin
+  Result.FMillis := -FMillis;
+end;
+
+function TTimeSpan.Subtract(const TS: TTimeSpan): TTimeSpan;
+begin
+  Result.FMillis := FMillis - TS.FMillis;
+end;
+
+function TTimeSpan.ToString: string;
+begin
+  Result := Format('[%d]:[%.2d]:[%.2d]:[%.2d].[%.4d]', [GetDays, GetHours, GetMinutes, GetSeconds, GetMilliseconds]);
+end;
+
+class function TTimeSpan.FromDays(Value: Double): TTimeSpan;
+begin
+  Result.FMillis := Round(Value * Double(MillisPerDay));
+end;
+
+class function TTimeSpan.FromHours(Value: Double): TTimeSpan; static;
+begin
+  Result.FMillis := Round(Value * Double(MillisPerHour));
+end;
+
+class function TTimeSpan.FromMinutes(Value: Double): TTimeSpan; static;
+begin
+  Result.FMillis := Round(Value * Double(MillisPerMinute));
+end;
+
+class function TTimeSpan.FromSeconds(Value: Double): TTimeSpan; static;
+begin
+  Result.FMillis := Round(Value * Double(MillisPerSecond));
+end;
+
+class function TTimeSpan.FromMilliseconds(Value: Double): TTimeSpan; static;
+begin
+  Result.FMillis := Round(Value);
+end;
+
+class function TTimeSpan.Subtract(const D1, D2: TDateTime): TTimeSpan; static;
+begin
+  Result.FMillis := Normalize(D1) - Normalize(D2);
+end;
+
+class function TTimeSpan.Parse(const S: string): TTimeSpan; static;
+begin
+  raise ENotImplemented.Create('');
+end;
+
+class function TTimeSpan.TryParse(const S: string; out Value: TTimeSpan): Boolean; static;
+begin
+  raise ENotImplemented.Create('');
+end;
+
+class operator TTimeSpan.+(const Left, Right: TTimeSpan) ATimeSpan : TTimeSpan;
+begin
+  ATimeSpan.FMillis := Left.FMillis + Right.FMillis;
+end;
+
+class operator TTimeSpan.+(const Left: TTimeSpan; Right: TDateTime) ADateTime: TDateTime;
+begin
+  ADateTime := IncMilliSecond(Right, Left.FMillis);
+end;
+
+class operator TTimeSpan.+(const Left: TDateTime; Right: TTimeSpan) ADateTime: TDateTime;
+begin
+  ADateTime := IncMilliSecond(Left, Right.FMillis);
+end;
+
+class operator TTimeSpan.-(const Left, Right: TTimeSpan) ATimeSpan : TTimeSpan;
+begin
+  ATimeSpan.FMillis := Left.FMillis - Right.FMillis;
+end;
+
+class operator TTimeSpan.-(const Left: TDateTime; Right: TTimeSpan) ADateTime: TDateTime;
+begin
+  ADateTime := IncMilliSecond(Left, -Right.FMillis);
+end;
+
+class operator TTimeSpan.=(const Left, Right: TTimeSpan) ABool : Boolean;
+begin
+  ABool := Left.FMillis = Right.FMillis;
+end;
+
+class operator TTimeSpan.<>(const Left, Right: TTimeSpan) ABool : Boolean;
+begin
+  ABool := Left.FMillis <> Right.FMillis;
+end;
+
+class operator TTimeSpan.>(const Left, Right: TTimeSpan) ABool : Boolean;
+begin
+  ABool := Left.FMillis > Right.FMillis;
+end;
+
+class operator TTimeSpan.>=(const Left, Right: TTimeSpan) ABool : Boolean;
+begin
+  ABool := Left.FMillis >= Right.FMillis;
+end;
+
+class operator TTimeSpan.<(const Left, Right: TTimeSpan) ABool : Boolean;
+begin
+  ABool := Left.FMillis < Right.FMillis;
+end;
+
+class operator TTimeSpan.<=(const Left, Right: TTimeSpan) ABool : Boolean;
+begin
+  ABool := Left.FMillis <= Right.FMillis;
+end;
+
+class operator TTimeSpan.Negative(const Value: TTimeSpan) ATimeSpan: TTimeSpan;
+begin
+  ATimeSpan := Value.Negate;
+end;
+
+class operator TTimeSpan.Positive(const Value: TTimeSpan) ATimeSpan : TTimeSpan;
+begin
+  ATimeSpan := Value;
+end;
+
+class operator TTimeSpan.Implicit(const Value: TTimeSpan) AString : string;
+begin
+  AString := Value.ToString;
+end;
+
+class operator TTimeSpan.Explicit(const Value: TTimeSpan) AString : string;
+begin
+  AString := Value.ToString;
+end;
 
 {%endregion}
 
@@ -288,6 +759,47 @@ begin
     Result := AFalseResult;
 end;
 
+{ Enums }
+
+function GetSetName(const aSet:PTypeInfo; Value: Integer):string;
+var
+  vData1 : PTypeData;
+  vData2 : PTypeData;
+  vCntr  : Integer;
+  v: Integer;
+begin
+  Result := '';
+  if aSet^.Kind = tkSet then begin
+    vData1 := GetTypeData(aSet);
+    vData2 := GetTypeData(vData1^.CompType);
+    for vCntr := vData2^.MinValue to vData2^.MaxValue do
+      if (Value shr vCntr) and 1 <> 0 then
+        Result := Result+ GetEnumName(vData1^.CompType,vCntr)+',';
+    if Result <> '' then Delete(Result, Length(Result), 1);
+  end;
+end;
+
+function GetSetValue(const aSet:PTypeInfo; Name: String): Integer;
+var
+  vData1 : PTypeData;
+  vData2 : PTypeData;
+  vCntr  : Integer;
+  p      : Integer;
+begin
+  Result := 0;
+  if aSet^.Kind = tkSet then begin
+    vData1 := GetTypeData(aSet);
+    vData2 := GetTypeData(vData1^.CompType);
+    for vCntr := vData2^.MinValue to vData2^.MaxValue do begin
+      p := pos(GetEnumName(vData1^.CompType, vCntr), Name);
+      if p = 0 then
+        Continue;
+      if (p = 1) or (Name[p-1] = ',') then
+        Result := Result or (1 shl vCntr);
+    end;
+  end;
+end;
+
 { Clip Value }
 
 function ClipValue( AValue, MinValue, MaxValue: Integer) : Integer;
@@ -299,20 +811,6 @@ begin
   else
     Result := AValue
 end;
-
-
-{ DateTime functions }
-function TimeStamp : AnsiString;
-begin
-  Result := FormatDateTime('yyy-mm-dd hh:nn:ss', Now);
-end;
-
-function UtcTimeStamp : AnsiString;
-begin
-  raise Exception.Create(sNotImplemented);
-end;
-
-{%endregion}
 
 {%region TBox }
 
@@ -341,7 +839,7 @@ end;
 
 {%endregion}
 
-{%region TArrayTool }
+{%region Collection Support }
 
 class function TArrayTool<T>.Contains(const Values: TArray<T>; const Item: T; const Comparer: IEqualityComparer<T>; out ItemIndex: SizeInt): Boolean;
 var
@@ -378,6 +876,22 @@ end;
 class function TArrayTool<T>.IndexOf(const Values: TArray<T>; const Item: T): SizeInt;
 begin
   TArrayTool<T>.Contains(Values, Item, Result);
+end;
+
+class function TArrayTool<T>.Copy(const AArray: array of T): TArray<T>;
+begin
+  Copy(AArray, 0, Length(AArray));
+end;
+
+class function TArrayTool<T>.Copy(const AArray: array of T; FromIndex, Count: SizeInt ): TArray<T>;
+var
+  i : SizeInt;
+begin
+  if Count < 0 then raise EArgumentOutOfRangeException.Create('Count was less than 0');
+  if (FromIndex + Count) > High(AArray) then raise EArgumentOutOfRangeException.Create('FromIndex + Count was greater than High(AArray)');
+  SetLength(Result, Count);
+  for i:= FromIndex to FromIndex + Count do
+    Result[i - FromIndex] := AArray[i];
 end;
 
 class procedure TArrayTool<T>.Add(var Values: TArray<T>; const AValue : T);
@@ -481,12 +995,56 @@ begin
   end;
 end;
 
-class function TArrayTool<T>.Create(const a, b: T): TArray<T>;
+class function TArrayTool<T>.Create(const item0 : T) : TArray<T>;
+begin
+  SetLength(result,1);
+  result[0] := item0;
+end;
+
+class function TArrayTool<T>.Create(const item0 : T; const item1 : T) : TArray<T>;
 begin
   SetLength(result,2);
-  result[0] := a;
-  result[1] := b;
+  result[0] := item0;
+  result[1] := item1;
 end;
+
+class function TArrayTool<T>.Create(const item0 : T; const item1 : T; const item2 : T) : TArray<T>;
+begin
+  SetLength(result,3);
+  result[0] := item0;
+  result[1] := item1;
+  result[2] := item2;
+end;
+
+class function TArrayTool<T>.Create(const item0 : T; const item1 : T; const item2 : T; const item3 : T) : TArray<T>;
+begin
+  SetLength(result,4);
+  result[0] := item0;
+  result[1] := item1;
+  result[2] := item2;
+  result[3] := item3;
+end;
+
+class function TArrayTool<T>.Create(const item0 : T; const item1 : T; const item2 : T; const item3 : T; const item4 : T) : TArray<T>;begin
+  SetLength(result,5);
+  result[0] := item0;
+  result[1] := item1;
+  result[2] := item2;
+  result[3] := item3;
+  result[4] := item4;
+end;
+
+class function TArrayTool<T>.Create(const item0 : T; const item1 : T; const item2 : T; const item3 : T; const item4 : T; const item5 : T) : TArray<T>;
+begin
+  SetLength(result,6);
+  result[0] := item0;
+  result[1] := item1;
+  result[2] := item2;
+  result[3] := item3;
+  result[4] := item4;
+  result[5] := item5;
+end;
+
 
 class function TArrayTool<T>.ToArray(Enumerable: TEnumerable<T>; Count: SizeInt): TArray<T>;
 var
@@ -501,7 +1059,435 @@ begin
   end;
 end;
 
+class function TListTool<T>.Filter(const AList: TList<T>; const APredicate: TPredicate) : SizeInt;
+begin
+  Result := Filter(AList, APredicate, idpNone);
+end;
+
+class function TListTool<T>.Filter(const AList: TList<T>; const APredicate: TPredicate; AItemDisposePolicy : TItemDisposePolicy) : SizeInt;
+var
+  i : SizeInt;
+  item : T;
+begin
+  Result := 0;
+  i := 0;
+  while i <= AList.Count do begin
+    if APredicate(AList[i]) then begin
+      case AItemDisposePolicy of
+          idpNone: ;
+          idpNil: AList[i] := nil;
+          idpFreeAndNil: begin
+            item := AList[i];
+            FreeAndNil(item);
+            AList[i] := nil;
+          end
+          else raise ENotSupportedException(Format('TItemDisposePolicy: [%d]', [Ord(AItemDisposePolicy)]));
+      end;
+      AList.Delete(i);
+      inc(Result);
+    end else Inc(i);
+  end;
+end;
+
 {%endregion}
+
+
+{%region Date/Time Support }
+
+function TimeStamp : AnsiString;
+begin
+  Result := FormatDateTime('yyy-mm-dd hh:nn:ss', Now);
+end;
+
+function UtcTimeStamp : AnsiString;
+begin
+  raise Exception.Create(sNotImplemented);
+end;
+
+function TDateTimeHelper.AddDays(const aNumberOfDays: Integer): TDateTime;
+begin
+  Result := IncDay(Self, aNumberOfDays);
+end;
+
+function TDateTimeHelper.AddHours(const aNumberOfHours: Int64): TDateTime;
+begin
+  Result := IncHour(Self, aNumberOfHours);
+end;
+
+function TDateTimeHelper.AddMilliseconds(const aNumberOfMilliseconds: Int64): TDateTime;
+begin
+  Result := IncMilliSecond(Self, aNumberOfMilliseconds);
+end;
+
+function TDateTimeHelper.AddMinutes(const aNumberOfMinutes: Int64): TDateTime;
+begin
+  Result := IncMinute(Self, aNumberOfMinutes);
+end;
+
+function TDateTimeHelper.AddMonths(const aNumberOfMonths: Integer): TDateTime;
+begin
+  Result := IncMonth(Self, aNumberOfMonths);
+end;
+
+function TDateTimeHelper.AddSeconds(const aNumberOfSeconds: Int64): TDateTime;
+begin
+  Result := IncSecond(Self, aNumberOfSeconds);
+end;
+
+function TDateTimeHelper.AddYears(const aNumberOfYears: Integer): TDateTime;
+begin
+  Result := IncYear(Self, aNumberOfYears);
+end;
+
+function TDateTimeHelper.CompareTo(const aDateTime: TDateTime): TValueRelationship;
+begin
+  Result := CompareDateTime(Self, aDateTime);
+end;
+
+class function TDateTimeHelper.Create(const aYear, aMonth,
+  aDay: Word): TDateTime;
+begin
+  Result := EncodeDate(aYear, aMonth, aDay);
+end;
+
+class function TDateTimeHelper.Create(const aYear, aMonth, aDay, aHour, aMinute,
+  aSecond, aMillisecond: Word): TDateTime;
+begin
+  Result := EncodeDateTime(aYear, aMonth, aDay, aHour, aMinute, aSecond, aMillisecond);
+end;
+
+function TDateTimeHelper.DaysBetween(const aDateTime: TDateTime): Integer;
+begin
+  Result := dateutils.DaysBetween(Self, aDateTime);
+end;
+
+function TDateTimeHelper.EndOfDay: TDateTime;
+begin
+  Result := EndOfTheDay(Self);
+end;
+
+function TDateTimeHelper.EndOfMonth: TDateTime;
+begin
+  Result := EndOfTheMonth(Self);
+end;
+
+function TDateTimeHelper.EndOfWeek: TDateTime;
+begin
+  Result := EndOfTheWeek(Self);
+end;
+
+function TDateTimeHelper.EndOfYear: TDateTime;
+begin
+  Result := EndOfTheYear(Self);
+end;
+
+function TDateTimeHelper.Equals(const aDateTime: TDateTime): Boolean;
+begin
+  Result := SameDateTime(Self, aDateTime);
+end;
+
+function TDateTimeHelper.GetDate: TDateTime;
+begin
+  Result := DateOf(Self);
+end;
+
+function TDateTimeHelper.GetDay: Word;
+begin
+  Result := DayOf(Self);
+end;
+
+function TDateTimeHelper.GetDayOfWeek: Word;
+begin
+  Result := DayOfTheWeek(Self);
+end;
+
+function TDateTimeHelper.GetDayOfYear: Word;
+begin
+  Result := DayOfTheYear(Self);
+end;
+
+function TDateTimeHelper.GetHour: Word;
+begin
+  Result := HourOf(Self);
+end;
+
+function TDateTimeHelper.GetMillisecond: Word;
+begin
+  Result := MilliSecondOf(Self);
+end;
+
+function TDateTimeHelper.GetMinute: Word;
+begin
+  Result := MinuteOf(Self);
+end;
+
+function TDateTimeHelper.GetMonth: Word;
+begin
+  Result := MonthOf(Self);
+end;
+
+class function TDateTimeHelper.GetNow: TDateTime;
+begin
+  Result := SysUtils.Now;
+end;
+
+function TDateTimeHelper.GetSecond: Word;
+begin
+  Result := SecondOf(Self);
+end;
+
+function TDateTimeHelper.GetTime: TDateTime;
+begin
+  Result := TimeOf(Self);
+end;
+
+class function TDateTimeHelper.GetToday: TDateTime;
+begin
+  Result := SysUtils.Date;
+end;
+
+class function TDateTimeHelper.GetTomorrow: TDateTime;
+begin
+  Result := SysUtils.Date + 1;
+end;
+
+function TDateTimeHelper.GetYear: Word;
+begin
+  Result := YearOf(Self);
+end;
+
+class function TDateTimeHelper.GetYesterDay: TDateTime;
+begin
+  Result := SysUtils.Date - 1;
+end;
+
+function TDateTimeHelper.HoursBetween(const aDateTime: TDateTime): Int64;
+begin
+  Result := DateUtils.HoursBetween(Self, aDateTime);
+end;
+
+function TDateTimeHelper.InRange(const aStartDateTime, aEndDateTime: TDateTime; const aInclusive: Boolean): Boolean;
+begin
+  if aInclusive then
+    Result := (aStartDateTime <= self) AND (self <= aEndDateTime)
+  else
+    Result := (aStartDateTime < self) AND (self < aEndDateTime);
+end;
+
+function TDateTimeHelper.IsAM: Boolean;
+begin
+  Result := NOT dateutils.IsPM(self);
+end;
+
+function TDateTimeHelper.IsInLeapYear: Boolean;
+begin
+  Result := dateutils.IsInLeapYear(Self);
+end;
+
+function TDateTimeHelper.IsPM: Boolean;
+begin
+  Result := dateutils.IsPM(Self);
+end;
+
+function TDateTimeHelper.IsSameDay(const aDateTime: TDateTime): Boolean;
+begin
+  Result := DateUtils.IsSameDay(Self, aDateTime);
+end;
+
+function TDateTimeHelper.IsToday: Boolean;
+begin
+  Result := DateUtils.IsToday(Self);
+end;
+
+function TDateTimeHelper.MilliSecondsBetween(const aDateTime: TDateTime): Int64;
+begin
+  Result := DateUtils.MilliSecondsBetween(Self, aDateTime);
+end;
+
+function TDateTimeHelper.MinutesBetween(const aDateTime: TDateTime): Int64;
+begin
+  Result := DateUtils.MinutesBetween(Self, aDateTime);
+end;
+
+function TDateTimeHelper.MonthsBetween(const aDateTime: TDateTime): Integer;
+begin
+  Result := DateUtils.MonthsBetween(Self, aDateTime);
+end;
+
+function TDateTimeHelper.SecondsBetween(const aDateTime: TDateTime): Int64;
+begin
+  Result := DateUtils.SecondsBetween(Self, aDateTime);
+end;
+
+function TDateTimeHelper.StartOfDay: TDateTime;
+begin
+  Result := StartOfTheDay(Self);
+end;
+
+function TDateTimeHelper.StartOfMonth: TDateTime;
+begin
+  Result := StartOfTheMonth(Self);
+end;
+
+function TDateTimeHelper.StartOfWeek: TDateTime;
+begin
+  Result := StartOfTheWeek(Self);
+end;
+
+function TDateTimeHelper.StartOfYear: TDateTime;
+begin
+  Result := StartOfTheYear(Self);
+end;
+
+function TDateTimeHelper.ToString(const aFormatStr: string): string;
+begin
+  if aFormatStr = '' then
+    Result := DateToStr(Self)
+  else
+    Result := FormatDateTime(aFormatStr, Self);
+end;
+
+function TDateTimeHelper.WeeksBetween(const aDateTime: TDateTime): Integer;
+begin
+  Result := DateUtils.WeeksBetween(Self, aDateTime);
+end;
+
+function TDateTimeHelper.WithinDays(const aDateTime: TDateTime;
+  const aDays: Integer): Boolean;
+begin
+  Result := DateUtils.WithinPastDays(Self, aDateTime, aDays);
+end;
+
+function TDateTimeHelper.WithinHours(const aDateTime: TDateTime;
+  const aHours: Int64): Boolean;
+begin
+  Result := DateUtils.WithinPastHours(Self, aDateTime, aHours);
+end;
+
+function TDateTimeHelper.WithinMilliseconds(const aDateTime: TDateTime;
+  const AMilliseconds: Int64): Boolean;
+begin
+  Result := DateUtils.WithinPastMilliSeconds(Self, aDateTime, AMilliseconds);
+end;
+
+function TDateTimeHelper.WithinMinutes(const aDateTime: TDateTime;
+  const aMinutes: Int64): Boolean;
+begin
+  Result := DateUtils.WithinPastMinutes(Self, aDateTime, aMinutes);
+end;
+
+function TDateTimeHelper.WithinMonths(const aDateTime: TDateTime;
+  const aMonths: Integer): Boolean;
+begin
+  Result := DateUtils.WithinPastMonths(Self, aDateTime, aMonths);
+end;
+
+function TDateTimeHelper.WithinSeconds(const aDateTime: TDateTime;
+  const aSeconds: Int64): Boolean;
+begin
+  Result := DateUtils.WithinPastSeconds(Self, aDateTime, aSeconds);
+end;
+
+function TDateTimeHelper.WithinWeeks(const aDateTime: TDateTime;
+  const aWeeks: Integer): Boolean;
+begin
+  Result := DateUtils.WithinPastWeeks(Self, aDateTime, aWeeks);
+end;
+
+function TDateTimeHelper.WithinYears(const aDateTime: TDateTime;
+  const aYears: Integer): Boolean;
+begin
+  Result := DateUtils.WithinPastYears(Self, aDateTime, aYears);
+end;
+
+function TDateTimeHelper.YearsBetween(const aDateTime: TDateTime): Integer;
+begin
+  Result := DateUtils.YearsBetween(Self, aDateTime);
+end;
+
+{%endregion}
+
+{% Comparer Support }
+
+constructor TNestedComparer<T>.Create(const comparer: TNestedComparison<T>);
+begin
+  FComparer := comparer;
+end;
+
+function TNestedComparer<T>.Compare(constref Left, Right: T): Integer;
+begin
+  Result := FComparer(Left, Right);
+end;
+
+constructor TManyComparer<T>.Create(const comparers: TArray<IComparer_T>);
+begin
+  FComparers := comparers;
+end;
+
+destructor TManyComparer<T>.Destroy;
+begin
+  FComparers := nil;
+  inherited;
+end;
+
+function TManyComparer<T>.Compare(constref Left, Right: T): Integer;
+var
+  i : Integer;
+begin
+  if Length(FComparers) = 0 then
+    raise Exception.Create('No comparers defined');
+  for i := Low(FComparers) to High(FComparers) do begin
+    Result := FComparers[i].Compare(Left, Right);
+    if (Result <> 0) or (i = High(FComparers)) then exit;
+  end;
+end;
+
+class function TManyComparer<T>.Construct(const comparers: array of TNestedComparison<T>) : IComparer<T>;
+var
+  i : Integer;
+  internalComparers : TArray<IComparer_T>;
+begin
+  SetLength(internalComparers, Length(comparers));
+  for i := 0 to High(comparers) do
+    internalComparers[i] := TNestedComparer<T>.Create(comparers[i]);
+  Create(internalComparers);
+end;
+
+class function TManyComparer<T>.Construct(const comparers: array of TOnComparison<T>) : IComparer<T>;
+var
+  i : Integer;
+  internalComparers : TArray<IComparer_T>;
+begin
+  SetLength(internalComparers, Length(comparers));
+  for i := 0 to High(comparers) do
+    internalComparers[i] := TComparer<T>.Construct(comparers[i]);
+  Create(internalComparers);
+end;
+
+class function TManyComparer<T>.Construct(const comparers: array of TComparisonFunc<T>) : IComparer<T>;
+var
+  i : Integer;
+  internalComparers : TArray<IComparer_T>;
+begin
+  SetLength(internalComparers, Length(comparers));
+  for i := 0 to High(comparers) do
+    internalComparers[i] := TComparer<T>.Construct(comparers[i]);
+  Create(internalComparers);
+end;
+
+class function TManyComparer<T>.Construct(const comparers: array of TComparer<T>) : IComparer<T>;
+var
+  i : Integer;
+  internalComparers : TArray<IComparer_T>;
+begin
+  SetLength(internalComparers, Length(comparers));
+  for i := 0 to High(comparers) do
+    internalComparers[i] := IComparer_T(comparers[i]);
+  Create(internalComparers);
+end;
+
+{%endegion }
+
 
 { TTableRow }
 
@@ -612,8 +1598,31 @@ end;
 procedure TNotifyManyEventHelper.Invoke(sender : TObject);
 var i : Integer;
 begin
-  for i := 0 to high(self) do
+  for i := low(self) to high(self) do
     self[i](sender);
+end;
+
+{%endregion}
+
+{%region TNotifyManyEventHelperEx}
+
+procedure TNotifyManyEventExHelper.Add(listener : TNotifyEventEx);
+begin
+  if TArrayTool<TNotifyEventEx>.IndexOf(self, listener) = -1 then begin
+    TArrayTool<TNotifyEventEx>.Add(self, listener);
+  end;
+end;
+
+procedure TNotifyManyEventExHelper.Remove(listener : TNotifyEventEx);
+begin
+  TArrayTool<TNotifyEventEx>.Remove(self, listener);
+end;
+
+procedure TNotifyManyEventExHelper.Invoke(sender : TObject; const args: array of Pointer);
+var i : Integer;
+begin
+  for i := Low(Self) to high(Self) do
+    self[i](sender, args);
 end;
 
 {%endregion}
@@ -949,6 +1958,8 @@ end;
 
 initialization
   TableRowType := TTableRow.Create;
+  MinTimeStampDateTime:= StrToDateTime('1980-01-01 00:00:000', IntlDateTimeFormat);
+
 finalization
   TableRowType.Free;
 end.

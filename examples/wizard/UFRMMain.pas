@@ -9,8 +9,7 @@ unit UFRMMain;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls, UWizard, UWIZName_Step1, UWIZName_Step2, UFRMWorkArea, UFRMNotifyManyTest, UCommon;
-
+  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls, UWizard, UWIZName_Step1, UWIZName_Step2, UFRMWorkArea, UFRMNotifyManyTest, UCommon, UCache;
 
 type
 

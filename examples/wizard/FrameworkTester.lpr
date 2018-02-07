@@ -7,8 +7,8 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, UFRMMain, UFRMWorkArea, UFRMNotifyManyTest, Generics.Defaults,
-UWIZName_Step1A, UWIZName_Step1B;
+  Forms, UFRMMain, UFRMWorkArea, UFRMNotifyManyTest, Generics.Defaults, UCache,
+  UWIZName_Step1A, UWIZName_Step1B;
 
 {$R *.res}
 

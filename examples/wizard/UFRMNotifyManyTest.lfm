@@ -3,11 +3,12 @@ object FRMNotifyManyTest: TFRMNotifyManyTest
   Height = 350
   Top = 200
   Width = 498
+  ActiveControl = cbListener1
   Caption = 'TNotifyManyTest'
   ClientHeight = 350
   ClientWidth = 498
   OnMouseMove = FormMouseMove
-  LCLVersion = '1.6.4.0'
+  Visible = False
   object cbListener1: TCheckBox
     Left = 16
     Height = 19

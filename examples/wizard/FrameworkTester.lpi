@@ -13,9 +13,6 @@
     <i18n>
       <EnableI18N LFM="False"/>
     </i18n>
-    <VersionInfo>
-      <StringTable ProductVersion=""/>
-    </VersionInfo>
     <BuildModes Count="1">
       <Item1 Name="Default" Default="True"/>
     </BuildModes>
@@ -32,7 +29,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="19">
+    <Units Count="20">
       <Unit0>
         <Filename Value="FrameworkTester.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -76,7 +73,7 @@
       <Unit6>
         <Filename Value="UWIZName_Step1A.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="UWIZ_Step1A"/>
+        <ComponentName Value="WIZName_Step1A"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit6>
@@ -106,15 +103,19 @@
       <Unit12>
         <Filename Value="..\..\src\Sphere10\UWizard.pas"/>
         <IsPartOfProject Value="True"/>
+        <ComponentName Value="WizardHostForm"/>
         <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
       </Unit12>
       <Unit13>
         <Filename Value="..\..\src\Generics.Collections\generics.collections.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="Generics.Collections"/>
       </Unit13>
       <Unit14>
         <Filename Value="..\..\src\Generics.Collections\generics.defaults.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="Generics.Defaults"/>
       </Unit14>
       <Unit15>
         <Filename Value="..\..\src\Generics.Collections\generics.hashes.pas"/>
@@ -132,6 +133,10 @@
         <Filename Value="..\..\src\Generics.Collections\generics.strings.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit18>
+      <Unit19>
+        <Filename Value="..\..\src\Sphere10\UCache.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit19>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
