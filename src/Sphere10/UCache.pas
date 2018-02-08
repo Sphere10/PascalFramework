@@ -52,6 +52,8 @@ type
       function BySizeCompare(constref Left, Right: __TPair_TKey_TValue): Integer;
       function BySizeDescendingCompare(constref Left, Right: __TPair_TKey_TValue): Integer;
       function IsExpiredPredicate(constref Item : __TPair_TKey_TValue) : boolean;
+    protected type
+      __TDictionary_TKey_TCachedItem_TValue = TDictionary<TKey, __TCachedItem_TValue>;
     protected
       FCurrentSize : SizeInt;
       FMaxCapacity : SizeInt;
@@ -60,7 +62,7 @@ type
       FExpirationPolicy : TExpirationPolicy;
       FReapPolicy : TCacheReapPolicy;
       FNullValuePolicy : TNullValuePolicy;
-      FInternalStorage : TDictionary<TKey, __TCachedItem_TValue>;
+      FInternalStorage : __TDictionary_TKey_TCachedItem_TValue;
       FLock : TSimpleRWSync;
       function EstimateSize(const AVal: TValue) : SizeInt; virtual; abstract;
       function Fetch(const AKey: TKey): TValue; virtual; abstract;
@@ -259,7 +261,7 @@ begin
   inherited Create(AOwner);
   FItemDisposePolicy := AItemDisposePolicy;
   FNullValuePolicy := ANullValuePolicy;
-  FInternalStorage := TDictionary<TKey, __TCachedItem_TValue>.Create;
+  FInternalStorage := __TDictionary_TKey_TCachedItem_TValue.Create;
   FCurrentSize := 0;
   FReapPolicy := AReapPolicy;
   FExpirationPolicy := AExpirationPolicy;
