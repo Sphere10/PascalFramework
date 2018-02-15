@@ -29,7 +29,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="5">
+    <Units Count="7">
       <Unit0>
         <Filename Value="VisualGridExample.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -46,13 +46,21 @@
         <IsPartOfProject Value="True"/>
       </Unit2>
       <Unit3>
-        <Filename Value="..\..\src\Sphere10\UCommonUI.pas"/>
+        <Filename Value="..\..\src\Sphere10\UVisualGrid.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit3>
       <Unit4>
-        <Filename Value="..\..\src\Sphere10\UVisualGrid.pas"/>
+        <Filename Value="..\..\src\Sphere10\UCommon.Collections.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit4>
+      <Unit5>
+        <Filename Value="..\..\src\Sphere10\UCommon.Data.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="..\..\src\Sphere10\UCommon.UI.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit6>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

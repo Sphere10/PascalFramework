@@ -51,7 +51,7 @@ type
       function ByAccessedOnCompare(constref Left, Right: __TPair_TKey_TValue): Integer;
       function BySizeCompare(constref Left, Right: __TPair_TKey_TValue): Integer;
       function BySizeDescendingCompare(constref Left, Right: __TPair_TKey_TValue): Integer;
-      function IsExpiredPredicate(constref Item : __TPair_TKey_TValue) : boolean;
+      function IsExpiredFilter(const Item : __TPair_TKey_TValue) : boolean;
     protected type
       __TDictionary_TKey_TCachedItem_TValue = TDictionary<TKey, __TCachedItem_TValue>;
     protected
@@ -227,7 +227,7 @@ type
 implementation
 
 uses
-  Generics.Defaults, UAutoScope;
+  Generics.Defaults, UAutoScope, UCommon.Collections;
 
 
 { TCachedItem }
@@ -377,6 +377,12 @@ begin
   end
 end;
 
+procedure TCacheBase<TKey, TValue>.Invalidate;
+begin
+  raise Exception.Create('Not implemented');
+end;
+
+
 procedure TCacheBase<TKey, TValue>.OnItemFetched(const AKey : TKey; const AVal: TValue);
 begin
 end;
@@ -417,7 +423,7 @@ begin
       crpSmallest: sortOrder := TArrayTool<TSortFunc>.Create(ByExpiredCompare, BySizeCompare);
       crpNone: begin
         if FExpirationPolicy <> epNone then begin
-          TListTool<__TPair_TKey_TValue>.Filter(deathRow, IsExpiredPredicate);
+          TListTool<__TPair_TKey_TValue>.Filter(deathRow, TPredicateTool<__TPair_TKey_TValue>.FromFunc(IsExpiredFilter));
           sortOrder := nil;
         end else begin
           deathRow.Clear;
@@ -429,7 +435,7 @@ begin
     end;
 
     if Length(sortOrder) > 0 then
-      deathRow.Sort(TManyComparer<__TPair_TKey_TValue>.Construct(sortOrder));
+      deathRow.Sort(TComparerTool<__TPair_TKey_TValue>.Many(sortOrder));
 
     // remove items from cache until enough space
     for candidate in deathRow do
@@ -571,7 +577,7 @@ begin
   Result := -BySizeCompare(Left, Right);
 end;
 
-function TCacheBase<TKey, TValue>.IsExpiredPredicate(constref Item : __TPair_TKey_TValue) : boolean;
+function TCacheBase<TKey, TValue>.IsExpiredFilter(const Item : __TPair_TKey_TValue) : boolean;
 begin
   Result := IsExpired(Item.Value);
 end;

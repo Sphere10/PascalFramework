@@ -1,7 +1,7 @@
 ﻿{
-  Copyright (c) 2017 Sphere 10 Software
+  Copyright (c) 2017 - 2018 Sphere 10 Software
 
-  TVisualGrid is an enterprise-class grid component with datasource, paging, searching capability.
+  An enterprise-class grid component with datasource, paging, searching capability.
 
   Distributed under the MIT software license, see the accompanying file LICENSE
   or visit http://www.opensource.org/licenses/mit-license.php.
@@ -20,8 +20,8 @@ interface
 
 uses
   Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, Types, Graphics,
-  UCommon, Generics.Collections, Menus, ComboEx, Buttons, Math
-  {$IFNDEF WINDOWS}, LResources{$ENDIF};
+  UCommon, UCommon.Data, UCommon.Collections, Generics.Collections, Generics.Defaults, Menus, ComboEx, Buttons, Math
+  {$IFNDEF WINDOWS}, LResources{$ENDIF}, syncobjs;
 
 type
   TSelectionType = (stNone, stCell, stRow, stMultiRow);
@@ -42,6 +42,9 @@ const
     vgfNumericGTE, vgfNumericBetweenInclusive, vgfNumericBetweenExclusive];
 
 type
+
+  { TColumnFilter }
+
   TColumnFilter = record
     ColumnName: utf8string;
     Sort: TSortDirection;
@@ -49,7 +52,19 @@ type
     Values: array of Variant;
   end;
 
+  { TFilterCriteria }
+
   TFilterCriteria = TArray<TColumnFilter>;
+
+  { TApplyFilterDelegate }
+
+  TApplyFilterDelegate<T> = function (const AItem : T; const AColumnFilter: TColumnFilter) : boolean of object;
+
+  { TApplySortDelegate }
+
+  TApplySortDelegate<T> = function (const Left : T; const Right : T; const AColumnFilter: TColumnFilter) : Integer of object;
+
+  { TDataTable }
 
   PDataTable = ^TDataTable;
   TDataTable = record
@@ -57,6 +72,29 @@ type
     Columns: TTableColumns;
     Rows : TArray<Variant>;
   end;
+
+  { TColumnFilterPredicate -- should be implementation only }
+
+  TColumnFilterPredicate<T> = class (TInterfacedObject, IPredicate<T>)
+     private
+       FFilter : TColumnFilter;
+       FDelegate : TApplyFilterDelegate<T>;
+     public
+       constructor Create(const AFilter : TColumnFilter; const ADelegate : TApplyFilterDelegate);
+       function Evaluate (constref AValue: T) : boolean;
+   end;
+
+  {TColumnFieldComparer }
+
+  TColumnFieldComparer<T> = class (TInterfacedObject, IComparer<T>)
+    private
+      FFilter : TColumnFilter;
+      FDelegate: TApplySortDelegate<T>;
+    public
+      constructor Create(const AFilter : TColumnFilter; const ADelegate: TApplySortDelegate<T>);
+      function Compare(constref ALeft, ARight: T): Integer; virtual;
+  end;
+
 
   { TPageFetchParams }
 
@@ -86,12 +124,37 @@ type
 
   TSearchCapabilities = array of TSearchCapability;
 
+  { TSortNullPolicy }
+  TSortNullPolicy = (snpNone, snpNullFirst, snpNullLast);
+
   { IDataSource }
 
   IDataSource = interface
     function FetchPage(constref AParams: TPageFetchParams; var ADataTable: TDataTable): TPageFetchResult;
     function GetSearchCapabilities: TSearchCapabilities;
     property SearchCapabilities : TSearchCapabilities read GetSearchCapabilities;
+  end;
+
+  { TCustomDataSource }
+// TODO: split  into TBindedDataSource <- TCustomDataSource
+  TCustomDataSource<T> = class(TComponent, IDataSource)
+    private
+      FLock : TCriticalSection;
+      FColumns : TTableColumns;
+    protected
+      function GetNullPolicy(const AFilter : TColumnFilter) : TSortNullPolicy; virtual;
+      function GetItemDisposePolicy : TItemDisposePolicy; virtual; abstract;
+      function GetColumns : TTableColumns; virtual; abstract;
+      function ApplyColumnSort(const Left : T; const Right : T; const AFilter: TColumnFilter) : Integer; virtual;
+      function ApplyColumnFilter(const AItem: T; const AFilter: TColumnFilter) : boolean; virtual;
+    public
+      constructor Create(AOwner: TComponent); override;
+      destructor Destroy; override;
+      function FetchPage(constref AParams: TPageFetchParams; var ADataTable: TDataTable): TPageFetchResult;
+      function GetSearchCapabilities: TSearchCapabilities; virtual; abstract;
+      procedure FetchAll( AContainer : TList<T>); virtual; abstract;
+      function GetItemField(const AItem: T; const AColumnName : AnsiString) : Variant; virtual; abstract;
+      procedure DehydrateItem(const AItem: T; ATableRow: Variant); virtual; abstract;
   end;
 
   { TVisualGridSelection }
@@ -135,13 +198,14 @@ type
 
   TPreparePopupMenuEvent = procedure(Sender: TObject; constref ASelection: TVisualGridSelection; out APopupMenu: TPopupMenu) of object;
   TSelectionEvent = procedure(Sender: TObject; constref ASelection: TVisualGridSelection) of object;
-  TDrawVisualCellEvent = procedure(Sender: TObject; ACol, ARow: Longint;
+ TDrawVisualCellEvent = procedure(Sender: TObject; ACol, ARow: Longint;
     Canvas: TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant; var Handled: boolean) of object;
 
   EVisualGridError = class(Exception);
 
   TVisualGridOptions = set of (vgoColAutoFill, vgoColSizing, vgoMultiSearchCheckComboBox, vgoSortDirectionAllowNone);
   TSortMode = (smNone, smSingleColumn, smMultiColumn);
+
 
   { TVisualGridCaption }
 
@@ -266,6 +330,7 @@ type
   private
     FCaption: TVisualGridCaption;
     FFetchDataInThread: boolean;
+    FActiveThread: TThread;
     FOnPreparePopupMenu: TPreparePopupMenuEvent;
     FOnSelection: TSelectionEvent;
     FOptions: TVisualGridOptions;
@@ -275,6 +340,7 @@ type
     FCanPage: boolean;
     FCanSearch: boolean;
     FSelectionType: TSelectionType;
+    FDefaultStretchedColumn : Integer;
     function GetCells(ACol, ARow: Integer): Variant;
     function GetColCount: Integer; inline;
     function GetColumns(Index: Integer): TVisualColumn;
@@ -351,6 +417,7 @@ type
     property AutoPageSize: boolean read FAutoPageSize write SetAutoPageSize default false;
     property ShowAllData: boolean read FShowAllData write SetShowAllData default false;
     property FetchDataInThread: boolean read FFetchDataInThread write SetFetchDataInThread;
+    property DefaultStretchedColumn: Integer read FDefaultStretchedColumn write FDefaultStretchedColumn;
 
     property CanPage: boolean read FCanPage write SetCanPage default true;
     property CanSearch: boolean read FCanSearch write SetCanSearch default true;
@@ -395,9 +462,30 @@ type
   TVisualGridSearchExpressionService = class
   end;
 
+  { TVisualGridTool }
+
+  TVisualGridTool<T> = class
+    public
+     class function ConstructRowComparer(const AFilterCriteria : TFilterCriteria; const ADelegate : TApplySortDelegate<T>) : IComparer<T>;
+     class function ConstructRowPredicate(const AFilterCriteria : TFilterCriteria; const ADelegate : TApplyFilterDelegate<T>; const AndOrSwitch : boolean) : IPredicate<T>;
+     class function MatchTextExact(const AValue : Variant; const AParams: array of Variant) : boolean;
+     class function MatchTextBeginning(const AValue : Variant; const AParams: array of Variant) : boolean;
+     class function MatchTextEnd(const AValue : Variant; const AParams: array of Variant) : boolean;
+     class function MatchTextAnywhere(const AValue : Variant; const AParams: array of Variant) : boolean;
+     class function NumericEQ(const AValue : Variant; const AParams: array of Variant) : boolean;
+     class function NumericLT(const AValue : Variant; const AParams: array of Variant) : boolean;
+     class function NumericLTE(const AValue : Variant; const AParams: array of Variant) : boolean;
+     class function NumericGT(const AValue : Variant; const AParams: array of Variant) : boolean;
+     class function NumericGTE(const AValue : Variant; const AParams: array of Variant) : boolean;
+     class function NumericBetweenInclusive(const AValue : Variant; const AParams: array of Variant) : boolean;
+     class function NumericBetweenExclusive(const AValue : Variant; const AParams: array of Variant) : boolean;
+  end;
+
 procedure Register;
 
 implementation
+
+uses Variants, UAutoScope, Dialogs;
 
 {$IFDEF WINDOWS}
 {$R *.rc}
@@ -432,6 +520,155 @@ type
 procedure Register;
 begin
   RegisterComponents('Pascal Framework', [TVisualGrid]);
+end;
+
+{ TCustomDataSource }
+
+constructor TCustomDataSource<T>.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FLock := TCriticalSection.Create;
+  FColumns := GetColumns;
+end;
+
+destructor TCustomDataSource<T>.Destroy;
+var
+  i : integer;
+  policy : TItemDisposePolicy;
+begin
+  inherited;
+  FreeAndNil(FLock);
+end;
+
+function TCustomDataSource<T>.GetNullPolicy(const AFilter : TColumnFilter) : TSortNullPolicy;
+begin
+  // Rule is as DBMS. When ascending NULLS show last (are greater), when descending, NULLS show first
+  case AFilter.Sort of
+    sdNone: Result := snpNone;
+    sdAscending: Result := snpNullLast;
+    sdDescending: Result := snpNullFirst;
+  end;
+end;
+
+function TCustomDataSource<T>.ApplyColumnSort(const Left : T; const Right : T; const AFilter: TColumnFilter) : Integer;
+var
+  leftField, rightField : Variant;
+  leftType, rightType : Integer;
+  nullPolicy : TSortNullPolicy;
+begin
+  leftField := GetItemField(Left, AFilter.ColumnName);
+  rightField := GetItemField(Right, AFilter.ColumnName);
+  leftType := VarType(leftField);
+  rightType := VarType(rightField);
+  nullPolicy := GetNullPolicy(AFilter);
+
+  // Handle null-based corner cases
+  if (leftType = varNull) AND (rightType = varNull) then begin
+    Result := 0;
+    exit;
+  end else if (leftType = varNull) AND (rightType <> varNull) then begin
+    Result := IIF(nullPolicy = snpNullFirst , -1, 1);
+    exit;
+  end else if (leftType <> varNull) AND (rightType = varNull) then begin
+    Result := IIF(nullPolicy = snpNullFirst, 1, -1);
+    exit;
+  end;
+
+  // Compare left/right values
+  Result := TCompare.Variant(@Left, @Right);
+
+  // Invert result for descending
+  if AFilter.Sort = sdDescending then
+    Result := Result * -1;
+end;
+
+function TCustomDataSource<T>.ApplyColumnFilter(const AItem: T; const AFilter: TColumnFilter) : boolean;
+var
+  value : Variant;
+begin
+  value := GetItemField(AItem, AFilter.ColumnName);
+  if AFilter.Filter in TEXT_FILTER then begin
+    case AFilter.Filter of
+      vgfMatchTextExact: Result := TVisualGridTool<T>.MatchTextExact(value, AFilter.Values);
+      vgfMatchTextBeginning: Result := TVisualGridTool<T>.MatchTextBeginning(value, AFilter.Values);
+      vgfMatchTextEnd: Result := TVisualGridTool<T>.MatchTextEnd(value, AFilter.Values);
+      vgfMatchTextAnywhere: Result := TVisualGridTool<T>.MatchTextAnywhere(value, AFilter.Values);
+    end;
+  end else if AFilter.Filter in NUMERIC_FILTER then begin
+    case AFilter.Filter of
+      vgfNumericEQ: Result := TVisualGridTool<T>.NumericEQ(value, AFilter.Values);
+      vgfNumericLT: Result := TVisualGridTool<T>.NumericLT(value, AFilter.Values);
+      vgfNumericLTE: Result := TVisualGridTool<T>.NumericLTE(value, AFilter.Values);
+      vgfNumericGT: Result := TVisualGridTool<T>.NumericGT(value, AFilter.Values);
+      vgfNumericGTE: Result := TVisualGridTool<T>.NumericGTE(value, AFilter.Values);
+      vgfNumericBetweenInclusive: Result := TVisualGridTool<T>.NumericBetweenInclusive(value, AFilter.Values);
+      vgfNumericBetweenExclusive: Result := TVisualGridTool<T>.NumericBetweenExclusive(value, AFilter.Values);
+    end;
+  end else Result := false;
+end;
+
+
+function TCustomDataSource<T>.FetchPage(constref AParams: TPageFetchParams; var ADataTable: TDataTable): TPageFetchResult;
+var
+  i, j : SizeInt;
+  data : TList<T>;
+  GC : TScoped;
+  pageStart, pageEnd : SizeInt;
+  entity : T;
+  comparer : IComparer<T>;
+  filter : IPredicate<T>;
+  xxx : boolean;
+begin
+  FLock.Acquire;
+  try
+     // Fetch underlying data if stale
+     data := GC.AddObject( TList<T>.Create ) as TList<T>;
+     FetchAll(data);
+
+     // NEED TO CONFIRM TEST OF Comparer/Filter API
+     // Filter the data
+          Writeln('before filter construct');
+     filter := TVisualGridTool<T>.ConstructRowPredicate(AParams.Filter, ApplyColumnFilter, true);
+
+     Writeln('before evalulate');
+     xxx := filter.Evaluate(data[0]);
+     Writeln('before filter');
+     TListTool<T>.Filter(data, filter);
+
+     // UGrids.pas(111,95) Error: Incompatible type for arg no. 2: Got "TCustomDataSource$1.ApplyColumnFilter(const TAccount;const TColumnFilter):Boolean;", expected "<procedure variable type of function(const <undefined type>;const TColumnFilter):Boolean of object;Register>"
+
+     // Sort the data
+     comparer := TVisualGridTool<T>.ConstructRowComparer(AParams.Filter, ApplyColumnSort);
+     data.Sort( comparer);
+
+     // Setup result
+     Result.TotalDataCount := data.Count;
+     Result.PageCount := data.Count div AParams.PageSize;
+     if AParams.PageIndex >= 0 then begin
+       Result.PageIndex := ClipValue(AParams.PageIndex, 0, Result.PageCount - 1);
+       pageStart := Result.PageIndex * AParams.PageSize;
+       pageEnd := pageStart + (AParams.PageSize - 1);
+     end else begin
+       Result.PageIndex := AParams.PageIndex;
+       pageStart := 0;
+       pageEnd := data.Count - 1;
+     end;
+
+     // Set columns
+     ADataTable.Columns := FColumns;
+
+     // Dehydrate the page of data only
+     j := 0;
+     SetLength(ADataTable.Rows, pageEnd - pageStart + 1);
+     for i := pageStart to pageEnd do begin
+       ADataTable.Rows[j] := TTableRow.New(@FColumns);
+       DehydrateItem( data[i], ADataTable.Rows[j]);
+       inc(j)
+     end;
+
+  finally
+    FLock.Release;
+  end;
 end;
 
 { TVisualGridCaption }
@@ -575,6 +812,7 @@ end;
 constructor TFetchDataThread.Create(AGrid: TCustomVisualGrid;
   ARefreshColumns: boolean);
 begin
+  AGrid.FActiveThread := Self;
   FGrid := AGrid;
   FGrid.ControlsEnable(false);
   FGrid.FFetchDataThreadTimer.Enabled:=true;
@@ -583,6 +821,7 @@ begin
   FGrid.BeforeFetchPage;
   FreeOnTerminate:=true;
   FLastFetchDataResult.RefreshColumns:=ARefreshColumns;
+
   // fast copy of data (we need to draw old data for a while)
   New(FGrid.FCachedDataTable);
   Move(FGrid.FDataTable, FGrid.FCachedDataTable^, SizeOf(TDataTable));
@@ -643,6 +882,129 @@ destructor TCustomVisualGrid.TSearchEdit.Destroy;
 begin
   FPanel.Free;
   inherited Destroy;
+end;
+
+{ TColumnFilterPredicate }
+
+constructor TColumnFilterPredicate<T>.Create(const AFilter : TColumnFilter; const ADelegate : TApplyFilterDelegate);
+begin
+  FFilter := AFilter;
+  FDelegate := ADelegate;
+end;
+
+function TColumnFilterPredicate<T>.Evaluate (constref AValue: T) : boolean;
+begin
+  Result := FDelegate(AValue, FFilter);
+end;
+
+{ TColumnFieldComparer }
+
+constructor TColumnFieldComparer<T>.Create(const AFilter : TColumnFilter; const ADelegate: TApplySortDelegate<T>);
+begin
+  FFilter := AFilter;
+  FDelegate := ADelegate;
+end;
+
+function TColumnFieldComparer<T>.Compare(constref ALeft, ARight: T): Integer;
+begin
+  Result := FDelegate(ALeft, ARight, FFilter);
+end;
+
+{ TVisualGridTool }
+
+class function TVisualGridTool<T>.ConstructRowComparer(const AFilterCriteria : TFilterCriteria; const ADelegate : TApplySortDelegate<T>) : IComparer<T>;
+type
+  __IComparer_T = IComparer<T>;
+var
+  i : integer;
+  comparers : TList<__IComparer_T>;
+  filter : TColumnFilter;
+  GC : TScoped;
+begin
+  comparers := GC.AddObject(  TList<__IComparer_T>.Create ) as TList<__IComparer_T>;
+  for i := Low(AFilterCriteria) to High(AFilterCriteria) do begin
+    filter := AFilterCriteria[i];
+    if filter.Sort <> sdNone then
+      comparers.Add( TColumnFieldComparer<T>.Create( filter, ADelegate ) );
+  end;
+  if comparers.Count = 0 then
+    Result := TComparerTool<T>.AlwaysEqual
+  else
+    Result := TComparerTool<T>.Many(comparers);
+end;
+
+class function TVisualGridTool<T>.ConstructRowPredicate(const AFilterCriteria : TFilterCriteria; const ADelegate : TApplyFilterDelegate<T>; const AndOrSwitch : boolean) : IPredicate<T>;
+var
+  arrayOfPredicates : array of IPredicate<T>;
+  i : integer;
+begin
+  if Length(AFilterCriteria) = 0 then begin
+    Result := TPredicateTool<T>.AlwaysTrue; // if no sub-predicates, row is considered true
+  end else begin
+    SetLength(arrayOfPredicates, Length(AFilterCriteria));
+    for i := 0 to High(AFilterCriteria) do
+      arrayOfPredicates[i] := TColumnFilterPredicate<T>.Create(AFilterCriteria[i], @ADelegate);
+
+    if AndOrSwitch then
+      Result := TPredicateTool<T>.AndMany(arrayOfPredicates)
+    else
+      Result := TPredicateTool<T>.OrMany(arrayOfPredicates);
+  end;
+end;
+
+class function TVisualGridTool<T>.MatchTextExact(const AValue : Variant; const AParams: array of Variant) : boolean;
+begin
+  Result := (Length(AParams) = 1) AND (VarToStr(AValue) = VarToStr(AParams[1]));
+end;
+
+class function TVisualGridTool<T>.MatchTextBeginning(const AValue : Variant; const AParams: array of Variant) : boolean;
+begin
+  Result := (Length(AParams) = 1) AND VarToStr(AValue).StartsWith(VarToStr(AParams[1]));
+end;
+
+class function TVisualGridTool<T>.MatchTextEnd(const AValue : Variant; const AParams: array of Variant) : boolean;
+begin
+  Result := (Length(AParams) = 1) AND VarToStr(AValue).EndsWith(VarToStr(AParams[1]));
+end;
+
+class function TVisualGridTool<T>.MatchTextAnywhere(const AValue : Variant; const AParams: array of Variant) : boolean;
+begin
+  Result := (Length(AParams) = 1) AND VarToStr(AValue).Contains(VarToStr(AParams[1]));
+end;
+
+class function TVisualGridTool<T>.NumericEQ(const AValue : Variant; const AParams: array of Variant) : boolean;
+begin
+  // TODO Maciej
+end;
+
+class function TVisualGridTool<T>.NumericLT(const AValue : Variant; const AParams: array of Variant) : boolean;
+begin
+  // TODO Maciej
+end;
+
+class function TVisualGridTool<T>.NumericLTE(const AValue : Variant; const AParams: array of Variant) : boolean;
+begin
+  // TODO Maciej
+end;
+
+class function TVisualGridTool<T>.NumericGT(const AValue : Variant; const AParams: array of Variant) : boolean;
+begin
+  // TODO Maciej
+end;
+
+class function TVisualGridTool<T>.NumericGTE(const AValue : Variant; const AParams: array of Variant) : boolean;
+begin
+  // TODO Maciej
+end;
+
+class function TVisualGridTool<T>.NumericBetweenInclusive(const AValue : Variant; const AParams: array of Variant) : boolean;
+begin
+  // TODO Maciej
+end;
+
+class function TVisualGridTool<T>.NumericBetweenExclusive(const AValue : Variant; const AParams: array of Variant) : boolean;
+begin
+  // TODO Maciej
 end;
 
 { TPageFetchParams }
@@ -1058,6 +1420,7 @@ begin
   end;
 
   { default values for properties }
+  DefaultStretchedColumn := -1;
   PageSize := 100;
   PageIndex := -1;
   FCanPage := true;
@@ -1311,7 +1674,7 @@ var
           LColumnFilter.Values[1]:=StrToInt(LExpressionRecord.Values[1]);
         end;
 
-        FFilter.Add(LColumnFilter);
+     FFilter.Add(LColumnFilter);
       end;
     end;
 
@@ -1661,7 +2024,10 @@ end;
 procedure TCustomVisualGrid.RefreshPageIndexData(ARefreshColumns: boolean);
 begin
   if Assigned(FDataSource) and FetchDataInThread then
-    TFetchDataThread.Create(Self, ARefreshColumns)
+  begin
+    if not Assigned(FActiveThread) then
+      TFetchDataThread.Create(Self, ARefreshColumns)
+  end
   else
   begin
     BeforeFetchPage;
@@ -1678,7 +2044,9 @@ var
   LEditOnLeft, LEditOnRight: TSearchEdit;
   //LFixedRect: TRect;
   LRect: TRect;
+  xxx : SizeInt;
 begin
+  xxx := FMultiSearchEdits.Count;
   LEdit := FMultiSearchEdits[ACol];
   LEdit.Visible := FDrawGrid.IsFixedCellVisible(aCol, 0);
   if ACol > 0 then
@@ -1711,7 +2079,6 @@ begin
   LRect := FDrawGrid.CellRect(ACol,0);
   LEdit.FPanel.SetBounds(LRect.Left + 1, 0, LRect.Width - 2, LEdit.FEdit.Height);
 end;
-
 
 procedure TCustomVisualGrid.RefreshPageIndexAndGridInterface;
 begin
@@ -1767,10 +2134,10 @@ begin
     begin
       if p^.SupportedFilters * NON_SORTABLE_FILTER <> [] then
       begin
-        FMultiSearchCheckComboBox.AddItem(p^.ColumnName, cbChecked);
-        FMultiSearchCheckComboBox.Objects[FMultiSearchCheckComboBox.Items.Count-1] := LEdit;
-        FMultiSearchCheckComboBox.Checked[FMultiSearchCheckComboBox.Items.Count-1] := FMultiSearchMenuItem.Checked;
-      end;
+      FMultiSearchCheckComboBox.AddItem(p^.ColumnName, cbChecked);
+      FMultiSearchCheckComboBox.Objects[FMultiSearchCheckComboBox.Items.Count-1] := LEdit;
+      FMultiSearchCheckComboBox.Checked[FMultiSearchCheckComboBox.Items.Count-1] := FMultiSearchMenuItem.Checked;
+    end;
       if (vgfSortable in p^.SupportedFilters)
        and not (vgoSortDirectionAllowNone in Options)
        and (SortMode <> smNone) then
@@ -1945,6 +2312,7 @@ begin
   begin
     if FromThread then
     begin
+      FActiveThread := nil;
       Dispose(FCachedDataTable);
       FCachedDataTable := nil;
       FFetchDataThreadTimer.Enabled:=false;
@@ -2009,6 +2377,9 @@ var
 begin
   LHandled := False;
 
+  if ColCount = 0 then
+    Exit;
+
   if ARow = 0 then
     ResizeSearchEdit(ACol);
   if (ARow > 0) and Assigned(FDataSource) then
@@ -2029,6 +2400,8 @@ var
   LCol, LRow: longint;
   LContains: boolean = false;
 begin
+  if ColCount = 0 then
+    Exit;
   if Button = mbRight then
     if (SelectionType <> stNone) and Assigned(FOnPreparePopupMenu) and
        (FDrawGrid.MouseToGridZone(X, Y) = gzNormal) then
@@ -2080,6 +2453,8 @@ procedure TCustomVisualGrid.GridHeaderClick(Sender: TObject; IsColumn: Boolean;
 var
   LColumn: TVisualColumn;
 begin
+  if ColCount = 0 then
+    Exit;
   if Index >= Length(ActiveDataTable.Columns) then
     raise EVisualGridError.CreateFmt(sImproperColumnIndex, [Length(ActiveDataTable.Columns)-1,Index]);
 

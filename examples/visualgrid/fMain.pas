@@ -7,7 +7,7 @@ interface
 uses
   SysUtils, Classes, Forms, Controls, Graphics, Dialogs, Math, PropEdits,
   LCLType, UVisualGrid, StdCtrls, Menus, Types, Grids, ExtCtrls, CheckLst,
-  RTTIGrids, UCommon, TypInfo;
+  RTTIGrids, UCommon.Data, TypInfo;
 
 type
 
@@ -69,7 +69,7 @@ var
 implementation
 
 uses
-  UCommonUI;
+  UCommon.UI;
 
 {$R *.lfm}
 

@@ -8,6 +8,7 @@ object Form1: TForm1
   ClientHeight = 587
   ClientWidth = 988
   OnCreate = FormCreate
+  LCLVersion = '1.8.0.6'
   Visible = False
   object GridPanel: TPanel
     Left = 304

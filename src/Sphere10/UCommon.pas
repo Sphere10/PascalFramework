@@ -1,5 +1,5 @@
 {
-  Copyright (c) 2017 Sphere 10 Software
+  Copyright (c) 2017 - 2018 Sphere 10 Software
 
   Common unit usable across all tiers.
 
@@ -8,7 +8,6 @@
 
   Acknowledgements:
     Herman Schoenfeld
-    Maciej Izak (hnb)
 }
 
 unit UCommon;
@@ -16,8 +15,6 @@ unit UCommon;
 {$IFDEF FPC}
   {$MODE Delphi}
 {$ENDIF}
-
-{$modeswitch nestedprocvars}
 
 interface
 
@@ -242,7 +239,28 @@ type
      function WithinMilliseconds(const aDateTime: TDateTime; const AMilliseconds: Int64): Boolean; inline;
    end;
 
-  { Collection Support }
+
+  { TItemDisposePolicy }
+
+  TItemDisposePolicy = (idpNone, idpNil, idpFreeAndNil);
+
+  { Event Support}
+
+  TNotifyEventEx = procedure (sender : TObject; const args: array of Pointer) of object;
+  TNotifyManyEvent = TArray<TNotifyEvent>;
+  TNotifyManyEventEx = TArray<TNotifyEventEx>;
+  TNotifyManyEventHelper = record helper for TNotifyManyEvent
+    procedure Add(listener : TNotifyEvent);
+    procedure Remove(listener : TNotifyEvent);
+    procedure Invoke(sender : TObject);
+  end;
+  TNotifyManyEventExHelper = record helper for TNotifyManyEventEx
+    procedure Add(listener : TNotifyEventEx);
+    procedure Remove(listener : TNotifyEventEx);
+    procedure Invoke(sender : TObject; const args: array of Pointer);
+  end;
+
+   { TArrayTool }
 
   TArrayTool<T> = class
     public
@@ -269,127 +287,10 @@ type
       class function Create(const item0 : T; const item1 : T; const item2 : T; const item3 : T) : TArray<T>; overload; static;
       class function Create(const item0 : T; const item1 : T; const item2 : T; const item3 : T; const item4 : T) : TArray<T>; overload; static;
       class function Create(const item0 : T; const item1 : T; const item2 : T; const item3 : T; const item4 : T; const item5 : T) : TArray<T>; overload; static;
+      class function _Length(const Values: array of T) : SizeInt; static; inline;
       class function ToArray(Enumerable: TEnumerable<T>; Count: SizeInt): TArray<T>; static;
-    end;
-
-  TItemDisposePolicy = (idpNone, idpNil, idpFreeAndNil);
-  TListTool<T> = class
-    public type
-      TPredicate = function (constref Item: T) : boolean of object;
-    class function Filter(const AList: TList<T>; const APredicate: TPredicate) : SizeInt; overload;
-    class function Filter(const AList: TList<T>; const APredicate: TPredicate; AItemDisposePolicy : TItemDisposePolicy) : SizeInt; overload;
   end;
 
-
-  { Event Support}
-
-  TNotifyEventEx = procedure (sender : TObject; const args: array of Pointer) of object;
-  TNotifyManyEvent = TArray<TNotifyEvent>;
-  TNotifyManyEventEx = TArray<TNotifyEventEx>;
-  TNotifyManyEventHelper = record helper for TNotifyManyEvent
-    procedure Add(listener : TNotifyEvent);
-    procedure Remove(listener : TNotifyEvent);
-    procedure Invoke(sender : TObject);
-  end;
-  TNotifyManyEventExHelper = record helper for TNotifyManyEventEx
-    procedure Add(listener : TNotifyEventEx);
-    procedure Remove(listener : TNotifyEventEx);
-    procedure Invoke(sender : TObject; const args: array of Pointer);
-  end;
-
-  { Comparer Support }
-
-  TNestedComparison<T> = function (constref Left, Right: T): Integer is nested;
-
-  TNestedComparer<T> = class(TComparer<T>)
-    private
-      FComparer: TNestedComparison<T>;
-    public
-      constructor Create(const comparer: TNestedComparison<T>);
-      function Compare(constref Left, Right: T): Integer; override;
-  end;
-
-  TManyComparer<T> = class(TInterfacedObject, IComparer<T>)
-    private type
-      TComparer_T = TComparer<T>;
-      IComparer_T = IComparer<T>;
-      TNestedComparison_T = TNestedComparison<T>;
-      TOnComparison_T = TOnComparison<T>;
-      TComparison_T = TComparisonFunc<T>;
-    private
-      FComparers : TArray<IComparer_T>;
-    public
-      constructor Create(const comparers: TArray<IComparer_T>); overload;
-      destructor Destroy; override;
-      function Compare(constref Left, Right: T): Integer;
-      class function Construct(const comparers: array of TNestedComparison<T>) : IComparer<T>; overload;
-      class function Construct(const comparers: array of TOnComparison<T>) : IComparer<T>; overload;
-      class function Construct(const comparers: array of TComparisonFunc<T>) : IComparer<T>; overload;
-      class function Construct(const comparers: array of TComparer<T>) : IComparer<T>; overload;
-  end;
-
-  { TTable types }
-
-  TTableColumns = TArray<utf8string>;
-  PTableColumns = ^TTableColumns;
-  ETableRow = class(Exception);
-
-  { TTableRow }
-
-  TTableRow = class(TInvokeableVariantType)
-  private
-    class constructor Create;
-    class destructor Destroy;
-  protected type
-    TColumnMapToIndex = TDictionary<utf8string, Integer>;
-    TColumnsDictionary = TObjectDictionary<PTableColumns, TColumnMapToIndex>;
-  protected class var
-    FColumns: TColumnsDictionary;
-  protected
-    class function MapColumns(AColumns: PTableColumns): TColumnMapToIndex;
-  public
-    function GetProperty(var Dest: TVarData; const V: TVarData; const Name: string): Boolean; override;
-    function SetProperty(var V: TVarData; const Name: string; const Value: TVarData): Boolean; override;
-    procedure Clear(var V: TVarData); override;
-    procedure Copy(var Dest: TVarData; const Source: TVarData; const Indirect: Boolean); override;
-    function DoFunction(var Dest: TVarData; const V: TVarData; const Name: string; const Arguments: TVarDataArray): Boolean; override;
-    class function New(AColumns: PTableColumns): Variant;
-  end;
-
-  TTableRowData = packed record
-  public
-    vtype: tvartype;
-  private
-    vfiller1 : word;
-    vfiller2: int32;
-  public
-    vcolumnmap: TTableRow.TColumnMapToIndex;
-    vvalues: TArray<Variant>;
-  end;
-
-  TExpressionKind = (ekUnknown, ekText, ekNum, ekSet);
-  TTextMatchKind = (tmkUnknown, tmkMatchTextExact, tmkMatchTextBeginning, tmkMatchTextEnd, tmkMatchTextAnywhere);
-  TNumericComparisionKind = (nckUnknown, nckNumericEQ, nckNumericLT, nckNumericLTE, nckNumericGT, nckNumericGTE);
-  TSetKind = (skUnknown, skNumericBetweenInclusive, skNumericBetweenExclusive);
-
-  TExpressionRecord = record
-    Values: array of utf8string;
-  case Kind: TExpressionKind of
-    ekUnknown: ();
-    ekText: (TextMatchKind: TTextMatchKind);
-    ekNum: (NumericComparisionKind: TNumericComparisionKind);
-    ekSet: (SetKind: TSetKind);
-  end;
-
-  ESearchExpressionParserException = class(Exception);
-
-  { TSearchExpressionService }
-
-  TSearchExpressionService = class
-  public
-    class procedure Parse(const AExpression: utf8string; const AExpressionKind: TExpressionKind; out AExpressionRecord: TExpressionRecord); overload;
-    class function Parse(const AExpression: utf8string): TExpressionRecord; overload;
-  end;
 
 { COMPLEX CONSTANTS }
 
@@ -398,25 +299,9 @@ const
     MaxTimeSpan: TTimeSpan = (FMillis: High(Int64));
     ZeroTimeSpan: TTimeSpan = (FMillis: 0);
 
-{ RESOURCES }
 resourcestring
   sNotImplemented = 'Not implemented';
   sInvalidParameter_OutOfBounds = 'Invalid Parameter: %s out of bounds';
-  sAColumnsCantBeNil = 'AColumns can''t be nil!';
-  sTooManyValues = 'Too many values';
-  sInvalidUTF8String = 'Invalid UTF8 string';
-  sBadNumericExpression = 'Bad numeric expression';
-  sUnexpectedNumberFormat = 'Unexpected number format';
-  sBadSyntaxForEscapeCharacter = 'Bad syntax for escape character "\"';
-  sUnexpectedCharInExpression = 'Unexpected char in expression';
-  sInvaildExpression_CharDetectedAfterClosingBracket = 'Invaild expression (char detected after closing bracket)';
-  sUnexpectedTokenFound = 'Unexpected token found : "%s"';
-  sUnexpectedStringLiteralInExpression = 'Unexpected string literal in expression';
-  sBadlyClosedBetweenExpression = 'Badly closed "between" expression';
-  sMissingNumberInExpression = 'Missing number in expression';
-  sUnexpectedOccurrenceOf_Found = 'Unexpected occurrence of "%s" found';
-  sBadBetweenExpression_UnexpectedToken = 'Bad "between" expression. Unexpected "%s"';
-  sExpressionError_NoValue = 'Expression error (no value)';
 
 implementation
 
@@ -436,7 +321,6 @@ const
 { VARIABLES }
 
 var
-  TableRowType: TTableRow = nil;
   MinTimeStampDateTime : TDateTime = 0;
 
 {%region Global functions }
@@ -449,7 +333,6 @@ begin
   for n := 1 to Length(Buffer) do
     Result := LowerCase(Result + IntToHex(Ord(Buffer[n]), 2));
 end;
-
 
 function BinStrComp(const Str1, Str2: AnsiString): integer;
 var Str1Len, Str2Len, i : Integer;
@@ -839,257 +722,6 @@ end;
 
 {%endregion}
 
-{%region Collection Support }
-
-class function TArrayTool<T>.Contains(const Values: TArray<T>; const Item: T; const Comparer: IEqualityComparer<T>; out ItemIndex: SizeInt): Boolean;
-var
-  Index: SizeInt;
-begin
-  for Index := 0 to high(Values) do begin
-    if Comparer.Equals(Values[Index], Item) then begin
-      ItemIndex := Index;
-      Result := True;
-      exit;
-    end;
-  end;
-  ItemIndex := -1;
-  Result := False;
-end;
-
-class function TArrayTool<T>.Contains(const Values: TArray<T>; const Item: T; out ItemIndex: SizeInt): Boolean;
-begin
-  Result := TArrayTool<T>.Contains(Values, Item, TEqualityComparer<T>.Default, ItemIndex);
-end;
-
-class function TArrayTool<T>.Contains(const Values: TArray<T>; const Item: T): Boolean;
-var
-  ItemIndex: SizeInt;
-begin
-  Result := TArrayTool<T>.Contains(Values, Item, ItemIndex);
-end;
-
-class function TArrayTool<T>.IndexOf(const Values: TArray<T>; const Item: T; const Comparer: IEqualityComparer<T>): SizeInt;
-begin
-  TArrayTool<T>.Contains(Values, Item, Comparer, Result);
-end;
-
-class function TArrayTool<T>.IndexOf(const Values: TArray<T>; const Item: T): SizeInt;
-begin
-  TArrayTool<T>.Contains(Values, Item, Result);
-end;
-
-class function TArrayTool<T>.Copy(const AArray: array of T): TArray<T>;
-begin
-  Copy(AArray, 0, Length(AArray));
-end;
-
-class function TArrayTool<T>.Copy(const AArray: array of T; FromIndex, Count: SizeInt ): TArray<T>;
-var
-  i : SizeInt;
-begin
-  if Count < 0 then raise EArgumentOutOfRangeException.Create('Count was less than 0');
-  if (FromIndex + Count) > High(AArray) then raise EArgumentOutOfRangeException.Create('FromIndex + Count was greater than High(AArray)');
-  SetLength(Result, Count);
-  for i:= FromIndex to FromIndex + Count do
-    Result[i - FromIndex] := AArray[i];
-end;
-
-class procedure TArrayTool<T>.Add(var Values: TArray<T>; const AValue : T);
-begin
-  SetLength(Values, SizeInt(Length(Values)) + 1);
-  Values[High(Values)] := AValue;
-end;
-
-class procedure TArrayTool<T>.Remove(var Values : TArray<T>; const Item : T; const Comparer : IEqualityComparer<T>);
-var index : SizeInt;
-begin
-  while TArrayTool<T>.Contains(Values, item, Comparer, index) do begin
-    TArrayTool<T>.RemoveAt(Values, index);
-  end;
-end;
-
-class procedure TArrayTool<T>.Remove(var Values : TArray<T>; const Item : T);
-begin
-  TArrayTool<T>.Remove(Values, Item, TEqualityComparer<T>.Default);
-end;
-
-class procedure TArrayTool<T>.RemoveAt(var Values : TArray<T>; ItemIndex : SizeInt);
-var i : Integer;
-begin
-  for i := ItemIndex + 1 to High(Values) do
-    Values[i - 1] := Values[i];
-  SetLength(Values, Length(Values) - 1);
-end;
-
-class procedure TArrayTool<T>.Append(var Arr: TArray<T>; Value: T);
-begin
-  SetLength(Arr, Length(Arr)+1);
-  Arr[High(Arr)] := Value;
-end;
-
-class procedure TArrayTool<T>.Prepend(var Arr: TArray<T>; Value: T);
-var i : Integer;
-begin
-  SetLength(Arr, Length(Arr)+1);
-  for i := High(Arr)-1 downto Low(Arr) do
-    Arr[i+1] := Arr[i];
-  Arr[Low(Arr)] := Value;
-end;
-
-class procedure TArrayTool<T>.InsertAt(var Values : TArray<T>; ItemIndex : SizeInt; const Item : T);
-var i : Integer;
-begin
-  if (ItemIndex < Low(Values)) OR (ItemIndex > High(Values)) then Raise Exception.CreateFmt(sInvalidParameter_OutOfBounds, ['ItemIndex']);
-  SetLength(Values, Length(Values)+1);
-  for i := High(Values)-1 downto ItemIndex do
-    Values[i+1] := Values[i];
-  Values[ItemIndex] := Item;
-end;
-
-class procedure TArrayTool<T>.Swap(var Values : array of T; Item1Index, Item2Index : SizeInt);
-var temp : T; len, recSize : SizeInt; itemSize : SizeInt;
-begin
-  len := Length(Values);
-  recSize := SizeOf(T);
-  if (Item1Index < 0) OR (Item1Index > len) then Raise Exception.CreateFmt(sInvalidParameter_OutOfBounds, ['Item1Index']);
-  if (Item2Index < 0) OR (Item2Index > len) then Raise Exception.CreateFmt(sInvalidParameter_OutOfBounds, ['Item2Index']);
-  temp := Values[Item1Index];
-  Values[Item1Index] := Values[Item2Index];
-  Values[Item2Index] := temp;
-end;
-
-class procedure TArrayTool<T>.MoveItem(var Values : array of T; FromIndex, ToIndex : SizeInt);
-var i : Integer; item : T;
-begin
-  if (FromIndex < Low(Values)) OR (FromIndex > High(Values)) then Raise Exception.CreateFmt(sInvalidParameter_OutOfBounds, ['FromIndex']);
-  if (ToIndex < Low(Values)) OR (ToIndex > High(Values)) then Raise Exception.CreateFmt(sInvalidParameter_OutOfBounds, ['ToIndex']);
-
-  item := Values[FromIndex];
-  if FromIndex < ToIndex then begin
-    for i := FromIndex + 1 to ToIndex do
-      Values[i - 1] := Values[i];
-    Values[ToIndex] := item;
-  end else if FromIndex > ToIndex then begin
-    for i := FromIndex - 1 downto ToIndex do
-      Values[i + 1] := Values[i];
-    Values[ToIndex] := item;
-  end;
-end;
-
-class function TArrayTool<T>.Concat(const Arrays: array of TArray<T>): TArray<T>;
-var
-  i, k, LIndex, LLength: Integer;
-begin
-  LLength := 0;
-  for i := 0 to High(Arrays) do
-    Inc(LLength, Length(Arrays[i]));
-  SetLength(Result, LLength);
-  LIndex := 0;
-  for i := 0 to High(Arrays) do
-  begin
-    for k := 0 to High(Arrays[i]) do
-    begin
-      Result[LIndex] := Arrays[i][k];
-      Inc(LIndex);
-    end;
-  end;
-end;
-
-class function TArrayTool<T>.Create(const item0 : T) : TArray<T>;
-begin
-  SetLength(result,1);
-  result[0] := item0;
-end;
-
-class function TArrayTool<T>.Create(const item0 : T; const item1 : T) : TArray<T>;
-begin
-  SetLength(result,2);
-  result[0] := item0;
-  result[1] := item1;
-end;
-
-class function TArrayTool<T>.Create(const item0 : T; const item1 : T; const item2 : T) : TArray<T>;
-begin
-  SetLength(result,3);
-  result[0] := item0;
-  result[1] := item1;
-  result[2] := item2;
-end;
-
-class function TArrayTool<T>.Create(const item0 : T; const item1 : T; const item2 : T; const item3 : T) : TArray<T>;
-begin
-  SetLength(result,4);
-  result[0] := item0;
-  result[1] := item1;
-  result[2] := item2;
-  result[3] := item3;
-end;
-
-class function TArrayTool<T>.Create(const item0 : T; const item1 : T; const item2 : T; const item3 : T; const item4 : T) : TArray<T>;begin
-  SetLength(result,5);
-  result[0] := item0;
-  result[1] := item1;
-  result[2] := item2;
-  result[3] := item3;
-  result[4] := item4;
-end;
-
-class function TArrayTool<T>.Create(const item0 : T; const item1 : T; const item2 : T; const item3 : T; const item4 : T; const item5 : T) : TArray<T>;
-begin
-  SetLength(result,6);
-  result[0] := item0;
-  result[1] := item1;
-  result[2] := item2;
-  result[3] := item3;
-  result[4] := item4;
-  result[5] := item5;
-end;
-
-
-class function TArrayTool<T>.ToArray(Enumerable: TEnumerable<T>; Count: SizeInt): TArray<T>;
-var
-  LItem: T;
-begin
-  SetLength(Result, Count);
-  Count := 0;
-  for LItem in Enumerable do
-  begin
-    Result[Count] := LItem;
-    Inc(Count);
-  end;
-end;
-
-class function TListTool<T>.Filter(const AList: TList<T>; const APredicate: TPredicate) : SizeInt;
-begin
-  Result := Filter(AList, APredicate, idpNone);
-end;
-
-class function TListTool<T>.Filter(const AList: TList<T>; const APredicate: TPredicate; AItemDisposePolicy : TItemDisposePolicy) : SizeInt;
-var
-  i : SizeInt;
-  item : T;
-begin
-  Result := 0;
-  i := 0;
-  while i <= AList.Count do begin
-    if APredicate(AList[i]) then begin
-      case AItemDisposePolicy of
-          idpNone: ;
-          idpNil: AList[i] := nil;
-          idpFreeAndNil: begin
-            item := AList[i];
-            FreeAndNil(item);
-            AList[i] := nil;
-          end
-          else raise ENotSupportedException(Format('TItemDisposePolicy: [%d]', [Ord(AItemDisposePolicy)]));
-      end;
-      AList.Delete(i);
-      inc(Result);
-    end else Inc(i);
-  end;
-end;
-
-{%endregion}
 
 
 {%region Date/Time Support }
@@ -1407,180 +1039,6 @@ end;
 
 {%endregion}
 
-{% Comparer Support }
-
-constructor TNestedComparer<T>.Create(const comparer: TNestedComparison<T>);
-begin
-  FComparer := comparer;
-end;
-
-function TNestedComparer<T>.Compare(constref Left, Right: T): Integer;
-begin
-  Result := FComparer(Left, Right);
-end;
-
-constructor TManyComparer<T>.Create(const comparers: TArray<IComparer_T>);
-begin
-  FComparers := comparers;
-end;
-
-destructor TManyComparer<T>.Destroy;
-begin
-  FComparers := nil;
-  inherited;
-end;
-
-function TManyComparer<T>.Compare(constref Left, Right: T): Integer;
-var
-  i : Integer;
-begin
-  if Length(FComparers) = 0 then
-    raise Exception.Create('No comparers defined');
-  for i := Low(FComparers) to High(FComparers) do begin
-    Result := FComparers[i].Compare(Left, Right);
-    if (Result <> 0) or (i = High(FComparers)) then exit;
-  end;
-end;
-
-class function TManyComparer<T>.Construct(const comparers: array of TNestedComparison<T>) : IComparer<T>;
-var
-  i : Integer;
-  internalComparers : TArray<IComparer_T>;
-begin
-  SetLength(internalComparers, Length(comparers));
-  for i := 0 to High(comparers) do
-    internalComparers[i] := TNestedComparer<T>.Create(comparers[i]);
-  Create(internalComparers);
-end;
-
-class function TManyComparer<T>.Construct(const comparers: array of TOnComparison<T>) : IComparer<T>;
-var
-  i : Integer;
-  internalComparers : TArray<IComparer_T>;
-begin
-  SetLength(internalComparers, Length(comparers));
-  for i := 0 to High(comparers) do
-    internalComparers[i] := TComparer<T>.Construct(comparers[i]);
-  Create(internalComparers);
-end;
-
-class function TManyComparer<T>.Construct(const comparers: array of TComparisonFunc<T>) : IComparer<T>;
-var
-  i : Integer;
-  internalComparers : TArray<IComparer_T>;
-begin
-  SetLength(internalComparers, Length(comparers));
-  for i := 0 to High(comparers) do
-    internalComparers[i] := TComparer<T>.Construct(comparers[i]);
-  Create(internalComparers);
-end;
-
-class function TManyComparer<T>.Construct(const comparers: array of TComparer<T>) : IComparer<T>;
-var
-  i : Integer;
-  internalComparers : TArray<IComparer_T>;
-begin
-  SetLength(internalComparers, Length(comparers));
-  for i := 0 to High(comparers) do
-    internalComparers[i] := IComparer_T(comparers[i]);
-  Create(internalComparers);
-end;
-
-{%endegion }
-
-
-{ TTableRow }
-
-class constructor TTableRow.Create;
-begin
-  FColumns := TColumnsDictionary.Create([doOwnsValues]);
-end;
-
-class destructor TTableRow.Destroy;
-begin
-  FColumns.Free;
-end;
-
-class function TTableRow.MapColumns(AColumns: PTableColumns): TColumnMapToIndex;
-var
-  i: Integer;
-begin
-  Result := TColumnMapToIndex.Create;
-  for i := 0 to High(AColumns^) do
-    Result.Add(AColumns^[i], i);
-  FColumns.Add(AColumns, Result);
-end;
-
-function TTableRow.GetProperty(var Dest: TVarData;
-  const V: TVarData; const Name: string): Boolean;
-var
-  LRow: TTableRowData absolute V;
-begin
-  Variant(Dest) := LRow.vvalues[LRow.vcolumnmap[Name]];
-  Result := true;
-end;
-
-function TTableRow.SetProperty(var V: TVarData; const Name: string;
-  const Value: TVarData): Boolean;
-var
-  LRow: TTableRowData absolute V;
-begin
-  LRow.vvalues[LRow.vcolumnmap[Name]] := Variant(Value);
-  Result := true;
-end;
-
-procedure TTableRow.Clear(var V: TVarData);
-begin
-  Finalize(TTableRowData(V));
-  FillChar(V, SizeOf(V), #0);
-end;
-
-procedure TTableRow.Copy(var Dest: TVarData; const Source: TVarData;
-  const Indirect: Boolean);
-var
-  LDestRow: TTableRowData absolute Dest;
-  LSourceRow: TTableRowData absolute Source;
-begin
-  if Indirect then
-    SimplisticCopy(Dest,Source,true)
-  else
-  begin
-    VarClear(variant(Dest));
-    FillChar(LDestRow, SizeOf(LDestRow), #0);
-    LDestRow.vtype := LSourceRow.vtype;
-    LDestRow.vcolumnmap := LSourceRow.vcolumnmap;
-    LDestRow.vvalues := system.copy(TTableRowData(LSourceRow).vvalues);
-  end;
-end;
-
-function TTableRow.DoFunction(var Dest: TVarData; const V: TVarData;
-  const Name: string; const Arguments: TVarDataArray): Boolean;
-var
-  LRow: TTableRowData absolute V;
-begin
-  Result := (Name = '_') and (Length(Arguments)=1);
-  if Result then
-    Variant(Dest) := LRow.vvalues[Variant(Arguments[0])];
-end;
-
-class function TTableRow.New(AColumns: PTableColumns): Variant;
-var
-  LColumnMap: TColumnMapToIndex;
-begin
-  if not Assigned(AColumns) then
-    raise ETableRow.Create(sAColumnsCantBeNil);
-
-  VarClear(Result);
-  FillChar(Result, SizeOf(Result), #0);
-  TTableRowData(Result).vtype:=TableRowType.VarType;
-
-  if not FColumns.TryGetValue(AColumns, LColumnMap) then
-    LColumnMap := MapColumns(AColumns);
-
-  TTableRowData(Result).vcolumnmap:=LColumnMap;
-  SetLength(TTableRowData(Result).vvalues, Length(AColumns^));
-end;
-
 {%region TNotifyManyEventHelper}
 
 procedure TNotifyManyEventHelper.Add(listener : TNotifyEvent);
@@ -1627,340 +1085,236 @@ end;
 
 {%endregion}
 
-{ TSearchExpressionService }
+{%region TArrayTool}
 
-class procedure TSearchExpressionService.Parse(const AExpression: utf8string;
-  const AExpressionKind: TExpressionKind; out
-  AExpressionRecord: TExpressionRecord);
-const
-  MAX_VALUES = 2;
-type
-  TToken = (tkNone, tkPercent, tkLess, tkGreater, tkEqual, tkLessOrEqual,
-    tkGreaterOrEqual, tkOpeningParenthesis, tkClosingParenthesis,
-    tkOpeningBracket, tkClosingBracket,  tkText, tkNum, tkComma);
-
-  TUTF8Char = record
-    Length: byte;
-    Char: array [0..3] of AnsiChar;
-  end;
-
-const
-  CONVERTABLE_TOKENS_TO_STR = [tkLess..tkClosingBracket, tkComma];
-  NUM_OPERATORS = [tkLess..tkGreaterOrEqual];
-
-  procedure GetChar(APos: PAnsiChar; out AChar: TUTF8Char);
-  begin
-    AChar.Length := UTF8CharacterLength(APos);
-
-    if AChar.Length >= 1 then AChar.Char[0] := APos[0];
-    if AChar.Length >= 2 then AChar.Char[1] := APos[1];
-    if AChar.Length >= 3 then AChar.Char[2] := APos[2];
-    if AChar.Length = 4 then AChar.Char[3] := APos[3];
-  end;
-
-  function TokenToStr(AToken: TToken): utf8string;
-  const
-    CONVERTER: array[TToken] of utf8string = (
-      'NONE', '%', '<', '>', '=', '<=', '>=', '(', ')', '[', ']', 'TEXT',
-      'NUMBER', ','
-    );
-  begin
-    Result := CONVERTER[AToken];
-  end;
-
+class function TArrayTool<T>.Contains(const Values: TArray<T>; const Item: T; const Comparer: IEqualityComparer<T>; out ItemIndex: SizeInt): Boolean;
 var
-  c, nc: PAnsiChar;
-  i: Integer;
-  LDot: boolean = false;
-  LChar: TUTF8Char;
-  LValueIdx: Integer = -1;
-  LValues: array[0..MAX_VALUES-1] of utf8string; // for now only 2 values for set "between"
-  LValue: PUTF8String;
-  LToken: TToken = tkNone;
-  LPrevToken: TToken = tkNone;
-  LExpression: utf8string;
-  LLastPercent: boolean = false;
-  LExpressionKind: TExpressionKind;
-
-  procedure NextValue;
-  begin
-    Inc(LValueIdx);
-    if LValueIdx > MAX_VALUES - 1 then
-      raise ESearchExpressionParserException.Create(sTooManyValues);
-    LValue := @LValues[LValueIdx];
-  end;
-
-  procedure EscapeSequence(AChar: Char);
-  begin
-    LToken := tkText;
-    LValue^ := LValue^ + AChar;
-    Inc(c);
-  end;
-
+  Index: SizeInt;
 begin
-  AExpressionRecord := Default(TExpressionRecord);
-  if AExpression = '' then
-    Exit;
-
-  LExpressionKind := AExpressionKind;
-  // more simple parsing loop
-  if AExpressionKind in [ekSet, ekNum] then
-    LExpression:=Trim(AExpression)
-  else
-    LExpression:=AExpression;
-
-  c := @LExpression[1];
-  if FindInvalidUTF8Character(c, Length(LExpression)) <> -1 then
-    raise ESearchExpressionParserException.Create(sInvalidUTF8String);
-
-  NextValue;
-  repeat
-    // simple scanner
-    GetChar(c, LChar);
-    if LChar.Length = 1 then
-      case LChar.Char[0] of
-        #0: Break;
-        #1..#32:
-          case LExpressionKind of
-            ekSet:
-              begin
-                while c^ in [#1..#32] do Inc(c);
-                Continue;
-              end;
-            ekText, ekUnknown:
-              begin
-                LValue^:=LValue^+LChar.Char[0];
-                LToken:=tkText;
-              end;
-            ekNum:
-              if not (LPrevToken in NUM_OPERATORS) then
-                raise ESearchExpressionParserException.Create(sBadNumericExpression)
-              else
-              begin
-                while c^ in [#1..#32] do Inc(c);
-                continue;
-              end;
-          end;
-        '0'..'9':
-          begin
-            repeat
-              if c^ = '.' then
-                if LDot then
-                  raise ESearchExpressionParserException.Create(sUnexpectedNumberFormat)
-                else
-                  LDot:=true;
-              LValue^:=LValue^+c^;
-              Inc(c);
-            until not (c^ in ['0'..'9', '.']);
-            Dec(c);
-            case LExpressionKind of
-              ekUnknown, ekSet, ekNum: LToken:=tkNum;
-              ekText: LToken:=tkText;
-            end;
-          end;
-        '%':
-          begin
-            if not (LExpressionKind in [ekText,ekUnknown]) then
-              ESearchExpressionParserException.Create(sBadNumericExpression);
-
-            LToken := tkPercent;
-          end;
-        '\':
-          begin
-            if not (LExpressionKind in [ekText,ekUnknown]) then
-              ESearchExpressionParserException.Create(sBadNumericExpression);
-            case (c+1)^ of
-              '%': EscapeSequence('%');
-              '\': EscapeSequence('\');
-              '[': EscapeSequence('[');
-              '(': EscapeSequence('(');
-              ']': EscapeSequence(']');
-              ')': EscapeSequence(')');
-              '<': EscapeSequence('<');
-              '>': EscapeSequence('>');
-              '=': EscapeSequence('=');
-            else
-              raise ESearchExpressionParserException.Create(sBadSyntaxForEscapeCharacter);
-            end
-          end;
-        '<':
-          if (c+1)^ = '=' then
-          begin
-            LToken := tkLessOrEqual;
-            Inc(c);
-          end
-          else
-            LToken := tkLess;
-        '>':
-          if (c+1)^ = '=' then
-          begin
-            LToken := tkGreaterOrEqual;
-            Inc(c);
-          end
-          else
-            LToken := tkGreater;
-        '=': LToken := tkEqual;
-        '(': LToken := tkOpeningParenthesis;
-        ')': LToken := tkClosingParenthesis;
-        '[': LToken := tkOpeningBracket;
-        ']': LToken := tkClosingBracket;
-        ',': LToken := tkComma;
-      else
-        LValue^ := LValue^ + LChar.Char[0];
-        LToken:=tkText;
-      end
-    else
-    begin
-      if not (LExpressionKind in [ekUnknown, ekText]) then
-        raise ESearchExpressionParserException.Create(sUnexpectedCharInExpression);
-      SetLength(LValue^, Length(LValue^) + LChar.Length);
-      Move(LChar.Char[0], LValue^[Succ(Length(LValue^) - LChar.Length)], LChar.Length);
-      LToken:=tkText;
+  for Index := 0 to high(Values) do begin
+    if Comparer.Equals(Values[Index], Item) then begin
+      ItemIndex := Index;
+      Result := True;
+      exit;
     end;
-
-    // parser is able to deduce expression kind (if needed)
-    if LExpressionKind = ekUnknown then
-    case LToken of
-      tkPercent, tkText, tkComma: LExpressionKind:=ekText;
-      tkOpeningBracket, tkOpeningParenthesis: LExpressionKind:=ekSet;
-      tkLess..tkGreaterOrEqual, tkNum: LExpressionKind:=ekNum;
-    else
-      raise ESearchExpressionParserException.Create(sUnexpectedCharInExpression);
-    end;
-
-    // text mode has precedence (parsing the expressions like: 123abs)
-    if (LExpressionKind = ekNum) and (AExpressionKind = ekUnknown)
-      and (LToken in [tkText, tkPercent]) and (AExpressionRecord.NumericComparisionKind = nckUnknown) then
-    begin
-      LExpressionKind := ekText;
-    end;
-
-    // text mode is special so part of tokens are used as normal characters
-    if (LExpressionKind = ekText) and (LToken in CONVERTABLE_TOKENS_TO_STR) then
-      LValue^:=LValue^+TokenToStr(LToken);
-
-    if LPrevToken in [tkClosingBracket, tkClosingParenthesis] then
-      raise ESearchExpressionParserException.Create(sInvaildExpression_CharDetectedAfterClosingBracket);
-
-    // rules
-    case LToken of
-      tkNum:
-        if LExpressionKind = ekSet then
-          if not (LPrevToken in [tkOpeningBracket, tkOpeningParenthesis, tkComma]) then
-            raise ESearchExpressionParserException.CreateFmt(sUnexpectedTokenFound, [TokenToStr(LToken)]);
-      tkText:
-        if LExpressionKind in [ekSet, ekNum] then
-          raise ESearchExpressionParserException.Create(sUnexpectedStringLiteralInExpression);
-      tkClosingBracket:
-        if (LExpressionKind = ekSet) then
-          if (AExpressionRecord.SetKind<>skNumericBetweenInclusive) then
-            raise ESearchExpressionParserException.Create(sBadlyClosedBetweenExpression)
-          else if LPrevToken <> tkNum then
-            raise ESearchExpressionParserException.Create(sMissingNumberInExpression);
-      tkClosingParenthesis:
-        if (LExpressionKind = ekSet) then
-          if (AExpressionRecord.SetKind<>skNumericBetweenExclusive) then
-            raise ESearchExpressionParserException.Create(sBadlyClosedBetweenExpression)
-          else if LPrevToken <> tkNum then
-            raise ESearchExpressionParserException.Create(sMissingNumberInExpression);
-      tkComma:
-        if LExpressionKind = ekSet then
-          if not (LPrevToken = tkNum) then
-            raise ESearchExpressionParserException.CreateFmt(sUnexpectedOccurrenceOf_Found, [','])
-          else
-            NextValue;
-      tkPercent:
-        if LExpressionKind = ekText then
-        begin
-          if LLastPercent then
-            raise ESearchExpressionParserException.CreateFmt(sUnexpectedOccurrenceOf_Found, ['%']);
-          case LPrevToken of
-            tkText, tkNum: // tkNum is here because is possible to parse: 123%
-              begin
-                if (AExpressionRecord.TextMatchKind = tmkUnknown) then
-                  AExpressionRecord.TextMatchKind:=tmkMatchTextEnd
-                else
-                  AExpressionRecord.TextMatchKind:=tmkMatchTextAnywhere;
-                LLastPercent:=true;
-              end;
-            tkNone:
-              AExpressionRecord.TextMatchKind:=tmkMatchTextBeginning;
-            tkPercent:
-              raise ESearchExpressionParserException.CreateFmt(sUnexpectedOccurrenceOf_Found, ['%']);
-          end;
-        end
-        else
-          raise ESearchExpressionParserException.CreateFmt(sUnexpectedOccurrenceOf_Found, ['%']);
-      tkLess..tkGreaterOrEqual:
-        case LExpressionKind of
-          ekNum:
-            if LPrevToken <> tkNone then
-              raise ESearchExpressionParserException.Create(sBadNumericExpression)
-            else
-              with AExpressionRecord do
-              case LToken of
-                tkLess: NumericComparisionKind:=nckNumericLT;
-                tkGreater: NumericComparisionKind:=nckNumericGT;
-                tkEqual: NumericComparisionKind:=nckNumericEQ;
-                tkLessOrEqual: NumericComparisionKind:=nckNumericLTE;
-                tkGreaterOrEqual: NumericComparisionKind:=nckNumericGTE;
-              end;
-          ekSet:
-            raise ESearchExpressionParserException.CreateFmt(sUnexpectedTokenFound, [TokenToStr(LToken)]);
-        end;
-      tkOpeningParenthesis, tkOpeningBracket:
-        if LExpressionKind = ekSet then
-          if LPrevToken <> tkNone then
-            raise ESearchExpressionParserException.CreateFmt(sBadBetweenExpression_UnexpectedToken, [TokenToStr(LToken)])
-          else
-          with AExpressionRecord do
-          case LToken of
-            tkOpeningParenthesis: SetKind:=skNumericBetweenExclusive;
-            tkOpeningBracket: SetKind:=skNumericBetweenInclusive;
-          end;
-    end;
-    LPrevToken := LToken;
-    Inc(c, LChar.Length);
-  until (LChar.Length=0) or (c^ = #0);
-
-  case LExpressionKind of
-    ekText:
-      if AExpressionRecord.TextMatchKind = tmkUnknown then
-        AExpressionRecord.TextMatchKind:=tmkMatchTextExact;
-    ekSet:
-      case AExpressionRecord.SetKind of
-        skNumericBetweenInclusive:
-          if LPrevToken <> tkClosingBracket then
-            raise ESearchExpressionParserException.Create(sBadlyClosedBetweenExpression);
-        skNumericBetweenExclusive:
-          if LPrevToken <> tkClosingParenthesis then
-            raise ESearchExpressionParserException.Create(sBadlyClosedBetweenExpression);
-      end;
   end;
-
-  if (LValueIdx = 0) and (LValue^='') then
-    raise ESearchExpressionParserException.Create(sExpressionError_NoValue);
-
-  SetLength(AExpressionRecord.Values, LValueIdx + 1);
-  for i := 0 to LValueIdx do
-    AExpressionRecord.Values[i] := LValues[i];
-
-  AExpressionRecord.Kind := LExpressionKind;
+  ItemIndex := -1;
+  Result := False;
 end;
 
-class function TSearchExpressionService.Parse(const AExpression: utf8string
-  ): TExpressionRecord;
+class function TArrayTool<T>.Contains(const Values: TArray<T>; const Item: T; out ItemIndex: SizeInt): Boolean;
 begin
-  Result.Kind := ekUnknown;
-  Parse(AExpression, Result.Kind, Result);
+  Result := TArrayTool<T>.Contains(Values, Item, TEqualityComparer<T>.Default, ItemIndex);
 end;
+
+class function TArrayTool<T>.Contains(const Values: TArray<T>; const Item: T): Boolean;
+var
+  ItemIndex: SizeInt;
+begin
+  Result := TArrayTool<T>.Contains(Values, Item, ItemIndex);
+end;
+
+class function TArrayTool<T>.IndexOf(const Values: TArray<T>; const Item: T; const Comparer: IEqualityComparer<T>): SizeInt;
+begin
+  TArrayTool<T>.Contains(Values, Item, Comparer, Result);
+end;
+
+class function TArrayTool<T>.IndexOf(const Values: TArray<T>; const Item: T): SizeInt;
+begin
+  TArrayTool<T>.Contains(Values, Item, Result);
+end;
+
+class function TArrayTool<T>.Copy(const AArray: array of T): TArray<T>;
+begin
+  Copy(AArray, 0, Length(AArray));
+end;
+
+class function TArrayTool<T>.Copy(const AArray: array of T; FromIndex, Count: SizeInt ): TArray<T>;
+var
+  i : SizeInt;
+begin
+  if Count < 0 then raise EArgumentOutOfRangeException.Create('Count was less than 0');
+  if (FromIndex + Count) > High(AArray) then raise EArgumentOutOfRangeException.Create('FromIndex + Count was greater than High(AArray)');
+  SetLength(Result, Count);
+  for i:= FromIndex to FromIndex + Count do
+    Result[i - FromIndex] := AArray[i];
+end;
+
+class procedure TArrayTool<T>.Add(var Values: TArray<T>; const AValue : T);
+begin
+  SetLength(Values, SizeInt(Length(Values)) + 1);
+  Values[High(Values)] := AValue;
+end;
+
+class procedure TArrayTool<T>.Remove(var Values : TArray<T>; const Item : T; const Comparer : IEqualityComparer<T>);
+var index : SizeInt;
+begin
+  while TArrayTool<T>.Contains(Values, item, Comparer, index) do begin
+    TArrayTool<T>.RemoveAt(Values, index);
+  end;
+end;
+
+class procedure TArrayTool<T>.Remove(var Values : TArray<T>; const Item : T);
+begin
+  TArrayTool<T>.Remove(Values, Item, TEqualityComparer<T>.Default);
+end;
+
+class procedure TArrayTool<T>.RemoveAt(var Values : TArray<T>; ItemIndex : SizeInt);
+var i : Integer;
+begin
+  for i := ItemIndex + 1 to High(Values) do
+    Values[i - 1] := Values[i];
+  SetLength(Values, Length(Values) - 1);
+end;
+
+class procedure TArrayTool<T>.Append(var Arr: TArray<T>; Value: T);
+begin
+  SetLength(Arr, Length(Arr)+1);
+  Arr[High(Arr)] := Value;
+end;
+
+class procedure TArrayTool<T>.Prepend(var Arr: TArray<T>; Value: T);
+var i : Integer;
+begin
+  SetLength(Arr, Length(Arr)+1);
+  for i := High(Arr)-1 downto Low(Arr) do
+    Arr[i+1] := Arr[i];
+  Arr[Low(Arr)] := Value;
+end;
+
+class procedure TArrayTool<T>.InsertAt(var Values : TArray<T>; ItemIndex : SizeInt; const Item : T);
+var i : Integer;
+begin
+  if (ItemIndex < Low(Values)) OR (ItemIndex > High(Values)) then Raise Exception.CreateFmt(sInvalidParameter_OutOfBounds, ['ItemIndex']);
+  SetLength(Values, Length(Values)+1);
+  for i := High(Values)-1 downto ItemIndex do
+    Values[i+1] := Values[i];
+  Values[ItemIndex] := Item;
+end;
+
+class procedure TArrayTool<T>.Swap(var Values : array of T; Item1Index, Item2Index : SizeInt);
+var temp : T; len, recSize : SizeInt; itemSize : SizeInt;
+begin
+  len := Length(Values);
+  recSize := SizeOf(T);
+  if (Item1Index < 0) OR (Item1Index > len) then Raise Exception.CreateFmt(sInvalidParameter_OutOfBounds, ['Item1Index']);
+  if (Item2Index < 0) OR (Item2Index > len) then Raise Exception.CreateFmt(sInvalidParameter_OutOfBounds, ['Item2Index']);
+  temp := Values[Item1Index];
+  Values[Item1Index] := Values[Item2Index];
+  Values[Item2Index] := temp;
+end;
+
+class procedure TArrayTool<T>.MoveItem(var Values : array of T; FromIndex, ToIndex : SizeInt);
+var i : Integer; item : T;
+begin
+  if (FromIndex < Low(Values)) OR (FromIndex > High(Values)) then Raise Exception.CreateFmt(sInvalidParameter_OutOfBounds, ['FromIndex']);
+  if (ToIndex < Low(Values)) OR (ToIndex > High(Values)) then Raise Exception.CreateFmt(sInvalidParameter_OutOfBounds, ['ToIndex']);
+
+  item := Values[FromIndex];
+  if FromIndex < ToIndex then begin
+    for i := FromIndex + 1 to ToIndex do
+      Values[i - 1] := Values[i];
+    Values[ToIndex] := item;
+  end else if FromIndex > ToIndex then begin
+    for i := FromIndex - 1 downto ToIndex do
+      Values[i + 1] := Values[i];
+    Values[ToIndex] := item;
+  end;
+end;
+
+class function TArrayTool<T>.Concat(const Arrays: array of TArray<T>): TArray<T>;
+var
+  i, k, LIndex, LLength: Integer;
+begin
+  LLength := 0;
+  for i := 0 to High(Arrays) do
+    Inc(LLength, Length(Arrays[i]));
+  SetLength(Result, LLength);
+  LIndex := 0;
+  for i := 0 to High(Arrays) do
+  begin
+    for k := 0 to High(Arrays[i]) do
+    begin
+      Result[LIndex] := Arrays[i][k];
+      Inc(LIndex);
+    end;
+  end;
+end;
+
+class function TArrayTool<T>.Create(const item0 : T) : TArray<T>;
+begin
+  SetLength(result,1);
+  result[0] := item0;
+end;
+
+class function TArrayTool<T>.Create(const item0 : T; const item1 : T) : TArray<T>;
+begin
+  SetLength(result,2);
+  result[0] := item0;
+  result[1] := item1;
+end;
+
+class function TArrayTool<T>.Create(const item0 : T; const item1 : T; const item2 : T) : TArray<T>;
+begin
+  SetLength(result,3);
+  result[0] := item0;
+  result[1] := item1;
+  result[2] := item2;
+end;
+
+class function TArrayTool<T>.Create(const item0 : T; const item1 : T; const item2 : T; const item3 : T) : TArray<T>;
+begin
+  SetLength(result,4);
+  result[0] := item0;
+  result[1] := item1;
+  result[2] := item2;
+  result[3] := item3;
+end;
+
+class function TArrayTool<T>.Create(const item0 : T; const item1 : T; const item2 : T; const item3 : T; const item4 : T) : TArray<T>;begin
+  SetLength(result,5);
+  result[0] := item0;
+  result[1] := item1;
+  result[2] := item2;
+  result[3] := item3;
+  result[4] := item4;
+end;
+
+class function TArrayTool<T>.Create(const item0 : T; const item1 : T; const item2 : T; const item3 : T; const item4 : T; const item5 : T) : TArray<T>;
+begin
+  SetLength(result,6);
+  result[0] := item0;
+  result[1] := item1;
+  result[2] := item2;
+  result[3] := item3;
+  result[4] := item4;
+  result[5] := item5;
+end;
+
+class function TArrayTool<T>.ToArray(Enumerable: TEnumerable<T>; Count: SizeInt): TArray<T>;
+var
+  LItem: T;
+begin
+  SetLength(Result, Count);
+  Count := 0;
+  for LItem in Enumerable do
+  begin
+    Result[Count] := LItem;
+    Inc(Count);
+  end;
+end;
+
+class function TArrayTool<T>._Length(const Values: array of T) : SizeInt;
+begin
+   Result := Length(Values);
+end;
+{%endregion}
 
 
 initialization
-  TableRowType := TTableRow.Create;
   MinTimeStampDateTime:= StrToDateTime('1980-01-01 00:00:000', IntlDateTimeFormat);
 
 finalization
-  TableRowType.Free;
+
 end.
 

@@ -3,9 +3,9 @@ program FrameworkTests;
 {$mode objfpc}{$H+}
 
 uses
-  Interfaces, Forms, GuiTestRunner, UCacheTests, Generics.Collections,
+  Interfaces, Forms, GuiTestRunner, Generics.Collections,
   generics.defaults, generics.hashes, generics.helpers,
-  generics.memoryexpanders, generics.strings;
+  generics.memoryexpanders, generics.strings, UCompareTests;
 
 {$R *.res}
 

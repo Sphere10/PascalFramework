@@ -162,7 +162,7 @@ implementation
 {$R *.lfm}
 
 uses
-  UCommonUI;
+  UCommon.UI;
 
 {%region TWizardForm }
 
