@@ -950,7 +950,7 @@ type
 var
   i : integer;
   filters : __TList_IPredicate_T;
-  GC : TScoped;}
+  GC : TScoped;
 begin
   filters := GC.AddObject( __TList_IPredicate_T.Create ) as __TList_IPredicate_T;
   for i := Low(AFilterCriteria) to High(AFilterCriteria) do
