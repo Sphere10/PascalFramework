@@ -952,7 +952,7 @@ var
   filters : __TList_IPredicate_T;
   GC : TScoped;}
 begin
-  filters := GC.AddObject( TList<TColumnFilter>.Create ) as __TList_IPredicate_T;
+  filters := GC.AddObject( __TList_IPredicate_T.Create ) as __TList_IPredicate_T;
   for i := Low(AFilterCriteria) to High(AFilterCriteria) do
     if AFilterCriteria[i].Filter <> vgfSortable then begin
       filters.Add( __IPredicate_T(TColumnFilterPredicate<T>.Create(AFilterCriteria[i], ADelegate))  );
