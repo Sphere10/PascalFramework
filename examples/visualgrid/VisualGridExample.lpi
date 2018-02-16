@@ -29,7 +29,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="7">
+    <Units Count="13">
       <Unit0>
         <Filename Value="VisualGridExample.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -61,6 +61,32 @@
         <Filename Value="..\..\src\Sphere10\UCommon.UI.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit6>
+      <Unit7>
+        <Filename Value="..\..\src\Generics.Collections\generics.collections.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Generics.Collections"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="..\..\src\Generics.Collections\generics.defaults.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Generics.Defaults"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="..\..\src\Generics.Collections\generics.hashes.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="..\..\src\Generics.Collections\generics.helpers.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="..\..\src\Generics.Collections\generics.memoryexpanders.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="..\..\src\Generics.Collections\generics.strings.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit12>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

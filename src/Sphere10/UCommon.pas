@@ -1108,25 +1108,30 @@ begin
 end;
 
 class function TArrayTool<T>.Contains(const Values: TArray<T>; const Item: T): Boolean;
-var
-  ItemIndex: SizeInt;
 begin
-  Result := TArrayTool<T>.Contains(Values, Item, ItemIndex);
+  Result := IndexOf(Values, Item) >= 0;
 end;
 
 class function TArrayTool<T>.IndexOf(const Values: TArray<T>; const Item: T; const Comparer: IEqualityComparer<T>): SizeInt;
+var
+  i : SizeInt;
 begin
-  TArrayTool<T>.Contains(Values, Item, Comparer, Result);
+  Result := -1;
+  for i := Low(Values) to High(Values) do
+    if Comparer.Equals(Values[i], Item) then begin
+      Result := i;
+      exit;
+    end;
 end;
 
 class function TArrayTool<T>.IndexOf(const Values: TArray<T>; const Item: T): SizeInt;
 begin
-  TArrayTool<T>.Contains(Values, Item, Result);
+  Result := IndexOf(Values, Item, TEqualityComparer<T>.Default);
 end;
 
 class function TArrayTool<T>.Copy(const AArray: array of T): TArray<T>;
 begin
-  Copy(AArray, 0, Length(AArray));
+  Result := Copy(AArray, 0, Length(AArray));
 end;
 
 class function TArrayTool<T>.Copy(const AArray: array of T; FromIndex, Count: SizeInt ): TArray<T>;

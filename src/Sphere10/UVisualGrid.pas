@@ -80,7 +80,7 @@ type
        FFilter : TColumnFilter;
        FDelegate : TApplyFilterDelegate<T>;
      public
-       constructor Create(const AFilter : TColumnFilter; const ADelegate : TApplyFilterDelegate);
+       constructor Create(const AFilter : TColumnFilter; const ADelegate : TApplyFilterDelegate<T>); overload;
        function Evaluate (constref AValue: T) : boolean;
    end;
 
@@ -149,12 +149,14 @@ type
       function ApplyColumnFilter(constref AItem: T; constref AFilter: TColumnFilter) : boolean; virtual;
       function GetItemField(constref AItem: T; const AColumnName : utf8string) : Variant; virtual; abstract;
       procedure DehydrateItem(constref AItem: T; var ATableRow: Variant); virtual; abstract;
+      function FetchPage(constref AParams: TPageFetchParams; var ADataTable: TDataTable): TPageFetchResult;
+      function GetSearchCapabilities: TSearchCapabilities; virtual; abstract;
+      procedure OnBeforeFetchAll(constref AParams: TPageFetchParams); virtual;
+      procedure FetchAll(const AContainer : TList<T>); virtual; abstract;
+      procedure OnAfterFetchAll(constref AParams: TPageFetchParams); virtual;
     public
       constructor Create(AOwner: TComponent); override;
       destructor Destroy; override;
-      function FetchPage(constref AParams: TPageFetchParams; var ADataTable: TDataTable): TPageFetchResult;
-      function GetSearchCapabilities: TSearchCapabilities; virtual; abstract;
-      procedure FetchAll(const AContainer : TList<T>); virtual; abstract;
   end;
 
   { TVisualGridSelection }
@@ -617,6 +619,7 @@ var
   comparer : IComparer<T>;
   filter : IPredicate<T>;
 begin
+  OnBeforeFetchAll(AParams);
   FLock.Acquire;
   try
      // Fetch underlying data if stale
@@ -626,7 +629,8 @@ begin
      // NEED TO CONFIRM TEST OF Comparer/Filter API
      // Filter the data
      filter := TVisualGridTool<T>.ConstructRowPredicate(AParams.Filter, ApplyColumnFilter, true);
-     TListTool<T>.FilterBy(data, filter);
+     if filter <> nil then
+       TListTool<T>.FilterBy(data, filter);
 
      // UGrids.pas(111,95) Error: Incompatible type for arg no. 2: Got "TCustomDataSource$1.ApplyColumnFilter(const TAccount;const TColumnFilter):Boolean;", expected "<procedure variable type of function(const <undefined type>;const TColumnFilter):Boolean of object;Register>"
 
@@ -663,7 +667,17 @@ begin
   finally
     FLock.Release;
   end;
+  OnAfterFetchAll(AParams);
 end;
+
+procedure TCustomDataSource<T>.OnBeforeFetchAll(constref AParams: TPageFetchParams);
+begin
+end;
+
+procedure TCustomDataSource<T>.OnAfterFetchAll(constref AParams: TPageFetchParams);
+begin
+end;
+
 
 { TVisualGridCaption }
 
@@ -880,11 +894,8 @@ end;
 
 { TColumnFilterPredicate }
 
-constructor TColumnFilterPredicate<T>.Create(const AFilter : TColumnFilter; const ADelegate : TApplyFilterDelegate);
+constructor TColumnFilterPredicate<T>.Create(const AFilter : TColumnFilter; const ADelegate : TApplyFilterDelegate<T>);
 begin
-  if NOT Assigned(ADelegate) then
-    raise EArgumentException.Create('ADelegate is null or unassigned');
-
   FFilter := AFilter;
   FDelegate := ADelegate;
 end;
@@ -933,23 +944,29 @@ begin
 end;
 
 class function TVisualGridTool<T>.ConstructRowPredicate(constref AFilterCriteria : TFilterCriteria; const ADelegate : TApplyFilterDelegate<T>; const AndOrSwitch : boolean) : IPredicate<T>;
+type
+  __IPredicate_T = IPredicate<T>;
+  __TList_IPredicate_T = TList<__IPredicate_T>;
 var
-  arrayOfPredicates : array of IPredicate<T>;
   i : integer;
+  filters : __TList_IPredicate_T;
+  GC : TScoped;}
 begin
-  if Length(AFilterCriteria) = 0 then begin
-    Result := TPredicateTool<T>.TruePredicate; // if no sub-predicates, row is considered true
-  end else if Length(AFilterCriteria) = 1 then begin
-    Result := TColumnFilterPredicate<T>.Create(AFilterCriteria[0], @ADelegate);
-  end else begin
-    SetLength(arrayOfPredicates, Length(AFilterCriteria));
-    for i := 0 to High(AFilterCriteria) do
-      arrayOfPredicates[i] := TColumnFilterPredicate<T>.Create(AFilterCriteria[i], @ADelegate);
+  filters := GC.AddObject( TList<TColumnFilter>.Create ) as __TList_IPredicate_T;
+  for i := Low(AFilterCriteria) to High(AFilterCriteria) do
+    if AFilterCriteria[i].Filter <> vgfSortable then begin
+      filters.Add( __IPredicate_T(TColumnFilterPredicate<T>.Create(AFilterCriteria[i], ADelegate))  );
+    end;
 
-    if AndOrSwitch then
-      Result := TPredicateTool<T>.AndMany(arrayOfPredicates)
-    else
-      Result := TPredicateTool<T>.OrMany(arrayOfPredicates);
+  case filters.Count of
+    0: Result := nil;
+    1: Result := filters[0];
+    else begin
+      if AndOrSwitch then
+        Result := TPredicateTool<T>.AndMany(filters.ToArray)
+      else
+        Result := TPredicateTool<T>.OrMany(filters.ToArray);
+    end
   end;
 end;
 
@@ -1010,8 +1027,7 @@ end;
 
 { TPageFetchParams }
 
-constructor TPageFetchParams.Create(AIndex: Integer; ASize: Integer;
-  AFilter: TFilterCriteria);
+constructor TPageFetchParams.Create(AIndex: Integer; ASize: Integer; AFilter: TFilterCriteria);
 begin
   PageIndex:= AIndex;
   PageSize:=ASize;
@@ -2299,8 +2315,7 @@ begin
   if Assigned(FDataSource) then
   begin
     FillFilter;
-    AResult := FDataSource.FetchPage(
-      TPageFetchParams.Create(FPageIndex, FPageSize, FFilter.ToArray), FDataTable)
+    AResult := FDataSource.FetchPage(TPageFetchParams.Create(FPageIndex, FPageSize, FFilter.ToArray), FDataTable)
   end
   else
     FillChar(AResult, SizeOf(AResult), #0);

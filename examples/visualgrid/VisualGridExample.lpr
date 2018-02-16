@@ -12,7 +12,7 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, runtimetypeinfocontrols, fMain;
+  Forms, Generics.Collections, runtimetypeinfocontrols, fMain;
 
 {$R *.res}
 
