@@ -947,25 +947,28 @@ class function TVisualGridTool<T>.ConstructRowPredicate(constref AFilterCriteria
 type
   __IPredicate_T = IPredicate<T>;
   __TList_IPredicate_T = TList<__IPredicate_T>;
+  __TColumnFilterPredicate_T = TColumnFilterPredicate<T>;
+  __TPredicateTool_T = TPredicateTool<T>;
 var
   i : integer;
   filters : __TList_IPredicate_T;
   GC : TScoped;
 begin
   filters := GC.AddObject( __TList_IPredicate_T.Create ) as __TList_IPredicate_T;
-  for i := Low(AFilterCriteria) to High(AFilterCriteria) do
+  for i := Low(AFilterCriteria) to High(AFilterCriteria) do begin
     if AFilterCriteria[i].Filter <> vgfSortable then begin
-      filters.Add( __IPredicate_T(TColumnFilterPredicate<T>.Create(AFilterCriteria[i], ADelegate))  );
+      filters.Add( __IPredicate_T(__TColumnFilterPredicate_T.Create(AFilterCriteria[i], ADelegate))  );
     end;
+  end;
 
   case filters.Count of
     0: Result := nil;
     1: Result := filters[0];
     else begin
       if AndOrSwitch then
-        Result := TPredicateTool<T>.AndMany(filters.ToArray)
+        Result := __TPredicateTool_T.AndMany(filters.ToArray)
       else
-        Result := TPredicateTool<T>.OrMany(filters.ToArray);
+        Result := __TPredicateTool_T.OrMany(filters.ToArray);
     end
   end;
 end;
