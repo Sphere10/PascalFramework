@@ -467,6 +467,9 @@ type
   { TVisualGridTool }
 
   TVisualGridTool<T> = class
+    protected type
+      __IPredicate_T = IPredicate<T>;
+      __TList_IPredicate_T = TList<__IPredicate_T>;
     public
      class function ConstructRowComparer(constref AFilterCriteria : TFilterCriteria; const ADelegate : TApplySortDelegate<T>) : IComparer<T>;
      class function ConstructRowPredicate(constref AFilterCriteria : TFilterCriteria; const ADelegate : TApplyFilterDelegate<T>; const AndOrSwitch : boolean) : IPredicate<T>;
@@ -945,8 +948,6 @@ end;
 
 class function TVisualGridTool<T>.ConstructRowPredicate(constref AFilterCriteria : TFilterCriteria; const ADelegate : TApplyFilterDelegate<T>; const AndOrSwitch : boolean) : IPredicate<T>;
 type
-  __IPredicate_T = IPredicate<T>;
-  __TList_IPredicate_T = TList<__IPredicate_T>;
   __TColumnFilterPredicate_T = TColumnFilterPredicate<T>;
   __TPredicateTool_T = TPredicateTool<T>;
 var
