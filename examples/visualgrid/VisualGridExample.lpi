@@ -78,6 +78,7 @@
       <Unit10>
         <Filename Value="..\..\src\Generics.Collections\generics.helpers.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="Generics.Helpers"/>
       </Unit10>
       <Unit11>
         <Filename Value="..\..\src\Generics.Collections\generics.memoryexpanders.pas"/>

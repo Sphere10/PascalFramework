@@ -580,7 +580,7 @@ begin
   end;
 
   // Compare left/right values
-  Result := TCompare.Variant(@Left, @Right);
+  Result := TCompare.Variant(@leftField, @rightField);
 
   // Invert result for descending
   if AFilter.Sort = sdDescending then
@@ -621,6 +621,8 @@ var
   entity : T;
   comparer : IComparer<T>;
   filter : IPredicate<T>;
+  res : boolean;
+  datum : T;
 begin
   OnBeforeFetchAll(AParams);
   FLock.Acquire;
@@ -632,14 +634,16 @@ begin
      // NEED TO CONFIRM TEST OF Comparer/Filter API
      // Filter the data
      filter := TVisualGridTool<T>.ConstructRowPredicate(AParams.Filter, ApplyColumnFilter, true);
-     if filter <> nil then
+     if filter <> nil then begin
+       datum := data[0];
+       res := filter.Evaluate(datum);
        TListTool<T>.FilterBy(data, filter);
-
+     end;
      // UGrids.pas(111,95) Error: Incompatible type for arg no. 2: Got "TCustomDataSource$1.ApplyColumnFilter(const TAccount;const TColumnFilter):Boolean;", expected "<procedure variable type of function(const <undefined type>;const TColumnFilter):Boolean of object;Register>"
 
      // Sort the data
-     //comparer := TVisualGridTool<T>.ConstructRowComparer(AParams.Filter, ApplyColumnSort);
-     //data.Sort( comparer);
+     comparer := TVisualGridTool<T>.ConstructRowComparer(AParams.Filter, ApplyColumnSort);
+     data.Sort( comparer);
 
      // Setup result
      Result.TotalDataCount := data.Count;
@@ -975,58 +979,111 @@ begin
 end;
 
 class function TVisualGridTool<T>.MatchTextExact(const AValue : Variant; const AParams: array of Variant) : boolean;
+var
+  match : Variant;
 begin
-  Result := (Length(AParams) = 1) AND (VarToStr(AValue) = VarToStr(AParams[1]));
+  if NOT VarIsNumeric(AValue) then
+    Exit(false);
+  Result := (Length(AParams) = 1) AND (VarToStr(AValue) = VarToStr(AParams[0]));
 end;
 
 class function TVisualGridTool<T>.MatchTextBeginning(const AValue : Variant; const AParams: array of Variant) : boolean;
 begin
-  Result := (Length(AParams) = 1) AND VarToStr(AValue).StartsWith(VarToStr(AParams[1]));
+  Result := (Length(AParams) = 1) AND VarToStr(AValue).StartsWith(VarToStr(AParams[0]));
 end;
 
 class function TVisualGridTool<T>.MatchTextEnd(const AValue : Variant; const AParams: array of Variant) : boolean;
 begin
-  Result := (Length(AParams) = 1) AND VarToStr(AValue).EndsWith(VarToStr(AParams[1]));
+  Result := (Length(AParams) = 1) AND VarToStr(AValue).EndsWith(VarToStr(AParams[0]));
 end;
 
 class function TVisualGridTool<T>.MatchTextAnywhere(const AValue : Variant; const AParams: array of Variant) : boolean;
 begin
-  Result := (Length(AParams) = 1) AND VarToStr(AValue).Contains(VarToStr(AParams[1]));
+  Result := (Length(AParams) = 1) AND VarToStr(AValue).Contains(VarToStr(AParams[0]));
 end;
 
 class function TVisualGridTool<T>.NumericEQ(const AValue : Variant; const AParams: array of Variant) : boolean;
+var
+  match : Variant;
 begin
-  // TODO Maciej
+  match := AParams[0];
+  if NOT VarIsNumeric(AValue) then
+    Exit(false);
+  Result := TCompare.Variant(@AValue, @match) = 0;
 end;
 
 class function TVisualGridTool<T>.NumericLT(const AValue : Variant; const AParams: array of Variant) : boolean;
+var
+  match : Variant;
 begin
-  // TODO Maciej
+  match := AParams[0];
+  if NOT VarIsNumeric(AValue) then
+    Exit(false);
+  Result := TCompare.Variant(@AValue, @match) = -1;
 end;
 
 class function TVisualGridTool<T>.NumericLTE(const AValue : Variant; const AParams: array of Variant) : boolean;
+var
+  match : Variant;
+  cmp : Integer;
 begin
-  // TODO Maciej
+  match := AParams[0];
+  if NOT VarIsNumeric(AValue) then
+    Exit(false);
+  cmp := TCompare.Variant(@AValue, @match);
+  Result := (cmp = -1) OR (cmp = 0);
 end;
 
 class function TVisualGridTool<T>.NumericGT(const AValue : Variant; const AParams: array of Variant) : boolean;
+var
+  match : Variant;
+  cmp : Integer;
 begin
-  // TODO Maciej
+  match := AParams[0];
+  if NOT VarIsNumeric(AValue) then
+    Exit(false);
+  cmp := TCompare.Variant(@AValue, @match);
+  Result := (cmp = 1);
 end;
 
 class function TVisualGridTool<T>.NumericGTE(const AValue : Variant; const AParams: array of Variant) : boolean;
+var
+  match : Variant;
+  cmp : Integer;
 begin
-  // TODO Maciej
+  match := AParams[0];
+  if NOT VarIsNumeric(AValue) then
+    Exit(false);
+  cmp := TCompare.Variant(@AValue, @match);
+  Result := (cmp = 1) OR (cmp = 0);
 end;
 
 class function TVisualGridTool<T>.NumericBetweenInclusive(const AValue : Variant; const AParams: array of Variant) : boolean;
+var
+  lower, upper : Variant;
+  lowercmp, uppercmp : Integer;
 begin
-  // TODO Maciej
+  lower := AParams[0];
+  upper := AParams[1];
+  if NOT VarIsNumeric(AValue) then
+    Exit(false);
+  lowercmp := TCompare.Variant(@AValue, @lower);
+  uppercmp := TCompare.Variant(@AValue, @upper);
+  Result := (lowercmp in [1, 0]) AND (uppercmp in [-1, 0]);
 end;
 
 class function TVisualGridTool<T>.NumericBetweenExclusive(const AValue : Variant; const AParams: array of Variant) : boolean;
+var
+  lower, upper : Variant;
+  lowercmp, uppercmp : Integer;
 begin
-  // TODO Maciej
+  lower := AParams[0];
+  upper := AParams[1];
+  if NOT VarIsNumeric(AValue) then
+    Exit(false);
+  lowercmp := TCompare.Variant(@AValue, @lower);
+  uppercmp := TCompare.Variant(@AValue, @upper);
+  Result := (lowercmp = 1) AND (uppercmp = -1);
 end;
 
 { TPageFetchParams }

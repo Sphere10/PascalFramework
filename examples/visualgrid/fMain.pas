@@ -17,7 +17,11 @@ type
     ID : Integer;
     Name : AnsiString;
     Foo: Integer;
-    Bar : AnsiString;
+    &Boolean : boolean;
+    &Char : char;
+    &UInt16 : UInt16;
+    &Single : Single;
+    Bar : utf8String;
   end;
 
   { TEntityDataSource }
@@ -110,13 +114,19 @@ var
 
   function TEntityDataSource.GetColumns : TTableColumns;
   begin
-    Result := TTableColumns.Create('ID', 'Name', 'Foo', 'Bar');
+    Result := TTableColumns.Create('ID', 'Name', 'Foo', 'Boolean', 'Char', 'UInt16', 'Single', 'Bar');
   end;
 
   function TEntityDataSource.GetSearchCapabilities: TSearchCapabilities;
   begin
     Result := TSearchCapabilities.Create(
       TSearchCapability.From('ID', SORTABLE_NUMERIC_FILTER),
+      TSearchCapability.From('Name', SORTABLE_TEXT_FILTER),
+      TSearchCapability.From('Foo', SORTABLE_TEXT_FILTER),
+      TSearchCapability.From('Boolean', SORTABLE_NUMERIC_FILTER),
+      TSearchCapability.From('Char', SORTABLE_TEXT_FILTER),
+      TSearchCapability.From('UInt16', SORTABLE_NUMERIC_FILTER),
+      TSearchCapability.From('Single', SORTABLE_NUMERIC_FILTER),
       TSearchCapability.From('Name', SORTABLE_TEXT_FILTER),
       TSearchCapability.From('Bar', SORTABLE_TEXT_FILTER)
     );
@@ -171,8 +181,16 @@ var
        Result := AItem.Name
      else if AColumnName = 'Foo' then
        Result := AItem.Foo
+     else if AColumnName = 'Boolean' then
+       Result := AItem.&Boolean
+     else if AColumnName = 'Char' then
+       Result := AItem.&Char
+     else if AColumnName = 'UInt16' then
+       Result := AItem.&UInt16
+     else if AColumnName = 'Single' then
+       Result := AItem.&Single
      else if AColumnName = 'Bar' then
-       Result := AItem.Bar
+       Result := AItem.&Bar
      else raise Exception.Create(Format('Field not found [%s]', [AColumnName]));
   end;
 
@@ -181,6 +199,12 @@ var
     ATableRow.ID := AItem.ID;
     ATableRow.Name := AItem.Name;
     ATableRow.Foo := AItem.Foo;
+    ATableRow.&Boolean := AItem.&Boolean;
+    ATableRow.&Char :=  Byte(AITem.&Char);
+    //SetVariantProp(ATableRow, string('Char'), AItem.&Char);  // [MACIEJ] - Help! this will not compile?
+    ATableRow.&Char := Variant(AItem.&Char);
+    ATableRow.&UInt16 := AItem.UInt16;
+    ATableRow.&Single := AItem.Single;
     ATableRow.Bar := AItem.Bar;
   end;
 
@@ -327,10 +351,24 @@ initialization
   for i := 0 to 999 do begin
     entity.ID := i;
     entity.Name := Format('Name %d', [i + 1]);
-    entity.Foo := i + 1;
-    entity.Bar := Format('String with %d', [(i * i) mod ((i div 5) + 5)]);
+    entity.Foo := i div 5;
+    entity.&Boolean := IIF(i mod 2 = 0, True, False);
+    entity.&Char := Char(65 + (i mod 3));   // A, B or C
+    entity.&UInt16 := i + 1;
+    entity.&Single:= Single(i) / 2.0;
+    entity.Bar := Format('String with %d', [(i * i) mod ((i div 5) + 5) mod 100] );
     GData.Add(entity);
   end;
+
+{ID : Integer;
+Name : AnsiString;
+Foo: Integer;
+&Boolean : boolean;
+&Char : char;
+&UInt16 : UInt16;
+&Single : Single;
+Bar : utf8String;
+}
 
   RegisterPropertyEditor(TypeInfo(TAlign), TVisualGrid, 'Align', THiddenPropertyEditor);
   RegisterPropertyEditor(TypeInfo(TCursor), TVisualGrid, 'Cursor', THiddenPropertyEditor);

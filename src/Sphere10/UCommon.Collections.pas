@@ -657,7 +657,8 @@ begin
     item := AList[i];
     if APredicate.Evaluate(item) then begin
       DiposeItem(AList, i, ADisposePolicy);
-      AList.Delete(i);
+      //AList.Delete(i);           // [MACIEJ] - After some deletes, it overfows i??
+      inc(i);
       inc(Result);
     end else Inc(i);
   end;
