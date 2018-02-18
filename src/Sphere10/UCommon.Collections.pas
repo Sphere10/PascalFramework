@@ -652,15 +652,15 @@ var
   item : T;
 begin
   Result := 0;
-  i := 0;
-  while i < AList.Count do begin
+  i := AList.Count-1;
+  while i >= 0 do begin
     item := AList[i];
     if APredicate.Evaluate(item) then begin
       DiposeItem(AList, i, ADisposePolicy);
-      //AList.Delete(i);           // [MACIEJ] - After some deletes, it overfows i??
-      inc(i);
+      AList.Delete(i);
       inc(Result);
-    end else Inc(i);
+    end;
+    Dec(i);
   end;
 end;
 
