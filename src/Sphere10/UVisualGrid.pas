@@ -667,9 +667,9 @@ begin
      // Setup result
      Result.TotalDataCount := data.Count;
      Result.PageCount := data.Count div AParams.PageSize;
-     if (AParams.PageSize >= 0) then begin
+     if (AParams.PageSize >= 0) and (AParams.PageIndex >= 0) and (data.count > 0) then begin
        Result.PageIndex := ClipValue(AParams.PageIndex, 0, Result.PageCount - 1);
-       pageStart := Result.PageIndex  * AParams.PageSize;
+       pageStart := Result.PageIndex * AParams.PageSize;
        pageEnd := pageStart + (AParams.PageSize - 1);
      end else begin
        Result.PageIndex := 0;
