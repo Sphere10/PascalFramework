@@ -1671,7 +1671,7 @@ end;
 
 procedure TCustomVisualGrid.SearchButtonClick(Sender: TObject);
 var
-  //LFormat: TFormatSettings;
+  LFormat: TFormatSettings;
   LNewStrFilter: utf8string;
   LException: boolean = false;
   e: TSearchEdit;
@@ -1706,13 +1706,23 @@ var
         else if LFilter in (NUMERIC_FILTER - [vgfNumericBetweenInclusive, vgfNumericBetweenExclusive]) then
         begin
           SetLength(LColumnFilter.Values, 1);
-          LColumnFilter.Values[0]:=StrToInt(LExpressionRecord.Values[0]);
+          if LExpressionRecord.HasDecimals then
+            LColumnFilter.Values[0]:=StrToFloat(LExpressionRecord.Values[0], LFormat)
+          else
+            LColumnFilter.Values[0]:=StrToInt(LExpressionRecord.Values[0]);
         end
         else if LFilter in [vgfNumericBetweenInclusive, vgfNumericBetweenExclusive] then
         begin
           SetLength(LColumnFilter.Values, 2);
-          LColumnFilter.Values[0]:=StrToInt(LExpressionRecord.Values[0]);
-          LColumnFilter.Values[1]:=StrToInt(LExpressionRecord.Values[1]);
+          if LExpressionRecord.HasDecimals then
+          begin
+            LColumnFilter.Values[0]:=StrToFloat(LExpressionRecord.Values[0], LFormat);
+            LColumnFilter.Values[1]:=StrToFloat(LExpressionRecord.Values[1], LFormat);
+          end else
+          begin
+            LColumnFilter.Values[0]:=StrToInt(LExpressionRecord.Values[0]);
+            LColumnFilter.Values[1]:=StrToInt(LExpressionRecord.Values[1]);
+          end;
         end;
 
      FFilter.Add(LColumnFilter);
@@ -1780,7 +1790,8 @@ begin
     exit;
 
   FFilter.Clear;
-  //LFormat.DecimalSeparator:='.';
+  LFormat := DefaultFormatSettings;
+  LFormat.DecimalSeparator:='.';
   try
     AddExpression(FSearchEdit.Text, nil);
     // multi column search

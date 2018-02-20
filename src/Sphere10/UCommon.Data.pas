@@ -81,6 +81,7 @@ type
 
   TExpressionRecord = record
     Values: array of utf8string;
+    HasDecimals: boolean; // for ekSet and ekNum only
   case Kind: TExpressionKind of
     ekUnknown: ();
     ekText: (TextMatchKind: TTextMatchKind);
@@ -243,7 +244,7 @@ const
 type
   TToken = (tkNone, tkPercent, tkLess, tkGreater, tkEqual, tkLessOrEqual,
     tkGreaterOrEqual, tkOpeningParenthesis, tkClosingParenthesis,
-    tkOpeningBracket, tkClosingBracket,  tkText, tkNum, tkComma);
+    tkOpeningBracket, tkClosingBracket, tkText, tkNum, tkComma);
 
   TUTF8Char = record
     Length: byte;
@@ -287,6 +288,8 @@ var
   LExpression: utf8string;
   LLastPercent: boolean = false;
   LExpressionKind: TExpressionKind;
+  LWasUnknow: boolean;
+  LHasDecimals: boolean = false;
 
   procedure NextValue;
   begin
@@ -308,6 +311,7 @@ begin
   if AExpression = '' then
     Exit;
 
+  LWasUnknow := AExpressionKind = ekUnknown;
   LExpressionKind := AExpressionKind;
   // more simple parsing loop
   if AExpressionKind in [ekSet, ekNum] then
@@ -360,9 +364,12 @@ begin
             until not (c^ in ['0'..'9', '.']);
             Dec(c);
             case LExpressionKind of
-              ekUnknown, ekSet, ekNum: LToken:=tkNum;
-              ekText: LToken:=tkText;
+              ekUnknown, ekSet, ekNum: LToken := tkNum;
+              ekText: LToken := tkText;
             end;
+            if LWasUnknow and LDot then
+              LHasDecimals := true;
+            LDot := false;
           end;
         '%':
           begin
@@ -552,6 +559,7 @@ begin
     AExpressionRecord.Values[i] := LValues[i];
 
   AExpressionRecord.Kind := LExpressionKind;
+  AExpressionRecord.HasDecimals := LHasDecimals;
 end;
 
 class function TSearchExpressionService.Parse(const AExpression: utf8string
