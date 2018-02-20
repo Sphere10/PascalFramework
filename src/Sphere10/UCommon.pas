@@ -1402,6 +1402,8 @@ begin
   IF VarIsBool(AValue) then
     if TryParseBool(AMatch, bmatch) then
       Result := (Boolean(AValue) = bmatch)
+    else
+      Result := false
   else Result := TCompare.Variant(@AValue, @AMatch) = 0;
 end;
 
