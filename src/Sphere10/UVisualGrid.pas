@@ -673,7 +673,7 @@ begin
          pageEnd := -1;
      end;
      Result.PageCount := Ceil (data.Count / (1.0 *AParams.PageSize));
-     if (AParams.PageSize >= 0) and (AParams.PageIndex >= 0) and (data.Count > 0) then begin
+     if (AParams.PageSize >= 0) and (data.Count > 0) then begin
        Result.PageIndex := ClipValue(AParams.PageIndex, 0, Result.PageCount - 1);
        pageStart := Result.PageIndex * AParams.PageSize;
        pageEnd := ClipValue(pageStart + (AParams.PageSize - 1), pageStart, data.Count - 1);
@@ -688,12 +688,14 @@ begin
      // Set columns
      ADataTable.Columns := FColumns;
 
-     j := 0;
-     SetLength(ADataTable.Rows, pageEnd - pageStart + 1);
-     for i := pageStart to pageEnd do begin
-       ADataTable.Rows[j] := TTableRow.New(@FColumns);
-       DehydrateItem( data[i], ADataTable.Rows[j]);
-       inc(j)
+     if pageEnd >= pageStart then begin
+       j := 0;
+       SetLength(ADataTable.Rows, pageEnd - pageStart + 1);
+       for i := pageStart to pageEnd do begin
+         ADataTable.Rows[j] := TTableRow.New(@FColumns);
+         DehydrateItem( data[i], ADataTable.Rows[j]);
+         inc(j)
+       end;
      end;
   finally
     FLock.Release;
@@ -706,7 +708,9 @@ begin
 end;
 
 procedure TCustomDataSource<T>.OnAfterFetchAll(constref AParams: TPageFetchParams);
+var x : integer;
 begin
+  x := 10;
 end;
 
 { TVisualGridCaption }

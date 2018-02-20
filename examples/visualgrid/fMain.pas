@@ -97,7 +97,7 @@ uses
   UCommon.UI;
 
 const
-     NUM_ENTITIES = 1000;
+     NUM_ENTITIES = 10000;
 
 
 {$R *.lfm}
