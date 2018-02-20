@@ -1968,6 +1968,9 @@ var
   i: Integer;
   LIsMultiSearch: boolean;
 begin
+  if AValue = FSearchMode then
+    Exit;
+
   LIsMultiSearch := AValue = smMulti;
 
   // LIsMultiSearch
@@ -1983,6 +1986,11 @@ begin
   FSearchEdit.Clear;
 
   FSearchMode := AValue;
+
+  // reload data and don't use any filter for new mode
+  FStrFilter := '';
+  FFilter.Clear;
+  RefreshPageIndexData(false);
 end;
 
 procedure TCustomVisualGrid.SetOptions(AValue: TVisualGridOptions);
