@@ -1032,12 +1032,14 @@ begin
   sortFilters := GC.AddObject( TList<TColumnFilter>.Create ) as TList<TColumnFilter>;
   sortFilters.AddRange( Filter);
   TListTool<TColumnFilter>.FilterBy( sortFilters, TPredicateTool<TColumnFilter>.FromFunc( IsSortFilter ));
-  Result := sortFilters.ToArray;
+  SetLength(Result, 0);
+  if sortFilters.Count > 0 then
+    Result := sortFilters.ToArray;
 end;
 
 function TPageFetchParams.GetSearchFilters : TArray<TColumnFilter>;
 var
-  sortFilters : TList<TColumnFilter>;
+  searchFilters : TList<TColumnFilter>;
   GC : TScoped;
 
   function IsSearchFilter(constref AColFilter : TColumnFilter) : boolean;
@@ -1046,10 +1048,12 @@ var
   end;
 
 begin
-  sortFilters := GC.AddObject( TList<TColumnFilter>.Create ) as TList<TColumnFilter>;
-  sortFilters.AddRange(Filter);
-  TListTool<TColumnFilter>.FilterBy( sortFilters, TPredicateTool<TColumnFilter>.FromFunc( IsSearchFilter ));
-  Result := sortFilters.ToArray;
+  searchFilters := GC.AddObject( TList<TColumnFilter>.Create ) as TList<TColumnFilter>;
+  searchFilters.AddRange(Filter);
+  TListTool<TColumnFilter>.FilterBy( searchFilters, TPredicateTool<TColumnFilter>.FromFunc( IsSearchFilter ));
+  SetLength(Result, 0);
+  if searchFilters.Count > 0 then
+    Result := searchFilters.ToArray;
 end;
 
 
