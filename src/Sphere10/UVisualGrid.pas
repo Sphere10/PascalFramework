@@ -27,7 +27,7 @@ uses
 type
   TSelectionType = (stNone, stCell, stRow, stMultiRow);
   TSortDirection = (sdNone, sdAscending, sdDescending);
-  TFilterOperand = (foAnd, foOR);
+  TFilterOperand = (foAnd, foOr);
   TVisualGridFilter = (vgfMatchTextExact, vgfMatchTextBeginning, vgfMatchTextEnd,
     vgfMatchTextAnywhere, vgfNumericEQ, vgfNumericLT, vgfNumericLTE, vgfNumericGT,
     vgfNumericGTE, vgfNumericBetweenInclusive, vgfNumericBetweenExclusive, vgfSortable);
@@ -496,17 +496,6 @@ type
     public
      class function ConstructRowComparer(const AFilters : TArray<TColumnFilter>; const ADelegate : TApplySortDelegate<T>) : IComparer<T>;
      class function ConstructRowPredicate(const AFilters : TArray<TColumnFilter>; const ADelegate : TApplyFilterDelegate<T>; const AOperand : TFilterOperand) : IPredicate<T>;
-     class function MatchTextExact(const AValue : Variant; const AParams: array of Variant) : boolean;
-     class function MatchTextBeginning(const AValue : Variant; const AParams: array of Variant) : boolean;
-     class function MatchTextEnd(const AValue : Variant; const AParams: array of Variant) : boolean;
-     class function MatchTextAnywhere(const AValue : Variant; const AParams: array of Variant) : boolean;
-     class function NumericEQ(const AValue : Variant; const AParams: array of Variant) : boolean;
-     class function NumericLT(const AValue : Variant; const AParams: array of Variant) : boolean;
-     class function NumericLTE(const AValue : Variant; const AParams: array of Variant) : boolean;
-     class function NumericGT(const AValue : Variant; const AParams: array of Variant) : boolean;
-     class function NumericGTE(const AValue : Variant; const AParams: array of Variant) : boolean;
-     class function NumericBetweenInclusive(const AValue : Variant; const AParams: array of Variant) : boolean;
-     class function NumericBetweenExclusive(const AValue : Variant; const AParams: array of Variant) : boolean;
   end;
 
 procedure Register;
@@ -614,23 +603,34 @@ function TCustomDataSource<T>.ApplyColumnFilter(constref AItem: T; constref AFil
 var
   value : Variant;
 begin
+  if Length(AFilter.Values) = 0 then
+    raise EArgumentException.Create('AFilter.Values does not contain any parameters');
+
   value := GetItemField(AItem, AFilter.ColumnName);
   if AFilter.Filter in TEXT_FILTER then begin
     case AFilter.Filter of
-      vgfMatchTextExact: Result := TVisualGridTool<T>.MatchTextExact(value, AFilter.Values);
-      vgfMatchTextBeginning: Result := TVisualGridTool<T>.MatchTextBeginning(value, AFilter.Values);
-      vgfMatchTextEnd: Result := TVisualGridTool<T>.MatchTextEnd(value, AFilter.Values);
-      vgfMatchTextAnywhere: Result := TVisualGridTool<T>.MatchTextAnywhere(value, AFilter.Values);
+      vgfMatchTextExact: Result := TVariantTool.MatchTextExact(value, AFilter.Values[0]);
+      vgfMatchTextBeginning: Result := TVariantTool.MatchTextBeginning(value, AFilter.Values[0]);
+      vgfMatchTextEnd: Result := TVariantTool.MatchTextEnd(value, AFilter.Values[0]);
+      vgfMatchTextAnywhere: Result := TVariantTool.MatchTextAnywhere(value, AFilter.Values[0]);
     end;
   end else if AFilter.Filter in NUMERIC_FILTER then begin
     case AFilter.Filter of
-      vgfNumericEQ: Result := TVisualGridTool<T>.NumericEQ(value, AFilter.Values);
-      vgfNumericLT: Result := TVisualGridTool<T>.NumericLT(value, AFilter.Values);
-      vgfNumericLTE: Result := TVisualGridTool<T>.NumericLTE(value, AFilter.Values);
-      vgfNumericGT: Result := TVisualGridTool<T>.NumericGT(value, AFilter.Values);
-      vgfNumericGTE: Result := TVisualGridTool<T>.NumericGTE(value, AFilter.Values);
-      vgfNumericBetweenInclusive: Result := TVisualGridTool<T>.NumericBetweenInclusive(value, AFilter.Values);
-      vgfNumericBetweenExclusive: Result := TVisualGridTool<T>.NumericBetweenExclusive(value, AFilter.Values);
+      vgfNumericEQ: Result := TVariantTool.NumericEQ(value, AFilter.Values[0]);
+      vgfNumericLT: Result := TVariantTool.NumericLT(value, AFilter.Values[0]);
+      vgfNumericLTE: Result := TVariantTool.NumericLTE(value, AFilter.Values[0]);
+      vgfNumericGT: Result := TVariantTool.NumericGT(value, AFilter.Values[0]);
+      vgfNumericGTE: Result := TVariantTool.NumericGTE(value, AFilter.Values[0]);
+      vgfNumericBetweenInclusive: begin
+        if Length(AFilter.Values) <> 1 then
+          raise EArgumentException.Create('AFilter.Values does not contain at least 2 parameters');
+        Result := TVariantTool.NumericBetweenInclusive(value, AFilter.Values[0], AFilter.Values[1]);
+      end;
+      vgfNumericBetweenExclusive: begin
+        if Length(AFilter.Values) <> 1 then
+          raise EArgumentException.Create('AFilter.Values does not contain at least 2 parameters');
+        Result := TVariantTool.NumericBetweenExclusive(value, AFilter.Values[0], AFilter.Values[1]);
+      end;
     end;
   end else Result := false;
 end;
@@ -666,32 +666,35 @@ begin
 
      // Setup result
      Result.TotalDataCount := data.Count;
-     Result.PageCount := data.Count div AParams.PageSize;
-     if (AParams.PageSize >= 0) and (AParams.PageIndex >= 0) and (data.count > 0) then begin
+     if (Result.TotalDataCount = 0) then begin
+         Result.PageCount := 0;
+         Result.PageIndex := -1;
+         pageStart := 0;
+         pageEnd := -1;
+     end;
+     Result.PageCount := (data.Count div AParams.PageSize) + 1;
+     if (AParams.PageSize >= 0) and (AParams.PageIndex >= 0) then begin
        Result.PageIndex := ClipValue(AParams.PageIndex, 0, Result.PageCount - 1);
        pageStart := Result.PageIndex * AParams.PageSize;
-       pageEnd := pageStart + (AParams.PageSize - 1);
+       pageEnd := ClipValue(pageStart + (AParams.PageSize - 1), pageStart, data.Count - 1);
      end else begin
        Result.PageIndex := 0;
        pageStart := 0;
        pageEnd := data.Count - 1;
      end;
 
+     // Dehydrate the page of data only
+
      // Set columns
      ADataTable.Columns := FColumns;
 
-     // Dehydrate the page of data only
      j := 0;
      SetLength(ADataTable.Rows, pageEnd - pageStart + 1);
      for i := pageStart to pageEnd do begin
-          if i < 0 then begin
-            Result := REsult;
-          end;
        ADataTable.Rows[j] := TTableRow.New(@FColumns);
        DehydrateItem( data[i], ADataTable.Rows[j]);
        inc(j)
      end;
-
   finally
     FLock.Release;
   end;
@@ -994,114 +997,6 @@ begin
       foOr: Result := __TPredicateTool_T.OrMany(filters.ToArray);
     end;
   end;
-end;
-
-class function TVisualGridTool<T>.MatchTextExact(const AValue : Variant; const AParams: array of Variant) : boolean;
-var
-  match : Variant;
-begin
-  if VarIsNumeric(AValue) then
-    Exit(false);
-  Result := (Length(AParams) = 1) AND (VarToStr(AValue) = VarToStr(AParams[0]));
-end;
-
-class function TVisualGridTool<T>.MatchTextBeginning(const AValue : Variant; const AParams: array of Variant) : boolean;
-begin
-  Result := (Length(AParams) = 1) AND VarToStr(AValue).StartsWith(VarToStr(AParams[0]));
-end;
-
-class function TVisualGridTool<T>.MatchTextEnd(const AValue : Variant; const AParams: array of Variant) : boolean;
-begin
-  Result := (Length(AParams) = 1) AND VarToStr(AValue).EndsWith(VarToStr(AParams[0]));
-end;
-
-class function TVisualGridTool<T>.MatchTextAnywhere(const AValue : Variant; const AParams: array of Variant) : boolean;
-begin
-  Result := (Length(AParams) = 1) AND VarToStr(AValue).Contains(VarToStr(AParams[0]));
-end;
-
-class function TVisualGridTool<T>.NumericEQ(const AValue : Variant; const AParams: array of Variant) : boolean;
-var
-  match : Variant;
-begin
-  match := AParams[0];
-  if NOT VarIsNumeric(AValue) then
-    Exit(false);
-  Result := TCompare.Variant(@AValue, @match) = 0;
-end;
-
-class function TVisualGridTool<T>.NumericLT(const AValue : Variant; const AParams: array of Variant) : boolean;
-var
-  match : Variant;
-begin
-  match := AParams[0];
-  if NOT VarIsNumeric(AValue) then
-    Exit(false);
-  Result := TCompare.Variant(@AValue, @match) = -1;
-end;
-
-class function TVisualGridTool<T>.NumericLTE(const AValue : Variant; const AParams: array of Variant) : boolean;
-var
-  match : Variant;
-  cmp : Integer;
-begin
-  match := AParams[0];
-  if NOT VarIsNumeric(AValue) then
-    Exit(false);
-  cmp := TCompare.Variant(@AValue, @match);
-  Result := (cmp = -1) OR (cmp = 0);
-end;
-
-class function TVisualGridTool<T>.NumericGT(const AValue : Variant; const AParams: array of Variant) : boolean;
-var
-  match : Variant;
-  cmp : Integer;
-begin
-  match := AParams[0];
-  if NOT VarIsNumeric(AValue) then
-    Exit(false);
-  cmp := TCompare.Variant(@AValue, @match);
-  Result := (cmp = 1);
-end;
-
-class function TVisualGridTool<T>.NumericGTE(const AValue : Variant; const AParams: array of Variant) : boolean;
-var
-  match : Variant;
-  cmp : Integer;
-begin
-  match := AParams[0];
-  if NOT VarIsNumeric(AValue) then
-    Exit(false);
-  cmp := TCompare.Variant(@AValue, @match);
-  Result := (cmp = 1) OR (cmp = 0);
-end;
-
-class function TVisualGridTool<T>.NumericBetweenInclusive(const AValue : Variant; const AParams: array of Variant) : boolean;
-var
-  lower, upper : Variant;
-  lowercmp, uppercmp : Integer;
-begin
-  lower := AParams[0];
-  upper := AParams[1];
-  if NOT VarIsNumeric(AValue) then
-    Exit(false);
-  lowercmp := TCompare.Variant(@AValue, @lower);
-  uppercmp := TCompare.Variant(@AValue, @upper);
-  Result := (lowercmp in [1, 0]) AND (uppercmp in [-1, 0]);
-end;
-
-class function TVisualGridTool<T>.NumericBetweenExclusive(const AValue : Variant; const AParams: array of Variant) : boolean;
-var
-  lower, upper : Variant;
-  lowercmp, uppercmp : Integer;
-begin
-  lower := AParams[0];
-  upper := AParams[1];
-  if NOT VarIsNumeric(AValue) then
-    Exit(false);
-  lowercmp := TCompare.Variant(@AValue, @lower);
-  uppercmp := TCompare.Variant(@AValue, @upper);
-  Result := (lowercmp = 1) AND (uppercmp = -1);
 end;
 
 { TPageFetchParams }
@@ -2449,7 +2344,7 @@ begin
   if Assigned(FDataSource) then
   begin
     FillFilter;
-    AResult := FDataSource.FetchPage(TPageFetchParams.Create(FPageIndex, FPageSize, FFilter.ToArray, IIF(FSearchMode = smMulti, foOr, foAnd)), FDataTable)
+    AResult := FDataSource.FetchPage(TPageFetchParams.Create(FPageIndex, FPageSize, FFilter.ToArray, IIF(FSearchMode = smMulti, foAnd, foOr)), FDataTable)
   end
   else
     FillChar(AResult, SizeOf(AResult), #0);

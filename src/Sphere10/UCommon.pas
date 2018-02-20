@@ -291,6 +291,24 @@ type
       class function ToArray(Enumerable: TEnumerable<T>; Count: SizeInt): TArray<T>; static;
   end;
 
+  { TVariantTool }
+
+  TVariantTool = class
+    public
+      class function TryParseBool(const AValue : Variant; out ABoolean : boolean) : boolean;
+      class function VarToInt(const AVariant: Variant): integer;
+      class function MatchTextExact(const AValue, AMatch : Variant) : boolean;
+      class function MatchTextBeginning(const AValue, AMatch : Variant) : boolean;
+      class function MatchTextEnd(const AValue, AMatch : Variant) : boolean;
+      class function MatchTextAnywhere(const AValue, AMatch : Variant) : boolean;
+      class function NumericEQ(const AValue, AMatch : Variant) : boolean;
+      class function NumericLT(const AValue, AMatch : Variant) : boolean;
+      class function NumericLTE(const AValue, AMatch : Variant) : boolean;
+      class function NumericGT(const AValue, AMatch : Variant) : boolean;
+      class function NumericGTE(const AValue, AMatch : Variant) : boolean;
+      class function NumericBetweenInclusive(const AValue, Lower, Upper : Variant) : boolean;
+      class function NumericBetweenExclusive(const AValue, Lower, Upper : Variant) : boolean;
+  end;
 
 { COMPLEX CONSTANTS }
 
@@ -322,6 +340,9 @@ const
 
 var
   MinTimeStampDateTime : TDateTime = 0;
+  VarTrue : Variant;
+  VarFalse : Variant;
+
 
 {%region Global functions }
 
@@ -721,8 +742,6 @@ begin
 end;
 
 {%endregion}
-
-
 
 {%region Date/Time Support }
 
@@ -1313,11 +1332,145 @@ class function TArrayTool<T>._Length(const Values: array of T) : SizeInt;
 begin
    Result := Length(Values);
 end;
+
 {%endregion}
 
+{%region TVariantTool}
+
+class function TVariantTool.TryParseBool(const AValue : Variant; out ABoolean : boolean) : boolean;
+var
+  AValueStr : string;
+begin
+  ABoolean := false;
+  Result := false;
+  if VarIsBool(AValue) then begin
+    ABoolean := Boolean(AValue);
+    Result := true;
+  end else if VarIsNumeric(AValue) then
+    case VarToInt(AValue) of
+      0: begin
+          ABoolean := False;
+          Result := True;
+         end;
+      1: begin
+           ABoolean := True;
+           Result := True;
+         end;
+    end
+  else if VarIsStr(AValue) then begin
+    AValueStr := VarToStr(AValue);
+    Result := (AValueStr = VarToStr(VarTrue)) or (AValueStr = VarToStr(VarFalse));
+    ABoolean := AValueStr = VarToStr(VarTrue);
+  end;
+end;
+
+class function TVariantTool.VarToInt(const AVariant: Variant): integer;
+begin
+  Result := StrToIntDef(Trim(VarToStr(AVariant)), 0);
+end;
+
+class function TVariantTool.MatchTextExact(const AValue, AMatch : Variant) : boolean;
+begin
+  if VarIsNumeric(AValue) then
+    Result := false
+  else
+    Result := VarToStr(AValue) = VarToStr(AMatch);
+end;
+
+class function TVariantTool.MatchTextBeginning(const AValue, AMatch : Variant) : boolean;
+begin
+  Result := VarToStr(AValue).StartsWith(VarToStr(AMatch));
+end;
+
+class function TVariantTool.MatchTextEnd(const AValue, AMatch : Variant) : boolean;
+begin
+  Result := VarToStr(AValue).EndsWith(VarToStr(AMatch));
+end;
+
+class function TVariantTool.MatchTextAnywhere(const AValue, AMatch : Variant) : boolean;
+begin
+  Result := VarToStr(AValue).Contains(VarToStr(AMatch));
+end;
+
+class function TVariantTool.NumericEQ(const AValue, AMatch : Variant) : boolean;
+var
+  bmatch : boolean;
+begin
+  if NOT VarIsNumeric(AValue) then
+    Exit(false);
+
+  IF VarIsBool(AValue) then
+    if TryParseBool(AMatch, bmatch) then
+      Result := (Boolean(AValue) = bmatch)
+  else Result := TCompare.Variant(@AValue, @AMatch) = 0;
+end;
+
+class function TVariantTool.NumericLT(const AValue, AMatch : Variant) : boolean;
+begin
+  if (NOT VarIsNumeric(AValue)) OR (VarIsBool(AValue)) then
+    Exit(false);
+  Result := TCompare.Variant(@AValue, @AMatch) = -1;
+end;
+
+class function TVariantTool.NumericLTE(const AValue, AMatch : Variant) : boolean;
+var
+  cmp : Integer;
+begin
+  if (NOT VarIsNumeric(AValue)) OR (VarIsBool(AValue)) then
+    Exit(false);
+  cmp := TCompare.Variant(@AValue, @AMatch);
+  Result := (cmp = -1) OR (cmp = 0);
+end;
+
+class function TVariantTool.NumericGT(const AValue, AMatch : Variant) : boolean;
+var
+  cmp : Integer;
+begin
+  if (NOT VarIsNumeric(AValue)) OR (VarIsBool(AValue)) then
+    Exit(false);
+  cmp := TCompare.Variant(@AValue, @AMatch);
+  Result := (cmp = 1);
+end;
+
+class function TVariantTool.NumericGTE(const AValue, AMatch : Variant) : boolean;
+var
+  cmp : Integer;
+begin
+  if (NOT VarIsNumeric(AValue)) OR (VarIsBool(AValue)) then
+    Exit(false);
+  cmp := TCompare.Variant(@AValue, @AMatch);
+  Result := (cmp = 1) OR (cmp = 0);
+end;
+
+class function TVariantTool.NumericBetweenInclusive(const AValue, Lower, Upper : Variant) : boolean;
+var
+  lowercmp, uppercmp : Integer;
+begin
+  if (NOT VarIsNumeric(AValue)) OR (VarIsBool(AValue)) then
+    Exit(false);
+  lowercmp := TCompare.Variant(@AValue, @Lower);
+  uppercmp := TCompare.Variant(@AValue, @Upper);
+  Result := ((lowercmp = 1) OR (lowercmp = 0)) AND ((uppercmp = -1) OR (uppercmp = 0));
+end;
+
+class function TVariantTool.NumericBetweenExclusive(const AValue, Lower, Upper : Variant) : boolean;
+var
+  lowercmp, uppercmp : Integer;
+begin
+  if NOT VarIsNumeric(AValue) then
+    Exit(false);
+  lowercmp := TCompare.Variant(@AValue, @Lower);
+  uppercmp := TCompare.Variant(@AValue, @Upper);
+  Result := (lowercmp = 1) AND (uppercmp = -1);
+end;
+
+
+{%endregion}
 
 initialization
   MinTimeStampDateTime:= StrToDateTime('1980-01-01 00:00:000', IntlDateTimeFormat);
+  VarTrue := True;
+  VarFalse := False;
 
 finalization
 

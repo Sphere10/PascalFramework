@@ -20,7 +20,7 @@ type
     &Boolean : boolean;
     &Char : char;
     &UInt16 : UInt16;
-    &Single : Single;
+    &Real : Real;
     Bar : utf8String;
   end;
 
@@ -96,6 +96,10 @@ implementation
 uses
   UCommon.UI;
 
+const
+     NUM_ENTITIES = 1000;
+
+
 {$R *.lfm}
 
 var
@@ -114,7 +118,7 @@ var
 
   function TEntityDataSource.GetColumns : TTableColumns;
   begin
-    Result := TTableColumns.Create('ID', 'Name', 'Foo', 'Boolean', 'Char', 'UInt16', 'Single', 'Bar');
+    Result := TTableColumns.Create('ID', 'Name', 'Foo', 'Boolean', 'Char', 'UInt16', 'Real', 'Bar');
   end;
 
   function TEntityDataSource.GetSearchCapabilities: TSearchCapabilities;
@@ -126,7 +130,7 @@ var
       TSearchCapability.From('Boolean', SORTABLE_NUMERIC_FILTER),
       TSearchCapability.From('Char', SORTABLE_TEXT_FILTER),
       TSearchCapability.From('UInt16', SORTABLE_NUMERIC_FILTER),
-      TSearchCapability.From('Single', SORTABLE_NUMERIC_FILTER),
+      TSearchCapability.From('Real', SORTABLE_NUMERIC_FILTER),
       TSearchCapability.From('Name', SORTABLE_TEXT_FILTER),
       TSearchCapability.From('Bar', SORTABLE_TEXT_FILTER)
     );
@@ -187,8 +191,8 @@ var
        Result := AItem.&Char
      else if AColumnName = 'UInt16' then
        Result := AItem.&UInt16
-     else if AColumnName = 'Single' then
-       Result := AItem.&Single
+     else if AColumnName = 'Real' then
+       Result := AItem.&Real
      else if AColumnName = 'Bar' then
        Result := AItem.&Bar
      else raise Exception.Create(Format('Field not found [%s]', [AColumnName]));
@@ -204,7 +208,7 @@ var
     //SetVariantProp(ATableRow, string('Char'), AItem.&Char);  // [MACIEJ] - Help! this will not compile?
     ATableRow.&Char := Variant(AItem.&Char);
     ATableRow.&UInt16 := AItem.UInt16;
-    ATableRow.&Single := AItem.Single;
+    ATableRow.&Real := AItem.Real;
     ATableRow.Bar := AItem.Bar;
   end;
 
@@ -348,15 +352,15 @@ var
 initialization
   GData := TList<TEntity>.Create;
 
-  for i := 0 to 999 do begin
+  for i := 0 to NUM_ENTITIES do begin
     entity.ID := i;
     entity.Name := Format('Name %d', [i + 1]);
     entity.Foo := i div 5;
     entity.&Boolean := IIF(i mod 2 = 0, True, False);
     entity.&Char := Char(65 + (i mod 3));   // A, B or C
     entity.&UInt16 := i + 1;
-    entity.&Single:= Single(i) / 2.0;
-    entity.Bar := Format('String with %d', [(i * i) mod ((i div 5) + 5) mod 100] );
+    entity.&Real:= i / 2.0;
+    entity.Bar := TGuid.NewGuid.ToString(True);
     GData.Add(entity);
   end;
 
@@ -366,7 +370,7 @@ Foo: Integer;
 &Boolean : boolean;
 &Char : char;
 &UInt16 : UInt16;
-&Single : Single;
+&Real : Real;
 Bar : utf8String;
 }
 

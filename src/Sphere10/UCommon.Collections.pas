@@ -428,14 +428,7 @@ end;
 class function TPredicateTool<T>.OrMany(const APredicates : array of IPredicate<T>) : IPredicate<T>;
 type
   __TArrayTool_IPredicate_T = TArrayTool<__IPredicate_T>;
-//var
- // arr : TArray<__IPredicate_T>;
-//  i : Integer;
 begin
-//  SetLength(arr, Length(APredicates));
-//  for i := 0 to High(APredicates) do
-//    arr[i] := APredicates[i];
-//  arr := __TArrayTool_IPredicate_T.Copy( APredicates) ;  // TODO: fix ArrayTool.Copy
   Result := TOrManyPredicate<T>.Create( __TArrayTool_IPredicate_T.Copy( APredicates) );
 end;
 
