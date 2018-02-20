@@ -484,13 +484,13 @@ begin
             tkText, tkNum: // tkNum is here because is possible to parse: 123%
               begin
                 if (AExpressionRecord.TextMatchKind = tmkUnknown) then
-                  AExpressionRecord.TextMatchKind:=tmkMatchTextEnd
+                  AExpressionRecord.TextMatchKind:=tmkMatchTextBeginning
                 else
                   AExpressionRecord.TextMatchKind:=tmkMatchTextAnywhere;
                 LLastPercent:=true;
               end;
             tkNone:
-              AExpressionRecord.TextMatchKind:=tmkMatchTextBeginning;
+              AExpressionRecord.TextMatchKind:=tmkMatchTextEnd;
             tkPercent:
               raise ESearchExpressionParserException.CreateFmt(sUnexpectedOccurrenceOf_Found, ['%']);
           end;
