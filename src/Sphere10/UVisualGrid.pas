@@ -277,6 +277,7 @@ type
       SearchCapability: PSearchCapability;
       constructor Create(AParent: TWinControl; AGrid: TCustomVisualGrid);
       destructor Destroy; override;
+      procedure Clear;
 
       property EditVisible: boolean read GetEditVisible write SetEditVisible;
       property Visible: boolean read GetVisible write SetVisible;
@@ -672,7 +673,7 @@ begin
          pageEnd := -1;
      end;
      Result.PageCount := Ceil (data.Count / (1.0 *AParams.PageSize));
-     if (AParams.PageSize >= 0) and (AParams.PageIndex >= 0) then begin
+     if (AParams.PageSize >= 0) and (AParams.PageIndex >= 0) and (data.Count > 0) then begin
        Result.PageIndex := ClipValue(AParams.PageIndex, 0, Result.PageCount - 1);
        pageStart := Result.PageIndex * AParams.PageSize;
        pageEnd := ClipValue(pageStart + (AParams.PageSize - 1), pageStart, data.Count - 1);
@@ -919,6 +920,11 @@ destructor TCustomVisualGrid.TSearchEdit.Destroy;
 begin
   FPanel.Free;
   inherited Destroy;
+end;
+
+procedure TCustomVisualGrid.TSearchEdit.Clear;
+begin
+  FEdit.Clear;
 end;
 
 { TColumnFilterPredicate }
@@ -1963,9 +1969,13 @@ begin
     FMultiSearchCheckComboBox.Checked[i] := LIsMultiSearch;
   FMultiSearchCheckComboBox.Checked[FMultiSearchCheckComboBox.Items.Count-1] := not LIsMultiSearch;
 
+  // Clear all filters
+  for i := 0 to FMultiSearchEdits.Count - 1 do
+    FMultiSearchEdits[i].Clear;
+  FSearchEdit.Clear;
+
   FSearchMode := AValue;
 end;
-
 
 procedure TCustomVisualGrid.SetOptions(AValue: TVisualGridOptions);
 var
