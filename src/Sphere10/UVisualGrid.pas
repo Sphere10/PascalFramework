@@ -622,12 +622,12 @@ begin
       vgfNumericGT: Result := TVariantTool.NumericGT(value, AFilter.Values[0]);
       vgfNumericGTE: Result := TVariantTool.NumericGTE(value, AFilter.Values[0]);
       vgfNumericBetweenInclusive: begin
-        if Length(AFilter.Values) <> 1 then
+        if Length(AFilter.Values) < 2 then
           raise EArgumentException.Create('AFilter.Values does not contain at least 2 parameters');
         Result := TVariantTool.NumericBetweenInclusive(value, AFilter.Values[0], AFilter.Values[1]);
       end;
       vgfNumericBetweenExclusive: begin
-        if Length(AFilter.Values) <> 1 then
+        if Length(AFilter.Values) < 2 then
           raise EArgumentException.Create('AFilter.Values does not contain at least 2 parameters');
         Result := TVariantTool.NumericBetweenExclusive(value, AFilter.Values[0], AFilter.Values[1]);
       end;
@@ -653,7 +653,6 @@ begin
      data := GC.AddObject( TList<T>.Create ) as TList<T>;
      FetchAll(data);
 
-     // NEED TO CONFIRM TEST OF Comparer/Filter API
      // Filter the data
      filters := AParams.GetSearchFilters;
      if Length(filters) > 0 then
@@ -672,7 +671,7 @@ begin
          pageStart := 0;
          pageEnd := -1;
      end;
-     Result.PageCount := (data.Count div AParams.PageSize) + 1;
+     Result.PageCount := Ceil (data.Count / (1.0 *AParams.PageSize));
      if (AParams.PageSize >= 0) and (AParams.PageIndex >= 0) then begin
        Result.PageIndex := ClipValue(AParams.PageIndex, 0, Result.PageCount - 1);
        pageStart := Result.PageIndex * AParams.PageSize;

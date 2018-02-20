@@ -118,7 +118,7 @@ var
 
   function TEntityDataSource.GetColumns : TTableColumns;
   begin
-    Result := TTableColumns.Create('ID', 'Name', 'Foo', 'Boolean', 'Char', 'UInt16', 'Real', 'Bar');
+    Result := TTableColumns.Create('ID', 'Name', 'Foo', 'Boolean', {'Char',} 'UInt16', 'Real', 'Bar');
   end;
 
   function TEntityDataSource.GetSearchCapabilities: TSearchCapabilities;
@@ -128,7 +128,7 @@ var
       TSearchCapability.From('Name', SORTABLE_TEXT_FILTER),
       TSearchCapability.From('Foo', SORTABLE_TEXT_FILTER),
       TSearchCapability.From('Boolean', SORTABLE_NUMERIC_FILTER),
-      TSearchCapability.From('Char', SORTABLE_TEXT_FILTER),
+//      TSearchCapability.From('Char', SORTABLE_TEXT_FILTER),
       TSearchCapability.From('UInt16', SORTABLE_NUMERIC_FILTER),
       TSearchCapability.From('Real', SORTABLE_NUMERIC_FILTER),
       TSearchCapability.From('Name', SORTABLE_TEXT_FILTER),
@@ -204,10 +204,8 @@ var
     ATableRow.Name := AItem.Name;
     ATableRow.Foo := AItem.Foo;
     ATableRow.&Boolean := AItem.&Boolean;
-    ATableRow.&Char :=  Byte(AITem.&Char);
-    //SetVariantProp(ATableRow, string('Char'), AItem.&Char);  // [MACIEJ] - Help! this will not compile?
     ATableRow.&Char := Variant(AItem.&Char);
-    ATableRow.&UInt16 := AItem.UInt16;
+    ATableRow.&UInt16 :=  Format('num: %d', [Integer(AItem.UInt16)]);
     ATableRow.&Real := AItem.Real;
     ATableRow.Bar := AItem.Bar;
   end;
