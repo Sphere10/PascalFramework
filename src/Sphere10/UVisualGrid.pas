@@ -395,7 +395,7 @@ type
     FCachedDataTable: PDataTable;
     FDataSource: IDataSource;
     FStrFilter: UTF8String;
-    FFilter: TList<TColumnFilter>;
+    FFilters: TList<TColumnFilter>;
     FSearchCapabilities: TSearchCapabilities;
     FPageSize: Integer;
     FPageIndex: Integer;
@@ -1080,7 +1080,7 @@ begin
 
   FMultiSearchEdits := TObjectList<TSearchEdit>.Create;
   FColumns := TObjectList<TVisualColumn>.Create;
-  FFilter := TList<TColumnFilter>.Create;
+  FFilters := TList<TColumnFilter>.Create;
 
   { component layout }
 
@@ -1489,7 +1489,7 @@ end;
 
 destructor TCustomVisualGrid.Destroy;
 begin
-  FFilter.Free;
+  FFilters.Free;
   FColumns.Free;
   FMultiSearchEdits.Free;
   FCaption.Free;
@@ -1725,7 +1725,7 @@ var
           end;
         end;
 
-     FFilter.Add(LColumnFilter);
+     FFilters.Add(LColumnFilter);
       end;
     end;
 
@@ -1789,7 +1789,7 @@ begin
   if not Assigned(FDataSource) then
     exit;
 
-  FFilter.Clear;
+  FFilters.Clear;
   LFormat := DefaultFormatSettings;
   LFormat.DecimalSeparator:='.';
   try
@@ -2000,7 +2000,7 @@ begin
 
   // reload data and don't use any filter for new mode
   FStrFilter := '';
-  FFilter.Clear;
+  FFilters.Clear;
   RefreshPageIndexData(false);
 end;
 
@@ -2333,9 +2333,9 @@ procedure TCustomVisualGrid.FetchPage(out AResult: TPageFetchResult);
   begin
     LColumnsToAdd := TList<Integer>.Create;
 
-    for i := FFilter.Count-1 downto 0 do
-      if FFilter[i].Filter=vgfSortable then
-        FFilter.Delete(i);
+    for i := FFilters.Count-1 downto 0 do
+      if FFilters[i].Filter=vgfSortable then
+        FFilters.Delete(i);
     LData := GetActiveDataTable;
     try
       for i := 0 to FColumns.Count - 1 do
@@ -2343,12 +2343,12 @@ procedure TCustomVisualGrid.FetchPage(out AResult: TPageFetchResult);
         begin
           // try to find column in existing filters
           LFilterFound := False;
-          for j := 0 to FFilter.Count-1 do
-            if FFilter[j].ColumnName = LData.Columns[i] then
+          for j := 0 to FFilters.Count-1 do
+            if FFilters[j].ColumnName = LData.Columns[i] then
             begin
-              LFilter := FFilter[j];
+              LFilter := FFilters[j];
               LFilter.Sort := FColumns[i].SortDirection;
-              FFilter[j] := LFilter;
+              FFilters[j] := LFilter;
               LFilterFound:=true;
             end;
           // if filter not found we need to create it later
@@ -2357,9 +2357,9 @@ procedure TCustomVisualGrid.FetchPage(out AResult: TPageFetchResult);
         end;
 
       // add missing filters
-      FFilter.Count:=FFilter.Count + LColumnsToAdd.Count;
+      FFilters.Count:=FFilters.Count + LColumnsToAdd.Count;
       j := 0;
-      for i := FFilter.Count - LColumnsToAdd.Count to FFilter.Count-1 do
+      for i := FFilters.Count - LColumnsToAdd.Count to FFilters.Count-1 do
       begin
         // real column index
         idx := LColumnsToAdd[j];
@@ -2369,7 +2369,7 @@ procedure TCustomVisualGrid.FetchPage(out AResult: TPageFetchResult);
         LFilter.Filter:=vgfSortable;
         LFilter.ColumnName:=LData.Columns[idx];
         LFilter.Sort := FColumns[idx].SortDirection;
-        FFilter[i] := LFilter;
+        FFilters[i] := LFilter;
       end;
     finally
       LColumnsToAdd.Free;
@@ -2380,7 +2380,7 @@ begin
   if Assigned(FDataSource) then
   begin
     FillFilter;
-    AResult := FDataSource.FetchPage(TPageFetchParams.Create(FPageIndex, FPageSize, FFilter.ToArray, IIF(FSearchMode = smMulti, foAnd, foOr)), FDataTable)
+    AResult := FDataSource.FetchPage(TPageFetchParams.Create(FPageIndex, FPageSize, FFilters.ToArray, IIF(FSearchMode = smMulti, foAnd, foOr)), FDataTable)
   end
   else
     FillChar(AResult, SizeOf(AResult), #0);
