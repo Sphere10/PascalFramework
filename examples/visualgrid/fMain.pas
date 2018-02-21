@@ -131,7 +131,6 @@ var
       TSearchCapability.From('Char', SORTABLE_TEXT_FILTER),
       TSearchCapability.From('UInt16', SORTABLE_NUMERIC_FILTER),
       TSearchCapability.From('Real', SORTABLE_NUMERIC_FILTER),
-      TSearchCapability.From('Name', SORTABLE_TEXT_FILTER),
       TSearchCapability.From('Bar', SORTABLE_TEXT_FILTER)
     );
   end;

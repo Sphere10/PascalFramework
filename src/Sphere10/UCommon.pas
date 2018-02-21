@@ -56,8 +56,6 @@ function IIF(const ACondition: Boolean; const ATrueResult, AFalseResult: variant
 function GetSetName(const aSet:PTypeInfo; Value: Integer):string;
 function GetSetValue(const aSet:PTypeInfo; Name: String): Integer;
 
-
-
 { Clip Value }
 function ClipValue( AValue, MinValue, MaxValue: Integer) : Integer;
 
@@ -295,6 +293,7 @@ type
 
   TVariantTool = class
     public
+      class function IsNumeric(const AValue : Variant) : boolean;
       class function TryParseBool(const AValue : Variant; out ABoolean : boolean) : boolean;
       class function VarToInt(const AVariant: Variant): integer;
       class function MatchTextExact(const AValue, AMatch : Variant) : boolean;
@@ -308,6 +307,12 @@ type
       class function NumericGTE(const AValue, AMatch : Variant) : boolean;
       class function NumericBetweenInclusive(const AValue, Lower, Upper : Variant) : boolean;
       class function NumericBetweenExclusive(const AValue, Lower, Upper : Variant) : boolean;
+  end;
+
+  { TFileTool }
+
+  TFileTool = class
+    class procedure AppendText(const AFileName: string; const AText: string);
   end;
 
 { COMPLEX CONSTANTS }
@@ -1337,6 +1342,17 @@ end;
 
 {%region TVariantTool}
 
+class function TVariantTool.IsNumeric(const AValue : Variant) : boolean;
+begin
+  // VarIsNumeric seems to be broken
+  case VarType(AValue) of
+    varsmallint, varinteger, varsingle,
+    vardouble, varcurrency, varboolean, vardecimal,
+    varshortint, varbyte, varword, varlongword, varint64, varqword : Result := true;
+    else Result := false;
+  end;
+end;
+
 class function TVariantTool.TryParseBool(const AValue : Variant; out ABoolean : boolean) : boolean;
 var
   AValueStr : string;
@@ -1396,20 +1412,23 @@ class function TVariantTool.NumericEQ(const AValue, AMatch : Variant) : boolean;
 var
   bmatch : boolean;
 begin
-  if NOT VarIsNumeric(AValue) then
+  if NOT IsNumeric(AValue) then
     Exit(false);
 
-  IF VarIsBool(AValue) then
-    if TryParseBool(AMatch, bmatch) then
-      Result := (Boolean(AValue) = bmatch)
-    else
-      Result := false
-  else Result := TCompare.Variant(@AValue, @AMatch) = 0;
+  IF VarIsBool(AValue) then begin
+    if TryParseBool(AMatch, bmatch) then begin
+      Result := (Boolean(AValue) = bmatch);
+    end else begin
+      Result := false;
+      end
+  end else begin
+    Result := TCompare.Variant(@AValue, @AMatch) = 0;
+  end;
 end;
 
 class function TVariantTool.NumericLT(const AValue, AMatch : Variant) : boolean;
 begin
-  if (NOT VarIsNumeric(AValue)) OR (VarIsBool(AValue)) then
+  if (NOT IsNumeric(AValue)) OR (VarIsBool(AValue)) then
     Exit(false);
   Result := TCompare.Variant(@AValue, @AMatch) = -1;
 end;
@@ -1418,7 +1437,7 @@ class function TVariantTool.NumericLTE(const AValue, AMatch : Variant) : boolean
 var
   cmp : Integer;
 begin
-  if (NOT VarIsNumeric(AValue)) OR (VarIsBool(AValue)) then
+  if (NOT IsNumeric(AValue)) OR (VarIsBool(AValue)) then
     Exit(false);
   cmp := TCompare.Variant(@AValue, @AMatch);
   Result := (cmp = -1) OR (cmp = 0);
@@ -1428,7 +1447,7 @@ class function TVariantTool.NumericGT(const AValue, AMatch : Variant) : boolean;
 var
   cmp : Integer;
 begin
-  if (NOT VarIsNumeric(AValue)) OR (VarIsBool(AValue)) then
+  if (NOT IsNumeric(AValue)) OR (VarIsBool(AValue)) then
     Exit(false);
   cmp := TCompare.Variant(@AValue, @AMatch);
   Result := (cmp = 1);
@@ -1438,7 +1457,7 @@ class function TVariantTool.NumericGTE(const AValue, AMatch : Variant) : boolean
 var
   cmp : Integer;
 begin
-  if (NOT VarIsNumeric(AValue)) OR (VarIsBool(AValue)) then
+  if (NOT IsNumeric(AValue)) OR (VarIsBool(AValue)) then
     Exit(false);
   cmp := TCompare.Variant(@AValue, @AMatch);
   Result := (cmp = 1) OR (cmp = 0);
@@ -1448,7 +1467,7 @@ class function TVariantTool.NumericBetweenInclusive(const AValue, Lower, Upper :
 var
   lowercmp, uppercmp : Integer;
 begin
-  if (NOT VarIsNumeric(AValue)) OR (VarIsBool(AValue)) then
+  if (NOT IsNumeric(AValue)) OR (VarIsBool(AValue)) then
     Exit(false);
   lowercmp := TCompare.Variant(@AValue, @Lower);
   uppercmp := TCompare.Variant(@AValue, @Upper);
@@ -1459,13 +1478,34 @@ class function TVariantTool.NumericBetweenExclusive(const AValue, Lower, Upper :
 var
   lowercmp, uppercmp : Integer;
 begin
-  if NOT VarIsNumeric(AValue) then
+  if NOT IsNumeric(AValue) then
     Exit(false);
   lowercmp := TCompare.Variant(@AValue, @Lower);
   uppercmp := TCompare.Variant(@AValue, @Upper);
   Result := (lowercmp = 1) AND (uppercmp = -1);
 end;
 
+{%endregion}
+
+{%region TFileTool }
+
+class procedure TFileTool.AppendText(const AFileName: string; const AText: string);
+var
+  fstream: TFileStream;
+begin
+  if (FileExists(AFileName)) then begin
+    fstream := TFileStream.Create(AFileName, fmOpenReadWrite or fmShareDenyNone);
+    fstream.Seek(0, soFromEnd);
+  end else begin
+    fstream := TFileStream.Create(AFileName, fmCreate or fmShareDenyNone);
+    fstream.Seek(0, soFromEnd);
+  end;
+  try
+    fstream.WriteAnsiString(AText+#13#10);
+  finally
+    fstream.Free;
+  end;
+end;
 
 {%endregion}
 

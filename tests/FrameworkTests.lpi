@@ -33,7 +33,7 @@
         <PackageName Value="FCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="11">
+    <Units Count="12">
       <Unit0>
         <Filename Value="FrameworkTests.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -81,6 +81,11 @@
         <Filename Value="UFilterTests.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit10>
+      <Unit11>
+        <Filename Value="uvarianttooltests.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="UVariantToolTests"/>
+      </Unit11>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
