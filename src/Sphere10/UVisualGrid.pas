@@ -26,6 +26,10 @@ uses
 
 type
 
+  { TSelectionType }
+
+  TSelectionType = (stNone, stCell, stRow, stMultiRow);
+
   { TVisualGridSelection }
 
   TVisualGridSelection = record

@@ -29,7 +29,6 @@ type
   TSortDirection = (sdNone, sdAscending, sdDescending);
   TFilterOperand = (foAnd, foOr);
   TSortNullPolicy = (snpNone, snpNullFirst, snpNullLast);
-  TSelectionType = (stNone, stCell, stRow, stMultiRow);
   TVisualGridFilter = (vgfMatchTextExact, vgfMatchTextBeginning, vgfMatchTextEnd,
     vgfMatchTextAnywhere, vgfNumericEQ, vgfNumericLT, vgfNumericLTE, vgfNumericGT,
     vgfNumericGTE, vgfNumericBetweenInclusive, vgfNumericBetweenExclusive, vgfSortable);
