@@ -151,7 +151,7 @@ var
       Result := Format('Col: ''%s'' :: Kind: %s :: Sort: %s :: Values(%s)', [
         AFilter.ColumnName,
         GetEnumName(TypeInfo(TVisualGridFilter), Ord(AFilter.Filter)),
-        GetEnumName(TypeInfo(UVisualGrid.TSortDirection), Ord(AFilter.Sort)),
+        GetEnumName(TypeInfo(UCommon.Data.TSortDirection), Ord(AFilter.Sort)),
         LValues]);
     end;
   begin
