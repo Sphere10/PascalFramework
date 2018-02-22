@@ -42,6 +42,7 @@ type
 
   TForm1 = class(TForm)
     AddDelayCheckBox: TCheckBox;
+    btnRefresh: TButton;
     bSetWidth: TButton;
     bSearchParser: TButton;
     cbExpectedKind: TComboBox;
@@ -67,6 +68,7 @@ type
     TIPropertyGrid1: TTIPropertyGrid;
     procedure bSetWidthClick(Sender: TObject);
     procedure bSearchParserClick(Sender: TObject);
+    procedure btnRefreshClick(Sender: TObject);
     procedure ColumnsAutoFillCheckBoxChange(Sender: TObject);
     procedure bRefreshClick(Sender: TObject);
     procedure FirstColumnStretchedCheckBoxChange(Sender: TObject);
@@ -320,6 +322,7 @@ var
       ShowMessage(LMsg);
   end;
 
+
   procedure TForm1.DrawVisualCell(Sender: TObject; ACol,
     ARow: Longint; Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
     var Handled: boolean);
@@ -338,11 +341,15 @@ var
     end;
   end;
 
-  procedure TForm1.Selection(Sender: TObject; constref
-    ASelection: TVisualGridSelection);
+  procedure TForm1.Selection(Sender: TObject; constref ASelection: TVisualGridSelection);
   begin
     lSelection.Caption := Format('Col = %d Row = %d ColCount = %d RowCount = %d ',
       [ASelection.Col, ASelection.Row, ASelection.ColCount, ASelection.RowCount]);
+  end;
+
+  procedure TForm1.btnRefreshClick(Sender: TObject);
+  begin
+    FVisualGrid.RefreshGrid;
   end;
 
 

@@ -8,7 +8,6 @@ object Form1: TForm1
   ClientHeight = 587
   ClientWidth = 988
   OnCreate = FormCreate
-  LCLVersion = '1.8.0.6'
   Visible = False
   object GridPanel: TPanel
     Left = 304
@@ -200,8 +199,8 @@ object Form1: TForm1
       TabOrder = 3
       object bSearchParser: TButton
         Left = 214
-        Height = 33
-        Top = 80
+        Height = 23
+        Top = 72
         Width = 75
         Caption = 'Test'
         OnClick = bSearchParserClick
@@ -251,7 +250,7 @@ object Form1: TForm1
       object cbSearchParser: TComboBox
         Left = 18
         Height = 23
-        Top = 79
+        Top = 72
         Width = 190
         ItemHeight = 15
         ItemIndex = 1
@@ -268,6 +267,15 @@ object Form1: TForm1
         )
         TabOrder = 2
         Text = '%\%%'
+      end
+      object btnRefresh: TButton
+        Left = 19
+        Height = 23
+        Top = 104
+        Width = 270
+        Caption = 'Refresh'
+        OnClick = btnRefreshClick
+        TabOrder = 3
       end
     end
   end

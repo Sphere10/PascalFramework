@@ -218,6 +218,7 @@ type
     FActiveThread: TThread;
     FOnPreparePopupMenu: TPreparePopupMenuEvent;
     FOnSelection: TSelectionEvent;
+    FFinishedUpdating: TNotifyEvent;
     FOptions: TVisualGridOptions;
     FSortMode: TSortMode;
     FSearchMode : TSearchMode;
@@ -275,7 +276,6 @@ type
     FOnDrawVisualCell: TDrawVisualCellEvent;
 
     procedure SortDirectionGlyphRefresh;
-    procedure RefreshGrid;
     procedure ReloadColumns;
     procedure LayoutChanged;
     function ClientRowCount: Integer;
@@ -325,6 +325,9 @@ type
     property OnDrawVisualCell: TDrawVisualCellEvent read FOnDrawVisualCell write FOnDrawVisualCell;
     property OnSelection: TSelectionEvent read FOnSelection write FOnSelection;
     property OnPreparePopupMenu: TPreparePopupMenuEvent read FOnPreparePopupMenu write FOnPreparePopupMenu;
+    property OnFinishedUpdating : TNotifyEvent read FFinishedUpdating write FFinishedUpdating;
+
+    procedure RefreshGrid;
   end;
 
   { TVisualGrid }
@@ -1649,7 +1652,7 @@ end;
 
 procedure TCustomVisualGrid.RefreshGrid;
 begin
-
+  RefreshPageIndexData(true);
 end;
 
 procedure TCustomVisualGrid.RefreshPageIndexData(ARefreshColumns: boolean);
@@ -1716,6 +1719,8 @@ begin
   SetPageIndexEditText(IntToStr(Succ(FPageIndex)));
   FPageCountLabel.Caption := Format('/%d',[FPageCount]);
   FDrawGrid.Refresh;
+  if Assigned(FFinishedUpdating) then
+    FFinishedUpdating(Self);
 end;
 
 procedure TCustomVisualGrid.ReloadColumns;
