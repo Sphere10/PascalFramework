@@ -418,22 +418,22 @@ end;
 
 function TTimeSpan.GetTotalDays: Double;
 begin
-  Result := Double(FMillis) / Double(MillisPerDay);
+  Result := FMillis / MillisPerDay;
 end;
 
 function TTimeSpan.GetTotalHours: Double;
 begin
-  Result := Double(FMillis) / Double(MillisPerHour);
+  Result := FMillis / MillisPerHour;
 end;
 
 function TTimeSpan.GetTotalMinutes: Double;
 begin
-  Result := Double(FMillis) / Double(MillisPerMinute);
+  Result := FMillis / MillisPerMinute;
 end;
 
 function TTimeSpan.GetTotalSeconds: Double;
 begin
-  Result := Double(FMillis) / Double(MillisPerSecond);
+  Result := FMillis / MillisPerSecond;
 end;
 
 function TTimeSpan.GetTotalMilliseconds: Double;
@@ -487,23 +487,25 @@ begin
 end;
 
 class function TTimeSpan.FromDays(Value: Double): TTimeSpan;
+var xxx : double;
 begin
-  Result.FMillis := Round(Value * Double(MillisPerDay));
+  xxx := MillisPerDay;
+  Result.FMillis := Round(Value * MillisPerDay);
 end;
 
 class function TTimeSpan.FromHours(Value: Double): TTimeSpan; static;
 begin
-  Result.FMillis := Round(Value * Double(MillisPerHour));
+  Result.FMillis := Round(Value * MillisPerHour);
 end;
 
 class function TTimeSpan.FromMinutes(Value: Double): TTimeSpan; static;
 begin
-  Result.FMillis := Round(Value * Double(MillisPerMinute));
+  Result.FMillis := Round(Value * MillisPerMinute);
 end;
 
 class function TTimeSpan.FromSeconds(Value: Double): TTimeSpan; static;
 begin
-  Result.FMillis := Round(Value * Double(MillisPerSecond));
+  Result.FMillis := Round(Value * MillisPerSecond);
 end;
 
 class function TTimeSpan.FromMilliseconds(Value: Double): TTimeSpan; static;
