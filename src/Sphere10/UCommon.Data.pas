@@ -514,7 +514,7 @@ begin
      // Sort the data
      filters := AParams.GetSortFilters;
      if Length(filters) > 0 then
-       data.Sort( TDataSourceTool<T>.ConstructRowComparer( AParams.Filter, ApplyColumnSort ) );
+       data.Sort( TDataSourceTool<T>.ConstructRowComparer( filters, ApplyColumnSort ) );
 
      // Setup result
      Result.TotalDataCount := data.Count;
@@ -657,7 +657,7 @@ var
 
   function IsSortFilter(constref AColFilter : TColumnFilter) : boolean;
   begin
-    Result := AColFilter.Filter = vgfSortable;
+    Result := AColFilter.Sort <> sdNone;
   end;
 
 begin
