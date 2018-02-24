@@ -139,7 +139,6 @@ var
 
   procedure TEntityDataSource.OnBeforeFetchAll(constref AParams: TPageFetchParams);
   var
-    i : Integer;
     LFilter: TColumnFilter;
 
     function FilterToStr(const AFilter: TColumnFilter): string;
