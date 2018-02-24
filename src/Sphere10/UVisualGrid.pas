@@ -1277,7 +1277,7 @@ var
           end;
         end;
 
-     FFilters.Add(LColumnFilter);
+        FFilters.Add(LColumnFilter);
       end;
     end;
 
@@ -1884,6 +1884,22 @@ procedure TCustomVisualGrid.FetchPage(out AResult: TPageFetchResult);
     LFilterFound: boolean;
     LFilter: TColumnFilter;
     LData: PDataTable;
+
+    function UpdateFilterSortDirection(const AColumnName: utf8string; ASortDirection: TSortDirection): boolean;
+    var
+      i: Integer;
+    begin
+      for i := 0 to FFilters.Count-1 do
+        if FFilters[i].ColumnName = AColumnName then
+        begin
+          LFilter := FFilters[i];
+          LFilter.Sort := ASortDirection;
+          FFilters[i] := LFilter;
+          Exit(True);
+        end;
+      Result := False;
+    end;
+
   begin
     LColumnsToAdd := TList<Integer>.Create;
 
@@ -1896,19 +1912,11 @@ procedure TCustomVisualGrid.FetchPage(out AResult: TPageFetchResult);
         if FColumns[i].SortDirection <> sdNone then
         begin
           // try to find column in existing filters
-          LFilterFound := False;
-          for j := 0 to FFilters.Count-1 do
-            if FFilters[j].ColumnName = LData.Columns[i] then
-            begin
-              LFilter := FFilters[j];
-              LFilter.Sort := FColumns[i].SortDirection;
-              FFilters[j] := LFilter;
-              LFilterFound:=true;
-            end;
           // if filter not found we need to create it later
-          if not LFilterFound then
+          if not UpdateFilterSortDirection(LData.Columns[i], FColumns[i].SortDirection) then
             LColumnsToAdd.Add(i);
-        end;
+        end else
+          UpdateFilterSortDirection(LData.Columns[i], sdNone);
 
       // add missing filters
       FFilters.Count:=FFilters.Count + LColumnsToAdd.Count;
