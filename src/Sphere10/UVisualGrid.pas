@@ -1881,7 +1881,6 @@ procedure TCustomVisualGrid.FetchPage(out AResult: TPageFetchResult);
   var
     LColumnsToAdd: TList<Integer>;
     i, j, idx: Integer;
-    LFilterFound: boolean;
     LFilter: TColumnFilter;
     LData: PDataTable;
 
