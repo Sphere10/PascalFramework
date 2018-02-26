@@ -166,6 +166,7 @@ type
     FTopPanelMultiSearchFixed: TPanel;
     FTopPanelMultiSearchClient: TPanel;
     FTopPanelMultiSearchRight: TPanel;
+    FTopPanelLeft: TPanel;
     FTopPanelRight: TPanel;
     FClientPanel: TPanel;
     FLoadDataPanel: TPanel;
@@ -228,6 +229,8 @@ type
     FCanSearch: boolean;
     FSelectionType: TSelectionType;
     FDefaultStretchedColumn : Integer;
+    FWidgetControl: TControl;
+    FWidgetControlParent: TWinControl;
     function GetCells(ACol, ARow: Integer): Variant;
     function GetColCount: Integer; inline;
     function GetColumns(Index: Integer): TVisualColumn;
@@ -253,6 +256,7 @@ type
     procedure SetPageIndex(Value: Integer);
     procedure SetPageSize(Value: Integer);
     procedure SetSelectionType(AValue: TSelectionType);
+    procedure SetWidgetControl(AValue: TControl);
   protected { TComponent }
     procedure Loaded; override;
   protected { TControl }
@@ -327,6 +331,8 @@ type
     property OnPreparePopupMenu: TPreparePopupMenuEvent read FOnPreparePopupMenu write FOnPreparePopupMenu;
     property OnFinishedUpdating : TNotifyEvent read FFinishedUpdating write FFinishedUpdating;
 
+    property WidgetControl: TControl read FWidgetControl write SetWidgetControl;
+
     procedure RefreshGrid;
   end;
 
@@ -347,6 +353,7 @@ type
     property SortMode;
     property SearchMode;
     property FetchDataInThread;
+    property WidgetControl;
 
     property OnDrawVisualCell;
     property OnSelection;
@@ -453,10 +460,16 @@ begin
   FOwner := AOwner;
 
   FLabel := TLabel.Create(AOwner);
-  FLabel.Parent := AOwner;
+  FLabel.Parent := AOwner.FTopPanel;
+
   with FLabel do
   begin
-    Align := alTop;
+    AnchorSideLeft.Control := AOwner.FTopPanelLeft;
+    AnchorSideLeft.Side := asrBottom;
+    AnchorSideTop.Control := AOwner.FTopPanelRight;
+    AnchorSideTop.Side := asrCenter;
+    AnchorSideRight.Control := AOwner.FTopPanelRight;
+    Anchors := [akTop, akLeft, akRight];
     Visible := false;
   end;
 end;
@@ -809,8 +822,6 @@ begin
     end;
   end;
 
-  FCaption := TVisualGridCaption.Create(Self);
-
   FTopPanel := TPanel.Create(Self);
   FTopPanel.Parent := FMainPanel;
   with FTopPanel do
@@ -838,6 +849,16 @@ begin
       Visible:=False;
     end;
 
+    FTopPanelLeft := TPanel.Create(Self);
+    FTopPanelLeft.Parent := FTopPanel;
+    with FTopPanelLeft do
+    begin
+      BevelOuter := bvNone;
+      Align := alLeft;
+      Height := 40;
+      Width := 0;
+    end;
+
     FTopPanelRight := TPanel.Create(Self);
     FTopPanelRight.Parent := FTopPanel;
     with FTopPanelRight do
@@ -845,7 +866,7 @@ begin
       BevelOuter := bvNone;
       Align := alRight;
       Height := 40;
-      Width := 300;
+      Width := 154;
 
       FSearchButton := TSpeedButton.Create(Self);
       FSearchButton.Parent := FTopPanelRight;
@@ -888,6 +909,8 @@ begin
       end;
     end;
   end;
+
+  FCaption := TVisualGridCaption.Create(Self);
 
   FClientPanel := TPanel.Create(Self);
   FClientPanel.Parent := FMainPanel;
@@ -2009,6 +2032,33 @@ begin
   end;
   if LSelectionEvent and Assigned(FOnSelection) then
     FOnSelection(Self, Selection);
+end;
+
+procedure TCustomVisualGrid.SetWidgetControl(AValue: TControl);
+begin
+  if FWidgetControl=AValue then Exit;
+
+  if Assigned(FWidgetControl) then
+    FWidgetControl.Parent := FWidgetControlParent;
+
+  FWidgetControl:=AValue;
+
+  if Assigned(AValue) then
+  begin
+    FTopPanelLeft.Width:=FWidgetControl.Width + 4 + 4;
+    if FWidgetControl.Height > FTopPanelLeft.Height then
+      FWidgetControl.Height := FTopPanelLeft.Height;
+
+    FWidgetControlParent := FWidgetControl.Parent;
+    FWidgetControl.Parent := FTopPanelLeft;
+    with FWidgetControl do
+    begin
+      AnchorSideLeft.Control := FTopPanelLeft;
+      AnchorSideLeft.Side := asrCenter;
+      AnchorSideTop.Control := FTopPanelLeft;
+      AnchorSideTop.Side := asrCenter;
+    end;
+  end;
 end;
 
 procedure TCustomVisualGrid.StandardDrawCell(Sender: TObject; ACol,

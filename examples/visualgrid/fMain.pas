@@ -45,10 +45,13 @@ type
     btnRefresh: TButton;
     bSetWidth: TButton;
     bSearchParser: TButton;
+    Button1: TButton;
     cbExpectedKind: TComboBox;
     ColumnsAutoFillCheckBox: TCheckBox;
     cbSearchParser: TComboBox;
+    ComboBox1: TComboBox;
     eCol: TEdit;
+    Edit1: TEdit;
     eWidth: TEdit;
     FirstColumnStretchedCheckBox: TCheckBox;
     bRefresh: TButton;
@@ -64,6 +67,7 @@ type
     Panel1: TPanel;
     Panel2: TPanel;
     Panel3: TPanel;
+    pWidgets: TPanel;
     PopupMenu1: TPopupMenu;
     TIPropertyGrid1: TTIPropertyGrid;
     procedure bSetWidthClick(Sender: TObject);
@@ -232,7 +236,7 @@ var
 
     GridPanel.AddControlDockCenter(FVisualGrid);
     TIPropertyGrid1.TIObject := FVisualGrid;
-
+    TIPropertyGrid1.PropertyEditorHook.LookupRoot := Self;
   end;
 
   procedure TForm1.miUpdateCellClick(Sender: TObject);
@@ -351,6 +355,25 @@ var
     FVisualGrid.RefreshGrid;
   end;
 
+type
+
+  { TWidgetsPropertyEditor }
+
+  TWidgetsPropertyEditor = class(TComponentOneFormPropertyEditor)
+  public
+    procedure GetValues(Proc: TGetStrProc); override;
+  end;
+
+{ TWidgetsPropertyEditor }
+
+procedure TWidgetsPropertyEditor.GetValues(Proc: TGetStrProc);
+var
+  i: Integer;
+begin
+  for i := 0 to Form1.pWidgets.ControlCount - 1 do
+    Proc(Form1.pWidgets.Controls[i].Name);
+end;
+
 
 initialization
   GData := TList<TEntity>.Create;
@@ -389,6 +412,8 @@ Bar : utf8String;
   RegisterPropertyEditor(TypeInfo(Integer), TVisualGrid, 'Top', THiddenPropertyEditor);
   RegisterPropertyEditor(TypeInfo(Integer), TVisualGrid, 'Width', THiddenPropertyEditor);
   RegisterPropertyEditor(TypeInfo(Integer), TVisualGrid, 'Height', THiddenPropertyEditor);
+
+  RegisterPropertyEditor(TypeInfo(TControl), TVisualGrid, 'WidgetControl', TWidgetsPropertyEditor);
 
 finalization
   FreeAndNil(GData);
