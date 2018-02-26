@@ -2058,7 +2058,8 @@ begin
       AnchorSideTop.Control := FTopPanelLeft;
       AnchorSideTop.Side := asrCenter;
     end;
-  end;
+  end else
+    FTopPanelLeft.Width:=0;
 end;
 
 procedure TCustomVisualGrid.StandardDrawCell(Sender: TObject; ACol,
