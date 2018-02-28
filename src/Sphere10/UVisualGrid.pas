@@ -24,6 +24,10 @@ uses
   UCommon, UCommon.Data, UCommon.Collections, Generics.Collections, Generics.Defaults, Menus, ComboEx, Buttons, Math
   {$IFNDEF WINDOWS}, LResources{$ENDIF}, syncobjs;
 
+const
+  CT_VISUALGRID_DEFAULT = Integer(-1);   { Column is not sized on start }
+  CT_VISUALGRID_STRETCH = Integer(-2);   { Column is stretched to fit }
+
 type
 
   { TSelectionType }
@@ -63,6 +67,7 @@ type
     FSortDirection: TSortDirection;
     FIgnoreRefresh: Boolean;
   public
+    property InternalColumn : TGridColumn read FColumn;
     constructor Create(AGrid: TCustomVisualGrid; AColumn: TGridColumn);
     property StretchedToFill: boolean read GetStretchedToFill write SetStretchedToFill;
     property Width: Integer read GetWidth write SetWidth;
@@ -74,6 +79,7 @@ type
   TPreparePopupMenuEvent = procedure(Sender: TObject; constref ASelection: TVisualGridSelection; out APopupMenu: TPopupMenu) of object;
   TSelectionEvent = procedure(Sender: TObject; constref ASelection: TVisualGridSelection) of object;
   TDrawVisualCellEvent = procedure(Sender: TObject; ACol, ARow: Longint; Canvas: TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant; var Handled: boolean) of object;
+  TColumnInitializeEvent = procedure(Sender: TObject; AColIndex:Integer; AColumn : TVisualColumn) of object;
 
   { TVisualGrid Exceptions }
 
@@ -229,6 +235,7 @@ type
     FCanSearch: boolean;
     FSelectionType: TSelectionType;
     FDefaultStretchedColumn : Integer;
+    FDefaultColumnWidths : TArray<Integer>;
     FWidgetControl: TControl;
     FWidgetControlParent: TWinControl;
     function GetCells(ACol, ARow: Integer): Variant;
@@ -278,6 +285,7 @@ type
     FSortColumn: TVisualColumn;
 
     FOnDrawVisualCell: TDrawVisualCellEvent;
+    FOnColumnInitialize : TColumnInitializeEvent;
 
     procedure SortDirectionGlyphRefresh;
     procedure ReloadColumns;
@@ -309,6 +317,7 @@ type
     property ShowAllData: boolean read FShowAllData write SetShowAllData default false;
     property FetchDataInThread: boolean read FFetchDataInThread write SetFetchDataInThread;
     property DefaultStretchedColumn: Integer read FDefaultStretchedColumn write FDefaultStretchedColumn;
+    property DefaultColumnWidths : TArray<Integer> read FDefaultColumnWidths write FDefaultColumnWidths;
 
     property CanPage: boolean read FCanPage write SetCanPage default true;
     property CanSearch: boolean read FCanSearch write SetCanSearch default true;
@@ -326,6 +335,7 @@ type
     property RowCount: Integer read GetRowCount;
     property Rows[ARow: Integer]: Variant read GetRows write SetRows;
 
+    property OnColumnInitialize : TColumnInitializeEvent read FOnColumnInitialize write FOnColumnInitialize;
     property OnDrawVisualCell: TDrawVisualCellEvent read FOnDrawVisualCell write FOnDrawVisualCell;
     property OnSelection: TSelectionEvent read FOnSelection write FOnSelection;
     property OnPreparePopupMenu: TPreparePopupMenuEvent read FOnPreparePopupMenu write FOnPreparePopupMenu;
@@ -506,8 +516,7 @@ begin
   FColumn.Width := AValue;
 end;
 
-constructor TVisualColumn.Create(AGrid: TCustomVisualGrid; AColumn: TGridColumn
-  );
+constructor TVisualColumn.Create(AGrid: TCustomVisualGrid; AColumn: TGridColumn );
 begin
   FGrid := AGrid;
   FColumn := AColumn;
@@ -1772,8 +1781,20 @@ begin
   begin
     LColumn := TVisualColumn.Create(Self, FDrawGrid.Columns.Add);
     FColumns.Add(LColumn);
-    LColumn.StretchedToFill:=False;
+    if i <= High(FDefaultColumnWidths) then
+      case FDefaultColumnWidths[i] of
+        CT_VISUALGRID_DEFAULT: LColumn.StretchedToFill:=False;
+        CT_VISUALGRID_STRETCH: LColumn.StretchedToFill:=True;
+        else begin
+          LColumn.StretchedToFill := False;
+          LColumn.SetWidth(FDefaultColumnWidths[i]);
+        end;
+    end else if i = FDefaultStretchedColumn then LColumn.StretchedToFill:=True;
     LColumn.FColumn.Title.Caption:=''; //FDataTable.Columns[i]; already painted in default drawing event
+
+    // invoke client initialization
+    if Assigned(FOnColumnInitialize) then
+      FOnColumnInitialize(Self, i, LColumn);
   end;
   FDrawGrid.Columns.EndUpdate;
   // TODO: may be optimized

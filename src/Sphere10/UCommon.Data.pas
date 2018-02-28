@@ -328,6 +328,9 @@ function TTableRow.SetProperty(var V: TVarData; const Name: string;
 var
   LRow: TTableRowData absolute V;
 begin
+  if NOT LRow.vcolumnmap.ContainsKey(Name) then
+    Exit(true); //raise ETableRow.Create(Format('TableRow did not have column "%s"', [Name]));
+
   LRow.vvalues[LRow.vcolumnmap[Name]] := Variant(Value);
   Result := true;
 end;
