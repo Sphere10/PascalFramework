@@ -66,6 +66,7 @@ function UtcTimeStamp : AnsiString;
 
 type
 
+  {$IFDEF FPC}
   { TTimeSpan }
 
   TTimeSpan = record
@@ -128,6 +129,7 @@ type
       property TotalSeconds: Double read GetTotalSeconds;
       property TotalMilliseconds: Double read GetTotalMilliseconds;
     end;
+  {$ENDIF}
 
   { TBox - a generic wrapper class for wrappying any type, mainly strings and primtives }
 
@@ -386,6 +388,7 @@ End;
 
 {%endregion}
 
+{$IFDEF FPC}
 {%region TTimeSpan }
 
 class constructor TTimeSpan.Create;
@@ -605,6 +608,8 @@ begin
 end;
 
 {%endregion}
+
+{$ENDIF}
 
 {%region Language-level tools }
 function IIF(const ACondition: Boolean; const ATrueResult, AFalseResult: Cardinal): Cardinal;
