@@ -6,7 +6,7 @@ object FRMMain: TFRMMain
   Caption = 'MainForm'
   ClientHeight = 240
   ClientWidth = 320
-  LCLVersion = '1.8.0.6'
+  LCLVersion = '1.8.2.0'
   Visible = False
   object _wizardTestButton: TButton
     Left = 8

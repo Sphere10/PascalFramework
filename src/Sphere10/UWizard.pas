@@ -137,7 +137,7 @@ type
 
 
   { TActionWizard - a generic Wizard that can be used without subclassing }
-  TActionWizard<T> = class(specialize TWizard<T>)
+  TActionWizard<T> = class(TWizard<T>)
     public type
       TActionWizardCancelFunc = function(screenIndex : Integer; constref model : T; out message : AnsiString) : boolean of object;
       TActionWizardFinishFunc = function(constref  model : T; out message : AnsiString) : boolean of object;
@@ -155,7 +155,7 @@ type
   end;
 
   { TGenericWizardBag - a generic bag for use within wizard }
-  TGenericWizardBag = TDictionary<AnsiString, TObject>;
+  TGenericWizardBag = TDictionary<utf8string, Variant>;
 
 implementation
 

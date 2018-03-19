@@ -45,8 +45,7 @@ uses UWIZName_Step1A, UWIZName_Step1B, UWIZName_Step2;
 
 procedure TWIZName_Step1.FNameEditEditingDone(Sender: TObject);
 begin
-  self.Model['Name'].Destroy; // free existing value
-  self.Model['Name'] := TStringObject.Create(FNameEdit.Text);
+  self.Model['Name'] := Variant(FNameEdit.Text);
 end;
 
 
@@ -65,7 +64,7 @@ end;
 procedure TWIZName_Step1.OnPresent;
 begin
   // Display value of property bag
-  FNameEdit.Text :=  TStringObject(Model['Name']).Value;
+  FNameEdit.Text := Model['Name'];
 end;
 
 procedure TWIZName_Step1.OnPrevious;

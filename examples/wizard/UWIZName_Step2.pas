@@ -52,7 +52,7 @@ end;
 
 procedure TWIZName_Step2.OnPresent;
 begin
-  FNameLabel.Caption := TStringObject(Model['Name']).Value;
+  FNameLabel.Caption := Model['Name'];
 end;
 
 procedure TWIZName_Step2.OnPrevious;

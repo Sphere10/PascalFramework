@@ -34,6 +34,8 @@ var
 
 implementation
 
+uses variants;
+
 { TFRMMain }
 
 procedure TFRMMain._wizardTestButtonClick(Sender: TObject);
@@ -47,7 +49,7 @@ begin
   propertyBag := TGenericWizardBag.Create;
   try
     // Pre-set property bag values when using TGenericWizardBag
-    propertyBag.Add('Name', TStringObject.Create(''));
+    propertyBag.Add('Name', Variant(''));
     TTestWizard.Show(
       self,
       'My Test Action Wizard',
@@ -99,11 +101,11 @@ end;
 
 function TFRMMain.FinishCallback(constref model : TGenericWizardBag; out message : AnsiString) : boolean;
 begin
-  if PChar(Model['Name']) = 'fail' then begin
+  if VarToStr(Model['Name']) = 'fail' then begin
     message := 'Name cannot be ''fail''';
     Result := false;
   end else begin
-    ShowMessage('Finish: ' + TStringObject(Model['Name']).Value);
+    ShowMessage('Finish: ' + VarToStr(Model['Name']));
     Result := true;
   end;
 end;

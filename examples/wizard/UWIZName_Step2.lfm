@@ -8,7 +8,8 @@ object WIZName_Step2: TWIZName_Step2
   ClientWidth = 523
   OnResize = UpdateDimensionLabel
   OnShow = UpdateDimensionLabel
-  LCLVersion = '1.6.4.0'
+  LCLVersion = '1.8.2.0'
+  Visible = False
   object Label1: TLabel
     Left = 32
     Height = 15
