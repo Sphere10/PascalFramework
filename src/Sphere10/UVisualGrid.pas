@@ -23,7 +23,7 @@ interface
 
 uses
   Classes, SysUtils, StdCtrls, ExtCtrls, Controls, Grids, Types, Graphics,
-  UCommon, UCommon.Data, UAccounts, UWallet, UCommon.Collections, Generics.Collections, Generics.Defaults, Menus, ComboEx, Buttons, Math,
+  UCommon, UCommon.Data, UCommon.Collections, Generics.Collections, Generics.Defaults, Menus, ComboEx, Buttons, Math,
   LResources, syncobjs;
 
 const
@@ -391,7 +391,7 @@ procedure Register;
 
 implementation
 
-uses Variants, UAutoScope, Dialogs, UUserInterface;
+uses Variants, UAutoScope, Dialogs;
 
 resourcestring
   sTotal = 'Total: %d';
