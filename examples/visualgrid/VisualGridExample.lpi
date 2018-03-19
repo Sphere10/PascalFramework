@@ -29,7 +29,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="13">
+    <Units Count="14">
       <Unit0>
         <Filename Value="VisualGridExample.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -88,6 +88,10 @@
         <Filename Value="..\..\src\Generics.Collections\generics.strings.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit12>
+      <Unit13>
+        <Filename Value="..\..\src\Sphere10\UVisualGrid.inc"/>
+        <IsPartOfProject Value="True"/>
+      </Unit13>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -97,7 +101,7 @@
       <Filename Value="VisualGridExample"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="$(ProjOutDir);..\..\src;mORMot;..\..\src\Generics.Collections\inc"/>
+      <IncludeFiles Value="$(ProjOutDir);..\..\src;mORMot;..\..\src\Generics.Collections\inc;..\..\src\Sphere10"/>
       <Libraries Value="..\..\src\3rd\mORMot\fpc-win32"/>
       <OtherUnitFiles Value="mORMot;..\..\src\Sphere10;..\..\src\Generics.Collections"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
