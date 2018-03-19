@@ -338,7 +338,8 @@ var
       Canvas.Font.Color:=clRed;
       Canvas.Font.Style:=[fsBold];
       LTextStyle := Canvas.TextStyle;
-      LTextStyle.Alignment:=taCenter;
+//      LTextStyle.Alignment:=taCenter;
+      LTextStyle.Alignment:=taRightJustify;
       Canvas.TextStyle:=LTextStyle;
       Canvas.TextRect(Rect, Rect.Left+2, Rect.Top+2, RowData, LTextStyle);
     end;
