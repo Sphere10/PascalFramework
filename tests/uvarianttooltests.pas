@@ -23,7 +23,7 @@ type
 
 implementation
 
-uses Generics.Defaults, Generics.Collections, UCommon, UCommon.Collections, UAutoScope, LazLogger;
+uses Generics.Defaults, Generics.Collections, UCommon, UCommon.Collections, UMemory, LazLogger;
 
 
 procedure TVariantToolTests.NumericEQ;

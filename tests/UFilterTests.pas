@@ -26,14 +26,14 @@ type
 
 implementation
 
-uses Generics.Defaults, Generics.Collections, UCommon, UCommon.Collections, UAutoScope, LazLogger;
+uses Generics.Defaults, Generics.Collections, UCommon, UCommon.Collections, UMemory, LazLogger;
 
 procedure TFilterTests.NestedFilter;
 var
   list : TList<Integer>;
   pred : IPredicate<Integer>;
   res : Integer;
-  GC : TScoped;
+  GC : TDisposables;
   i : integer;
 
   function NestedFilterFunc(constref AItem : Integer ) : boolean;
@@ -64,7 +64,7 @@ var
   list : TList<Integer>;
   pred : IPredicate<Integer>;
   res : Integer;
-  GC : TScoped;
+  GC : TDisposables;
 begin
   list := GC.AddObject( TList<Integer>.Create ) as TList<Integer>;
   list.AddRange([1,2,3,4,5,6,7,8,9,10]);
@@ -88,7 +88,7 @@ var
   list : TList<Integer>;
   pred : IPredicate<Integer>;
   res : Integer;
-  GC : TScoped;
+  GC : TDisposables;
 begin
   list := GC.AddObject( TList<Integer>.Create ) as TList<Integer>;
   list.AddRange([1,2,3,4,5,6,7,8,9,10]);
@@ -108,7 +108,7 @@ var
   list : TList<Integer>;
   pred : IPredicate<Integer>;
   res : Integer;
-  GC : TScoped;
+  GC : TDisposables;
 
   function NestedFilterOddFunc(constref AItem : Integer ) : boolean;
   begin
@@ -134,7 +134,7 @@ var
   list : TList<Integer>;
   pred : IPredicate<Integer>;
   res : Integer;
-  GC : TScoped;
+  GC : TDisposables;
 
   function NestedFilterOddFunc(constref AItem : Integer ) : boolean;
   begin

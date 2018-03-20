@@ -271,7 +271,7 @@ resourcestring
 
 implementation
 
-uses dateutils, UAutoScope;
+uses dateutils, UMemory;
 
 { VARIABLES }
 
@@ -495,7 +495,7 @@ function TCustomDataSource<T>.FetchPage(constref AParams: TPageFetchParams; var 
 var
   i, j : SizeInt;
   data : TList<T>;
-  GC : TScoped;
+  GC : TDisposables;
   pageStart, pageEnd : SizeInt;
   entity : T;
   comparer : IComparer<T>;
@@ -601,7 +601,7 @@ var
   i : integer;
   comparers : TList<__IComparer_T>;
   filter : TColumnFilter;
-  GC : TScoped;
+  GC : TDisposables;
 begin
   comparers := GC.AddObject(  TList<__IComparer_T>.Create ) as TList<__IComparer_T>;
   for i := Low(AFilters) to High(AFilters) do begin
@@ -624,7 +624,7 @@ type
 var
   i : integer;
   filters : __TList_IPredicate_T;
-  GC : TScoped;
+  GC : TDisposables;
 begin
   filters := GC.AddObject( __TList_IPredicate_T.Create ) as __TList_IPredicate_T;
   for i := Low(AFilters) to High(AFilters) do begin
@@ -656,7 +656,7 @@ end;
 function TPageFetchParams.GetSortFilters : TArray<TColumnFilter>;
 var
   sortFilters : TList<TColumnFilter>;
-  GC : TScoped;
+  GC : TDisposables;
 
   function IsSortFilter(constref AColFilter : TColumnFilter) : boolean;
   begin
@@ -675,7 +675,7 @@ end;
 function TPageFetchParams.GetSearchFilters : TArray<TColumnFilter>;
 var
   searchFilters : TList<TColumnFilter>;
-  GC : TScoped;
+  GC : TDisposables;
 
   function IsSearchFilter(constref AColFilter : TColumnFilter) : boolean;
   begin

@@ -393,7 +393,7 @@ procedure Register;
 
 implementation
 
-uses Variants, UAutoScope, Dialogs;
+uses Variants, UMemory, Dialogs;
 
 resourcestring
   sTotal = 'Total: %d';
@@ -1481,7 +1481,7 @@ function TCustomVisualGrid.GetSelectedRows : TArray<Variant>;
 var
   sel : TVisualGridSelection;
   selectedRows : TList<Variant>;
-  GC: TScoped;
+  GC: TDisposables;
   row : Integer;
 begin
   sel := GetSelection;
