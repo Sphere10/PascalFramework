@@ -2000,7 +2000,12 @@ begin
     Exit;
 
   FPageIndex := Value;
-  RefreshPageIndexData(false)
+  if FDeselectionType <> dtNone then
+  begin
+    ResetLastSelection;
+    UpdateSelection(stNone);
+  end;
+  RefreshPageIndexData(false);
 end;
 
 procedure TCustomVisualGrid.SetPageIndexEditText(const AStr: utf8string);
