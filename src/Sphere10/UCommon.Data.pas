@@ -204,6 +204,7 @@ type
       procedure DehydrateItem(constref AItem: T; var ATableRow: Variant); virtual; abstract;
       function FetchPage(constref AParams: TPageFetchParams; var ADataTable: TDataTable): TPageFetchResult;
       function GetSearchCapabilities: TSearchCapabilities; virtual; abstract;
+      function GetEntityKey(constref AItem: T) : Variant; virtual;
       procedure OnBeforeFetchAll(constref AParams: TPageFetchParams); virtual;
       procedure FetchAll(const AContainer : TList<T>); virtual; abstract;
       procedure OnAfterFetchAll(constref AParams: TPageFetchParams); virtual;
@@ -311,6 +312,7 @@ begin
   Result := TColumnMapToIndex.Create;
   for i := 0 to High(AColumns^) do
     Result.Add(AColumns^[i], i);
+  Result.Add('__KEY', i + 1);
   FColumns.Add(AColumns, Result);
 end;
 
@@ -329,7 +331,7 @@ var
   LRow: TTableRowData absolute V;
 begin
   if NOT LRow.vcolumnmap.ContainsKey(Name) then
-    Exit(true); //raise ETableRow.Create(Format('TableRow did not have column "%s"', [Name]));
+    Exit(true); // TODO: Re-enable this when TVisualColumn added -- ETableRow.Create(Format('TableRow did not have column "%s"', [Name]));
 
   LRow.vvalues[LRow.vcolumnmap[Name]] := Variant(Value);
   Result := true;
@@ -384,7 +386,7 @@ begin
     LColumnMap := MapColumns(AColumns);
 
   TTableRowData(Result).vcolumnmap:=LColumnMap;
-  SetLength(TTableRowData(Result).vvalues, Length(AColumns^));
+  SetLength(TTableRowData(Result).vvalues, LColumnMap.Count);
 end;
 
 { TSearchCapability }
@@ -491,6 +493,11 @@ begin
   end else Result := false;
 end;
 
+function TCustomDataSource<T>.GetEntityKey(constref AItem: T) : Variant;
+begin
+  Result := nil;
+end;
+
 function TCustomDataSource<T>.FetchPage(constref AParams: TPageFetchParams; var ADataTable: TDataTable): TPageFetchResult;
 var
   i, j : SizeInt;
@@ -549,6 +556,7 @@ begin
        for i := pageStart to pageEnd do begin
          ADataTable.Rows[j] := TTableRow.New(@FColumns);
          DehydrateItem( data[i], ADataTable.Rows[j]);
+         ADataTable.Rows[j].__KEY := GetEntityKey(data[i]);
          inc(j)
        end;
      end;
