@@ -6,7 +6,7 @@ uses
   Interfaces, Forms, GuiTestRunner, Generics.Collections, generics.defaults,
   generics.hashes, generics.helpers, generics.memoryexpanders, generics.strings,
   UCommon.Collections, UCompareTests, UFilterTests, UVariantToolTests, UDisposablesTest,
-  UAutoPtrTests, UDynamicTests;
+  UAutoPtrTests, UDynamicTests, UBoxTests;
 
 {$R *.res}
 
