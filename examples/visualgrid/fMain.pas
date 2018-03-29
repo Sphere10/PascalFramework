@@ -42,7 +42,7 @@ type
 
   TForm1 = class(TForm)
     AddDelayCheckBox: TCheckBox;
-    btnRefresh: TButton;
+    bRegenerate: TButton;
     bSetWidth: TButton;
     bSearchParser: TButton;
     Button1: TButton;
@@ -53,6 +53,7 @@ type
     eCol: TEdit;
     Edit1: TEdit;
     eWidth: TEdit;
+    eNumEntities: TEdit;
     FirstColumnStretchedCheckBox: TCheckBox;
     bRefresh: TButton;
     GridPanel: TPanel;
@@ -72,9 +73,10 @@ type
     TIPropertyGrid1: TTIPropertyGrid;
     procedure bSetWidthClick(Sender: TObject);
     procedure bSearchParserClick(Sender: TObject);
-    procedure btnRefreshClick(Sender: TObject);
+    procedure bRegenerateClick(Sender: TObject);
     procedure ColumnsAutoFillCheckBoxChange(Sender: TObject);
     procedure bRefreshClick(Sender: TObject);
+    procedure eNumEntitiesChange(Sender: TObject);
     procedure FirstColumnStretchedCheckBoxChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure miUpdateCellClick(Sender: TObject);
@@ -102,10 +104,6 @@ implementation
 uses
   UCommon.UI;
 
-const
-     NUM_ENTITIES = 10000;
-
-
 {$R *.lfm}
 
 var
@@ -114,6 +112,27 @@ var
   GAddDelayCheckBox : TCheckBox;
   i : integer;
   entity : TEntity;
+  GNumEntities : Integer;
+
+  { Globals }
+  procedure GenerateEntities;
+  begin
+    if NOT Assigned(GData) then
+      GData := TList<TEntity>.Create;
+
+    GData.Clear;
+    for i := 0 to GNumEntities - 1 do begin
+      entity.ID := i;
+      entity.Name := Format('Name %d', [i + 1]);
+      entity.Foo := i div 5;
+      entity.&Boolean := IIF(i mod 2 = 0, True, False);
+      entity.&Char := Char(65 + (i mod 3));   // A, B or C
+      entity.&UInt16 := i + 1;
+      entity.&Real:= i / 2.0;
+      entity.Bar := TGuid.NewGuid.ToString(True);
+      GData.Add(entity);
+    end;
+  end;
 
   { TEntityDataSource }
 
@@ -266,6 +285,11 @@ var
     TIPropertyGrid1.RefreshPropertyValues;
   end;
 
+  procedure TForm1.eNumEntitiesChange(Sender: TObject);
+  begin
+     GNumEntities := StrToInt(eNumEntities.Text);
+  end;
+
   procedure TForm1.FirstColumnStretchedCheckBoxChange(Sender: TObject);
   begin
     FVisualGrid.Columns[0].StretchedToFill:=FirstColumnStretchedCheckBox.Checked;
@@ -325,7 +349,6 @@ var
       ShowMessage(LMsg);
   end;
 
-
   procedure TForm1.DrawVisualCell(Sender: TObject; ACol,
     ARow: Longint; Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
     var Handled: boolean);
@@ -351,8 +374,9 @@ var
       [ASelection.Col, ASelection.Row, ASelection.ColCount, ASelection.RowCount]);
   end;
 
-  procedure TForm1.btnRefreshClick(Sender: TObject);
+  procedure TForm1.bRegenerateClick(Sender: TObject);
   begin
+    GenerateEntities;
     FVisualGrid.RefreshGrid;
   end;
 
@@ -377,19 +401,8 @@ end;
 
 
 initialization
-  GData := TList<TEntity>.Create;
-
-  for i := 0 to NUM_ENTITIES do begin
-    entity.ID := i;
-    entity.Name := Format('Name %d', [i + 1]);
-    entity.Foo := i div 5;
-    entity.&Boolean := IIF(i mod 2 = 0, True, False);
-    entity.&Char := Char(65 + (i mod 3));   // A, B or C
-    entity.&UInt16 := i + 1;
-    entity.&Real:= i / 2.0;
-    entity.Bar := TGuid.NewGuid.ToString(True);
-    GData.Add(entity);
-  end;
+  GNumEntities := 10000;
+  GenerateEntities;
 
 {ID : Integer;
 Name : AnsiString;
