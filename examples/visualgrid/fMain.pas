@@ -252,6 +252,16 @@ var
     FVisualGrid.OnDrawVisualCell:=DrawVisualCell;
     FVisualGrid.OnPreparePopupMenu:=PreparePopupMenu;
     FVisualGrid.OnSelection:=Selection;
+    FVisualGrid.ColumnRenderers := TArray<TVisualColumnRenderer>.Create(
+      nil,                                      // ID
+      nil,                                      // Name
+      nil,                                      // Foo
+      nil,                                      // Boolean
+      nil,                                      // Char
+      nil,                                      // UInt16
+      TVisualCellRenderers.DollarValue,         // Real
+      nil                                       // Bar
+    );
 
     GridPanel.AddControlDockCenter(FVisualGrid);
     TIPropertyGrid1.TIObject := FVisualGrid;
