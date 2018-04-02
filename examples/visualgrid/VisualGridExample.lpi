@@ -74,6 +74,7 @@
       <Unit9>
         <Filename Value="..\..\src\Generics.Collections\generics.hashes.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="Generics.Hashes"/>
       </Unit9>
       <Unit10>
         <Filename Value="..\..\src\Generics.Collections\generics.helpers.pas"/>

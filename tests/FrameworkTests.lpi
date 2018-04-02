@@ -91,23 +91,23 @@
         <IsPartOfProject Value="True"/>
       </Unit12>
       <Unit13>
-        <Filename Value="UDynamicTests.pas"/>
+        <Filename Value="..\src\Sphere10\UCommon.Collections.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit13>
       <Unit14>
-        <Filename Value="..\src\Sphere10\UCommon.Collections.pas"/>
+        <Filename Value="..\src\Sphere10\UCommon.Data.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit14>
       <Unit15>
-        <Filename Value="..\src\Sphere10\UCommon.Data.pas"/>
+        <Filename Value="UDisposablesTest.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit15>
       <Unit16>
-        <Filename Value="UDisposablesTest.pas"/>
+        <Filename Value="UBoxTests.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit16>
       <Unit17>
-        <Filename Value="UBoxTests.pas"/>
+        <Filename Value="UAutoPtrTests.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit17>
     </Units>

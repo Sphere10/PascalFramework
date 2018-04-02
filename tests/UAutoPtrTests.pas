@@ -16,6 +16,8 @@ type
       procedure TestReAssign;
       procedure TestNestedScope;
       procedure TestRecordScope;
+      procedure TestNoCollect_1;
+      procedure TestNoCollect_2;
   end;
 
 implementation
@@ -36,7 +38,6 @@ type
     public
       FDummy : TAutoPtr<TTestObject>;
   end;
-
 
 procedure TAutoPtrTest.TestReAssign;
 var auto : TAutoPtr<TTestObject>;
@@ -76,6 +77,45 @@ procedure TAutoPtrTest.TestRecordScope;
 begin
   RunTest;
   Self.AssertEquals('Memory leak', 0, TTestObject.Instances);
+end;
+
+procedure TAutoPtrTest.TestNoCollect_1;
+var
+  dummy : TTestObject;
+
+   procedure RunTest;
+   var autoRec : TTestRecord;
+   begin
+     autoRec.FDummy.SetValue(TTestObject.Create, idpNone);
+     Self.AssertEquals('Premature collection', 1, TTestObject.Instances);
+     dummy := autoRec.FDummy.Value;
+     dummy.Val:= 'XXX';
+     Self.AssertEquals('XXX', autoRec.FDummy.Value.Val);
+   end;
+begin
+  RunTest;
+  Self.AssertEquals(1, TTestObject.Instances);
+  FreeAndNil(dummy);
+end;
+
+procedure TAutoPtrTest.TestNoCollect_2;
+var
+  dummy : TTestObject;
+
+   procedure RunTest;
+   var autoRec : TTestRecord;
+   begin
+     autoRec.FDummy.Value := TTestObject.Create;
+     Self.AssertEquals('Premature collection', 1, TTestObject.Instances);
+     dummy := autoRec.FDummy.Value;
+     dummy.Val:= 'XXX';
+     Self.AssertEquals('XXX', autoRec.FDummy.Value.Val);
+     autoRec.FDummy.DangerousUpdateDisposePolicy(idpNone);
+   end;
+begin
+  RunTest;
+  Self.AssertEquals(1, TTestObject.Instances);
+  FreeAndNil(dummy);
 end;
 
 class constructor TTestObject.Create;

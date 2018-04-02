@@ -29,12 +29,11 @@ type
   TEntityDataSource = class(TCustomDataSource<TEntity>)
     protected
       function GetItemDisposePolicy : TItemDisposePolicy; override;
-      function GetColumns : TTableColumns;  override;
-      function GetSearchCapabilities: TSearchCapabilities; override;
+      function GetColumns : TDataColumns;  override;
       procedure OnBeforeFetchAll(constref AParams: TPageFetchParams); override;
       procedure FetchAll(const AContainer : TList<TEntity> ); override;
       procedure OnAfterFetchAll(constref AParams: TPageFetchParams); override;
-      function GetItemField(constref AItem: TEntity; const AColumnName : utf8string) : Variant; override;
+      function GetItemField(constref AItem: TEntity; const AColumnName : AnsiString) : Variant; override;
       procedure DehydrateItem(constref AItem: TEntity; var ATableRow: Variant); override;
   end;
 
@@ -82,15 +81,12 @@ type
     procedure miUpdateCellClick(Sender: TObject);
     procedure miUpdateRowClick(Sender: TObject);
   private
-    FColumns: TTableColumns;
     FDataSource : TEntityDataSource;
     FVisualGrid: TVisualGrid;
     { Private declarations }
   private
     procedure PreparePopupMenu(Sender: TObject; constref ASelection: TVisualGridSelection; out APopupMenu: TPopupMenu);
-    procedure DrawVisualCell(Sender: TObject; ACol, ARow: Longint;
-      Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
-      var Handled: boolean);
+    procedure DrawVisualCell(Sender: TObject; ACol, ARow: Longint; Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const CellData, RowData: Variant; var Handled: boolean);
     procedure Selection(Sender: TObject; constref ASelection: TVisualGridSelection);
   public
     { Public declarations }
@@ -141,22 +137,17 @@ var
     Result := idpNone;
   end;
 
-  function TEntityDataSource.GetColumns : TTableColumns;
+  function TEntityDataSource.GetColumns : TDataColumns;
   begin
-    Result := TTableColumns.Create('ID', 'Name', 'Foo', 'Boolean', 'Char', 'UInt16', 'Real', 'Bar');
-  end;
-
-  function TEntityDataSource.GetSearchCapabilities: TSearchCapabilities;
-  begin
-    Result := TSearchCapabilities.Create(
-      TSearchCapability.From('ID', SORTABLE_NUMERIC_FILTER),
-      TSearchCapability.From('Name', SORTABLE_TEXT_FILTER),
-      TSearchCapability.From('Foo', SORTABLE_TEXT_FILTER),
-      TSearchCapability.From('Boolean', SORTABLE_NUMERIC_FILTER),
-      TSearchCapability.From('Char', SORTABLE_TEXT_FILTER),
-      TSearchCapability.From('UInt16', SORTABLE_NUMERIC_FILTER),
-      TSearchCapability.From('Real', SORTABLE_NUMERIC_FILTER),
-      TSearchCapability.From('Bar', SORTABLE_TEXT_FILTER)
+    Result := TDataColumns.Create(
+      TDataColumn.From('ID'),
+      TDataColumn.From('Name'),
+      TDataColumn.From('Foo'),
+      TDataColumn.From('Boolean'),
+      TDataColumn.From('Char'),
+      TDataColumn.From('UInt16'),
+      TDataColumn.From('Real'),
+      TDataColumn.From('Bar')
     );
   end;
 
@@ -174,7 +165,7 @@ var
       SetLength(LValues, Length(LValues) - 1);
       Result := Format('Col: ''%s'' :: Kind: %s :: Sort: %s :: Values(%s)', [
         AFilter.ColumnName,
-        GetEnumName(TypeInfo(TVisualGridFilter), Ord(AFilter.Filter)),
+        GetEnumName(TypeInfo(TDataFilter), Ord(AFilter.Filter)),
         GetEnumName(TypeInfo(UCommon.Data.TSortDirection), Ord(AFilter.Sort)),
         LValues]);
     end;
@@ -200,7 +191,7 @@ var
       Sleep(3000);
   end;
 
-  function TEntityDataSource.GetItemField(constref AItem: TEntity; const AColumnName : utf8string) : Variant;
+  function TEntityDataSource.GetItemField(constref AItem: TEntity; const AColumnName : AnsiString) : Variant;
   begin
      if AColumnName = 'ID' then
        Result := AItem.ID
@@ -252,16 +243,32 @@ var
     FVisualGrid.OnDrawVisualCell:=DrawVisualCell;
     FVisualGrid.OnPreparePopupMenu:=PreparePopupMenu;
     FVisualGrid.OnSelection:=Selection;
-    FVisualGrid.ColumnRenderers := TArray<TVisualColumnRenderer>.Create(
-      nil,                                      // ID
-      nil,                                      // Name
-      nil,                                      // Foo
-      nil,                                      // Boolean
-      nil,                                      // Char
-      nil,                                      // UInt16
-      TVisualCellRenderers.DollarValue,         // Real
-      nil                                       // Bar
-    );
+    with FVisualGrid.AddColumn('1: ID') do begin
+      Binding := 'ID';
+      Filters:=SORTABLE_NUMERIC_FILTER;
+    end;
+    with FVisualGrid.AddColumn('Name') do begin
+      Filters:=SORTABLE_TEXT_FILTER;
+    end;
+    with FVisualGrid.AddColumn('Foo') do begin
+      Filters:=SORTABLE_TEXT_FILTER;
+    end;
+    with FVisualGrid.AddColumn('Boolean') do begin
+      Filters:=SORTABLE_NUMERIC_FILTER;
+    end;
+    with FVisualGrid.AddColumn('Char') do begin
+      Filters:=SORTABLE_TEXT_FILTER;
+    end;
+    with FVisualGrid.AddColumn('UInt16') do begin
+      Filters:=SORTABLE_NUMERIC_FILTER;
+    end;
+    with FVisualGrid.AddColumn('Real') do begin
+      Filters:=SORTABLE_NUMERIC_FILTER;
+      Renderer:=TVisualCellRenderers.DollarValue;
+    end;
+    with FVisualGrid.AddColumn('Bar') do begin
+      Filters:=SORTABLE_TEXT_FILTER;
+    end;
 
     GridPanel.AddControlDockCenter(FVisualGrid);
     TIPropertyGrid1.TIObject := FVisualGrid;
@@ -278,7 +285,7 @@ var
   var
     i, j: Integer;
     r: variant;
-    rd: TTableRowData absolute r;
+    rd: TDataRowData absolute r;
   begin
     with FVisualGrid.Selection do
       for i := 0 to RowCount - 1 do
@@ -359,9 +366,7 @@ var
       ShowMessage(LMsg);
   end;
 
-  procedure TForm1.DrawVisualCell(Sender: TObject; ACol,
-    ARow: Longint; Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const RowData: Variant;
-    var Handled: boolean);
+  procedure TForm1.DrawVisualCell(Sender: TObject; ACol, ARow: Longint; Canvas : TCanvas; Rect: TRect; State: TGridDrawState; const CellData, RowData: Variant; var Handled: boolean);
   var
     LTextStyle: TTextStyle;
   begin
@@ -374,7 +379,7 @@ var
 //      LTextStyle.Alignment:=taCenter;
       LTextStyle.Alignment:=taRightJustify;
       Canvas.TextStyle:=LTextStyle;
-      Canvas.TextRect(Rect, Rect.Left+2, Rect.Top+2, RowData, LTextStyle);
+      Canvas.TextRect(Rect, Rect.Left+2, Rect.Top+2, CellData, LTextStyle);
     end;
   end;
 
