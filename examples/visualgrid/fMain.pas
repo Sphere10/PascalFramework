@@ -7,7 +7,7 @@ interface
 uses
   SysUtils, Classes, Forms, Controls, Graphics, Dialogs, Math, PropEdits,
   LCLType, UVisualGrid, StdCtrls, Menus, Types, Grids, ExtCtrls, CheckLst,
-  RTTIGrids, UCommon, UCommon.Data, Generics.Collections, TypInfo;
+  RTTIGrids, UMemory, UCommon, UCommon.Data, Generics.Collections, TypInfo;
 
 type
 
@@ -28,13 +28,12 @@ type
 
   TEntityDataSource = class(TCustomDataSource<TEntity>)
     protected
-      function GetItemDisposePolicy : TItemDisposePolicy; override;
+      function GetItemDisposePolicy : TDisposePolicy; override;
       function GetColumns : TDataColumns;  override;
       procedure OnBeforeFetchAll(constref AParams: TPageFetchParams); override;
       procedure FetchAll(const AContainer : TList<TEntity> ); override;
       procedure OnAfterFetchAll(constref AParams: TPageFetchParams); override;
       function GetItemField(constref AItem: TEntity; const AColumnName : AnsiString) : Variant; override;
-      procedure DehydrateItem(constref AItem: TEntity; var ATableRow: Variant); override;
   end;
 
   { TForm1 }
@@ -132,7 +131,7 @@ var
 
   { TEntityDataSource }
 
-  function TEntityDataSource.GetItemDisposePolicy : TItemDisposePolicy;
+  function TEntityDataSource.GetItemDisposePolicy : TDisposePolicy;
   begin
     Result := idpNone;
   end;
@@ -212,18 +211,6 @@ var
      else raise Exception.Create(Format('Field not found [%s]', [AColumnName]));
   end;
 
-  procedure TEntityDataSource.DehydrateItem(constref AItem: TEntity; var ATableRow: Variant);
-  begin
-    ATableRow.ID := AItem.ID;
-    ATableRow.Name := AItem.Name;
-    ATableRow.Foo := AItem.Foo;
-    ATableRow.&Boolean := AItem.&Boolean;
-    ATableRow.&Char := Variant(AItem.&Char);
-    ATableRow.&UInt16 :=  AItem.UInt16;
-    ATableRow.&Real := AItem.Real;
-    ATableRow.Bar := AItem.Bar;
-  end;
-
   { TForm1 }
 
   procedure TForm1.PreparePopupMenu(Sender: TObject; constref
@@ -287,14 +274,14 @@ var
     r: variant;
     rd: TDataRowData absolute r;
   begin
-    with FVisualGrid.Selection do
+{    with FVisualGrid.Selection do
       for i := 0 to RowCount - 1 do
       begin
         r := FVisualGrid.Rows[i + Row];
         for j := 0 to High(rd.vvalues) do
           rd.vvalues[j] := 'Test';
         FVisualGrid.Rows[i + Row] := r;
-      end;
+      end;}
   end;
 
   procedure TForm1.bRefreshClick(Sender: TObject);
