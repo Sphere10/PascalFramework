@@ -1977,6 +1977,7 @@ procedure TCustomVisualGrid.RefreshPageIndexAndGridInterface;
 var
   LCountOnPage2: Integer;
   LGridUnusedHeight, LPotentialHeight: integer;
+  LWasVisible: boolean;
 
   function RecalcPageCount: boolean;
   var
@@ -2027,7 +2028,12 @@ begin
           FBottomPanel.Visible := FCanPage
     end
   else
+  begin
+    LWasVisible := FBottomPanel.Visible;
     FBottomPanel.Visible := FCanPage;
+    if (FTopPanel.Visible <> LWasVisible) and RecalcPageCount then
+      Exit;
+  end;
 
   // show or hide Search Panel (related to option vgoAutoHideSearchPanel)
   if (vgoAutoHideSearchPanel in FOptions) and (FPageCount in [0,1]) then
@@ -2035,16 +2041,19 @@ begin
     if FCanSearch then
     begin
       // if widget control is set, only hide search controls
+      LWasVisible := FTopPanel.Visible;
       FTopPanel.Visible := Assigned(FWidgetControl);
       FTopPanelRight.Visible := not Assigned(FWidgetControl);
+      if (FTopPanel.Visible <> LWasVisible) and RecalcPageCount then
+        Exit;
     end;
   end
   else
-  if not FTopPanel.Visible and FCanSearch then
   begin
+    LWasVisible := FTopPanel.Visible;
     FTopPanel.Visible := FCanSearch;
     FTopPanelRight.Visible := true;
-    if RecalcPageCount then
+    if (FTopPanel.Visible <> LWasVisible) and RecalcPageCount then
       Exit;
   end;
 
