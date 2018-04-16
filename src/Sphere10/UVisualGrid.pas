@@ -421,7 +421,7 @@ uses
     property InternalDrawGrid : TDrawGrid read FDrawGrid;
     function AddColumn(const AName: utf8string) : TVisualColumn;
     procedure RefreshGrid;
-    procedure ClearSelection;
+    procedure ClearSelection(AIgnoreDeselectionType: boolean = false);
   end;
 
   { TVisualGrid }
@@ -2387,20 +2387,12 @@ begin
   UpdateSelection(SelectionType);
 end;
 
-procedure TCustomVisualGrid.ClearSelection;
-var
-  LSel : TSelectionType;
-  LIgnore : boolean;
+procedure TCustomVisualGrid.ClearSelection(AIgnoreDeselectionType: boolean);
 begin
-  ResetLastSelection;
-  LSel := FSelectionType;
-  LIgnore := FIgnoreSelectionEvent;
-  FIgnoreSelectionEvent:=true;
-  try
-    SelectionType := stNone;
-    SelectionType := LSel;
-  finally
-    FIgnoreSelectionEvent:=LIgnore;
+  if (FDeselectionType <> dtNone) or AIgnoreDeselectionType then
+  begin
+    ResetLastSelection;
+    UpdateSelection(stNone);
   end;
 end;
 
