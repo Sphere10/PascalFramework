@@ -2365,8 +2365,12 @@ begin
   if FSelectionType=AValue then
     Exit;
   FSelectionType:=AValue;
-  UpdateSelection(FSelectionType);
-  GridSelection(Self, 0, 0);
+  // do not select if don't need (otherwise it means false selection event and false selection in grid)
+  if (FDeselectionType = dtNone) or (FLastSelection.Selections <> nil) then
+  begin
+    UpdateSelection(FSelectionType);
+    GridSelection(Self, 0, 0)
+  end;
 end;
 
 procedure TCustomVisualGrid.SetDeselectionType(AValue: TDeselectionType);
