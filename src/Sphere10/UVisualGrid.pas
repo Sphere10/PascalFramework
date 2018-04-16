@@ -2368,6 +2368,9 @@ begin
   // do not select if don't need (otherwise it means false selection event and false selection in grid)
   if (FDeselectionType = dtNone) or (FLastSelection.Selections <> nil) then
   begin
+    // reset internal selection variable for stNone (and call event)
+    if FSelectionType = stNone then
+      ResetLastSelection;
     UpdateSelection(FSelectionType);
     GridSelection(Self, 0, 0)
   end;
