@@ -1189,6 +1189,7 @@ begin
     Width := 300;
     Height := 150;
     //Align:=alClient;
+    Color:=clWindow;
     Visible:=false;
     AnchorSideLeft.Control := Self;
     AnchorSideLeft.Side := asrCenter;
@@ -1941,6 +1942,8 @@ var
   //LFixedRect: TRect;
   LRect: TRect;
 begin
+  if ACol > FMultiSearchEdits.Count - 1 then
+    exit;
   LEdit := FMultiSearchEdits[ACol];
   LEdit.Visible := FDrawGrid.IsFixedCellVisible(aCol, 0);
   if ACol > 0 then
@@ -2436,6 +2439,7 @@ var
   LCellData, LRow: Variant;
   LColumn : TVisualColumn;
   LStyle : TTextStyle;
+  LDataTable: PDataTable;
 
   procedure DrawHeaderCell;
   begin
@@ -2462,7 +2466,7 @@ var
     if LColumn.HasDataFontStyles then Canvas.Font.Style := LColumn.DataFontStyles;
 
     // Get row/cell data
-    LRow := ActiveDataTable^.Rows[ARow-1];
+    LRow := LDataTable^.Rows[ARow-1];
     LCellData := TDataRowData(LRow)[LColumn.DisplayBinding];
 
     // Clean data if necessary
@@ -2485,6 +2489,9 @@ var
 begin
   LHandled := False;
   if ColCount = 0 then Exit;
+  LDataTable := ActiveDataTable;
+  if (ARow > 0) and (ARow > Length(LDataTable^.Rows)) then
+    Exit;
   if ARow = 0 then ResizeSearchEdit(ACol);
   LColumn := FColumns[ACol];
   Rect := CalculateCellContentRect(Rect);
