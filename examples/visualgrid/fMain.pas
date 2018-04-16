@@ -41,6 +41,7 @@ type
   TForm1 = class(TForm)
     AddDelayCheckBox: TCheckBox;
     bRegenerate: TButton;
+    bDeselect: TButton;
     bSetWidth: TButton;
     bSearchParser: TButton;
     Button1: TButton;
@@ -69,6 +70,7 @@ type
     pWidgets: TPanel;
     PopupMenu1: TPopupMenu;
     TIPropertyGrid1: TTIPropertyGrid;
+    procedure bDeselectClick(Sender: TObject);
     procedure bSetWidthClick(Sender: TObject);
     procedure bSearchParserClick(Sender: TObject);
     procedure bRegenerateClick(Sender: TObject);
@@ -321,6 +323,11 @@ var
     end;
 
     FVisualGrid.Columns[LCol].Width := StrToIntDef(eWidth.Text, 150);
+  end;
+
+  procedure TForm1.bDeselectClick(Sender: TObject);
+  begin
+    FVisualGrid.ClearSelection;
   end;
 
   procedure TForm1.bSearchParserClick(Sender: TObject);

@@ -1,33 +1,32 @@
 object Form1: TForm1
   Left = 439
-  Height = 587
+  Height = 584
   Top = 210
-  Width = 988
+  Width = 712
   ActiveControl = lbSearchCriteria
   Caption = 'Form1'
-  ClientHeight = 587
-  ClientWidth = 988
+  ClientHeight = 584
+  ClientWidth = 712
   OnCreate = FormCreate
-  LCLVersion = '1.8.2.0'
   Visible = False
   object GridPanel: TPanel
     Left = 304
-    Height = 587
+    Height = 584
     Top = 0
-    Width = 684
+    Width = 408
     Align = alClient
     BevelOuter = bvNone
     BorderWidth = 1
     BorderStyle = bsSingle
-    ClientHeight = 583
-    ClientWidth = 680
+    ClientHeight = 580
+    ClientWidth = 404
     ParentColor = False
     TabOrder = 0
     object lbSearchCriteria: TListBox
       Left = 1
       Height = 64
       Top = 1
-      Width = 678
+      Width = 402
       Align = alTop
       ItemHeight = 0
       TabOrder = 0
@@ -71,17 +70,17 @@ object Form1: TForm1
   end
   object Panel2: TPanel
     Left = 0
-    Height = 587
+    Height = 584
     Top = 0
     Width = 304
     Align = alLeft
     Caption = 'Panel2'
-    ClientHeight = 587
+    ClientHeight = 584
     ClientWidth = 304
     TabOrder = 1
     object TIPropertyGrid1: TTIPropertyGrid
       Left = 1
-      Height = 315
+      Height = 312
       Top = 133
       Width = 304
       Align = alLeft
@@ -228,7 +227,7 @@ object Form1: TForm1
     object Panel3: TPanel
       Left = 1
       Height = 138
-      Top = 448
+      Top = 445
       Width = 302
       Align = alBottom
       ClientHeight = 138
@@ -306,10 +305,10 @@ object Form1: TForm1
         Text = '%\%%'
       end
       object bRegenerate: TButton
-        Left = 19
+        Left = 120
         Height = 23
         Top = 104
-        Width = 190
+        Width = 89
         Caption = 'Re-Generate'
         OnClick = bRegenerateClick
         TabOrder = 3
@@ -330,6 +329,15 @@ object Form1: TForm1
         OnChange = eNumEntitiesChange
         TabOrder = 4
         Text = '10000'
+      end
+      object bDeselect: TButton
+        Left = 18
+        Height = 23
+        Top = 104
+        Width = 89
+        Caption = 'Deselect'
+        OnClick = bDeselectClick
+        TabOrder = 5
       end
     end
   end
