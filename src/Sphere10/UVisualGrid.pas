@@ -1982,6 +1982,7 @@ var
   LCountOnPage2: Integer;
   LGridUnusedHeight, LPotentialHeight: integer;
   LWasVisible: boolean;
+  LHasFilter: boolean;
 
   function RecalcPageCount: boolean;
   var
@@ -1993,7 +1994,21 @@ var
       PageSize := LCount;
   end;
 
+  function FindProperFilter: boolean;
+  var
+    f: ^TColumnFilter;
+  begin
+    for f in FFilters.Ptr^ do
+      if f.Filter <> vgfSortable then
+        Exit(true);
+    Result := false;
+  end;
+
 begin
+  // if filter is active then vgoAutoHideSearchPanel should be not considered.
+  // Note: vgfSortable is not considered as 'real' filter
+  LHasFilter := (FSearchEdit.Text <> '') and (FFilters.Count > 0) and FindProperFilter;
+
   SetPageIndexEditText(IntToStr(Succ(FPageIndex)));
   FPageCountLabel.Caption := Format('/%d',[FPageCount]);
 
@@ -2011,7 +2026,8 @@ begin
           LGridUnusedHeight := FDrawGrid.ClientHeight - FDrawGrid.GridHeight;
           LPotentialHeight := FBottomPanel.Height + LGridUnusedHeight;
           // vgoAutoHideSearchPanel + AutoPageSize + vgoAutoHidePaging is killer combo :P
-          if (vgoAutoHideSearchPanel in FOptions) and FTopPanel.Visible and not Assigned(FWidgetControl) then
+          if (vgoAutoHideSearchPanel in FOptions) and FTopPanel.Visible and not Assigned(FWidgetControl)
+           and not LHasFilter then
             LPotentialHeight := LPotentialHeight + FTopPanel.Height;
           if FBottomPanel.Visible
            and (FDrawGrid.DefaultRowHeight * LCountOnPage2 <= LPotentialHeight) then
@@ -2040,7 +2056,7 @@ begin
   end;
 
   // show or hide Search Panel (related to option vgoAutoHideSearchPanel)
-  if (vgoAutoHideSearchPanel in FOptions) and (FPageCount in [0,1]) then
+  if (vgoAutoHideSearchPanel in FOptions) and (FPageCount in [0,1]) and not LHasFilter then
   begin
     if FCanSearch then
     begin
