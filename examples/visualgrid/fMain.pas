@@ -379,8 +379,8 @@ var
 
   procedure TForm1.Selection(Sender: TObject; constref ASelection: TVisualGridSelection);
   begin
-    lSelection.Caption := Format('Col = %d Row = %d ColCount = %d RowCount = %d ',
-      [ASelection.Col, ASelection.Row, ASelection.ColCount, ASelection.RowCount]);
+    lSelection.Caption := Format('C=%d R=%d ColCount=%d RowCount=%d P=%d',
+      [ASelection.Col, ASelection.Row, ASelection.ColCount, ASelection.RowCount, ASelection.Page]);
   end;
 
   procedure TForm1.bRegenerateClick(Sender: TObject);
