@@ -2673,8 +2673,16 @@ begin
 
     if not SelectionsEquals(FLastSelectionEvent, LSelection) then
     begin
-      FOnSelection(Self, LSelection);
+      FIgnoreSelectionEvent := true;
       FLastSelectionEvent := LSelection;
+      FOnSelection(Self, LSelection);
+      // maybe inside FOnSelection was called ClearSelection, we can handle this
+      if not SelectionsEquals(FLastSelection, LSelection) then
+      begin
+        FLastSelectionEvent := FLastSelection;
+        FOnSelection(Self, FLastSelection);
+      end;
+      FIgnoreSelectionEvent := false;
     end;
   end;
 end;
