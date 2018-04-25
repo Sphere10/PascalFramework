@@ -2586,6 +2586,7 @@ begin
               UpdateSelection(FSelectionType, true);
       end;
     dtDefault, dtNone:
+      if FDrawGrid.MouseToGridZone(X, Y) = gzNormal then
       case Button of
         mbLeft: UpdateSelection(FSelectionType, true);
       end;
