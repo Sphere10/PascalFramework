@@ -13,14 +13,15 @@ type
 
   TMiscTests = class(TTestCase)
     published
-      procedure SortedHashSet;
+      procedure SortedHashSet_Large;
+      procedure SortedHashSet_Clear;
   end;
 
 implementation
 
 uses Generics.Defaults, Generics.Collections, UCommon, UCommon.Collections, UMemory;
 
-procedure TMiscTests.SortedHashSet;
+procedure TMiscTests.SortedHashSet_Large;
 var
   i : integer;
   c : Cardinal;
@@ -45,6 +46,28 @@ begin
 
   // Ensure enumerates ordered manner
   i := 1;
+  for c in LSet do begin
+    AssertEquals(i, c);
+    Inc(i);
+  end;
+end;
+
+
+procedure TMiscTests.SortedHashSet_Clear;
+var
+  i : integer;
+  c : Cardinal;
+  LSet : TSortedHashSet<Cardinal>;
+  GC : TDisposables;
+begin
+  LSet := GC.AddObject( TSortedHashSet<Cardinal>.Create ) as TSortedHashSet<Cardinal>;
+
+  for i := 1 to 1000 do  LSet.Add(i);
+  LSet.Clear;
+  for i := 1001 to 2000 do  LSet.Add(i);
+
+  // Ensure enumerates ordered manner
+  i := 1001;
   for c in LSet do begin
     AssertEquals(i, c);
     Inc(i);
