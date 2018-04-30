@@ -15,6 +15,7 @@ type
     published
       procedure SortedHashSet_Large;
       procedure SortedHashSet_Clear;
+      procedure SortedHashSet_AddRange;
   end;
 
 implementation
@@ -68,6 +69,37 @@ begin
 
   // Ensure enumerates ordered manner
   i := 1001;
+  for c in LSet do begin
+    AssertEquals(i, c);
+    Inc(i);
+  end;
+end;
+
+procedure TMiscTests.SortedHashSet_AddRange;
+var
+  i, j : integer;
+  c : Cardinal;
+  LVals : TArray<Cardinal>;
+  LSet : TSortedHashSet<Cardinal>;
+  GC : TDisposables;
+begin
+  LSet := GC.AddObject( TSortedHashSet<Cardinal>.Create ) as TSortedHashSet<Cardinal>;
+
+  // Prepare addrange input
+  SetLength(LVals, 1000);
+  for i := 0 to 999 do
+    LVals[i] := i;
+  // shuffle randomly
+  for i := 0 to 999 do begin
+    TArrayTool<Cardinal>.Swap(LVals, i, Random(999));
+  end;
+
+  LSet.AddRange(LVals);
+  LSet.Clear;
+  LSet.AddRange(LVals);
+
+  // Ensure enumerates ordered manner
+  i := 0;
   for c in LSet do begin
     AssertEquals(i, c);
     Inc(i);
