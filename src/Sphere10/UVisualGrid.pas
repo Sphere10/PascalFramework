@@ -306,6 +306,7 @@ uses
     FLastSelection: TVisualGridSelection;
     FLastSelectionEvent: TVisualGridSelection;
     FIgnoreSelectionEvent: boolean;
+    FIgnoreRecalcPageCount: boolean;
     FCellPadding : TRect;
     FWidgetControl: TControl;
     FWidgetControlParent: TWinControl;
@@ -495,6 +496,7 @@ type
   protected
     FGrid: TCustomVisualGrid;
     FLastFetchDataResult: TCustomVisualGrid.TLastFetchDataResult;
+    FIgnoreRecalcPageCount: boolean;
     procedure Execute; override;
   public
     constructor Create(AGrid: TCustomVisualGrid; ARefreshColumns: boolean);
@@ -767,6 +769,7 @@ begin
   FGrid.BeforeFetchPage;
   FreeOnTerminate:=true;
   FLastFetchDataResult.RefreshColumns:=ARefreshColumns;
+  FIgnoreRecalcPageCount:=FGrid.FIgnoreRecalcPageCount;
 
   // fast copy of data (we need to draw old data for a while)
   New(FGrid.FCachedDataTable);
@@ -1709,7 +1712,10 @@ begin
   LPageSize:=StrToIntDef(FPageSizeEdit.Text, FPageSize);
   if not CheckRangeForPageSize(LPageSize) then
     SetPageSizeEditText(IntToStr(LPageSize));
+
+  FIgnoreRecalcPageCount := true;
   PageSize:=LPageSize;
+  FIgnoreRecalcPageCount := false;
 end;
 
 procedure TCustomVisualGrid.PageNavigationClick(Sender: TObject);
@@ -1992,6 +1998,8 @@ var
   var
     LCount: Integer;
   begin
+    if FIgnoreRecalcPageCount then
+      Exit(false);
     LCount := ClientRowCount;
     Result := LCount <> PageSize;
     if Result then
@@ -2326,6 +2334,7 @@ begin
   begin
     if FromThread then
     begin
+      FIgnoreRecalcPageCount := TFetchDataThread(FActiveThread).FIgnoreRecalcPageCount;
       FActiveThread := nil;
       Dispose(FCachedDataTable);
       FCachedDataTable := nil;
@@ -2355,6 +2364,7 @@ begin
     FIgnoreSelectionEvent:=false;
   end;
   RefreshPageIndexAndGridInterface;
+  FIgnoreRecalcPageCount := false;
 
   // each page means different records so selection should be not moved to
   // new page nor deselected
