@@ -2011,7 +2011,7 @@ var
 begin
   // if filter is active then vgoAutoHideSearchPanel should be not considered.
   // Note: vgfSortable is not considered as 'real' filter
-  LHasFilter := (FSearchEdit.Text <> '') and (FFilters.Count > 0) and FindProperFilter;
+  LHasFilter := (FFilters.Count > 0) and FindProperFilter;
 
   SetPageIndexEditText(IntToStr(Succ(FPageIndex)));
   FPageCountLabel.Caption := Format('/%d',[FPageCount]);
@@ -2068,6 +2068,7 @@ begin
       LWasVisible := FTopPanel.Visible;
       FTopPanel.Visible := Assigned(FWidgetControl);
       FTopPanelRight.Visible := not Assigned(FWidgetControl);
+      FTopPanelMultiSearch.Visible := false;
       if (FTopPanel.Visible <> LWasVisible) and RecalcPageCount then
         Exit;
     end;
@@ -2077,6 +2078,7 @@ begin
     LWasVisible := FTopPanel.Visible;
     FTopPanel.Visible := FCanSearch;
     FTopPanelRight.Visible := true;
+    FTopPanelMultiSearch.Visible := smMulti = FSearchMode;
     if (FTopPanel.Visible <> LWasVisible) and RecalcPageCount then
       Exit;
   end;
