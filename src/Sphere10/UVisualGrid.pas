@@ -2037,10 +2037,16 @@ begin
           LCountOnPage2 := FTotalDataCount - ClientRowCount;
           LGridUnusedHeight := FDrawGrid.ClientHeight - FDrawGrid.GridHeight;
           LPotentialHeight := FBottomPanel.Height + LGridUnusedHeight;
-          // vgoAutoHideSearchPanel + AutoPageSize + vgoAutoHidePaging is killer combo :P
-          if (vgoAutoHideSearchPanel in FOptions) and FTopPanel.Visible and not Assigned(FWidgetControl)
-           and not LHasFilter then
-            LPotentialHeight := LPotentialHeight + FTopPanel.Height;
+          if (vgoAutoHideSearchPanel in FOptions) and not LHasFilter then
+          begin
+            // vgoAutoHideSearchPanel + AutoPageSize + vgoAutoHidePaging is killer combo :P
+            if FTopPanel.Visible and not Assigned(FWidgetControl) then
+              LPotentialHeight := LPotentialHeight + FTopPanel.Height;
+            // the above killer combo is not all :D - there is also FTopPanelMultiSearch
+            if FTopPanelMultiSearch.Visible then
+              LPotentialHeight := LPotentialHeight + FTopPanelMultiSearch.Height;
+          end;
+
           if FBottomPanel.Visible
            and (FDrawGrid.DefaultRowHeight * LCountOnPage2 <= LPotentialHeight) then
           begin
