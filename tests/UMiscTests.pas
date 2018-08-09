@@ -16,6 +16,14 @@ type
       procedure SortedHashSet_Large;
       procedure SortedHashSet_Clear;
       procedure SortedHashSet_AddRange;
+      procedure Bytes2Hex_1;
+      procedure Bytes2Hex_2;
+      procedure Bytes2Hex_3;
+      procedure Bytes2Hex_4;
+      procedure Hex2Bytes_1;
+      procedure Hex2Bytes_2;
+      procedure Hex2Bytes_3;
+      procedure Hex2Bytes_4;
   end;
 
 implementation
@@ -52,7 +60,6 @@ begin
     Inc(i);
   end;
 end;
-
 
 procedure TMiscTests.SortedHashSet_Clear;
 var
@@ -104,6 +111,50 @@ begin
     AssertEquals(i, c);
     Inc(i);
   end;
+end;
+
+procedure TMiscTests.Bytes2Hex_1;
+var B : TBytes;
+begin
+  SetLength(B, 0);
+  AssertEquals('', Bytes2Hex(B));
+end;
+
+procedure TMiscTests.Bytes2Hex_2;
+begin
+  AssertEquals('00FF', Bytes2Hex(TBytes.Create(0, 255)));
+end;
+
+procedure TMiscTests.Bytes2Hex_3;
+begin
+  AssertEquals('00FFFE', Bytes2Hex(TBytes.Create(0, 255, 254)));
+end;
+
+procedure TMiscTests.Bytes2Hex_4;
+begin
+  AssertEquals('0x00FFFE', Bytes2Hex(TBytes.Create(0, 255, 254), True));
+end;
+
+procedure TMiscTests.Hex2Bytes_1;
+var B : TBytes;
+begin
+  SetLength(B, 0);
+  AssertEquals(0, BytesCompare (B, Hex2Bytes('')));
+end;
+
+procedure TMiscTests.Hex2Bytes_2;
+begin
+  AssertEquals(0, BytesCompare (TBytes.Create(0, 255), Hex2Bytes('00FF')));
+end;
+
+procedure TMiscTests.Hex2Bytes_3;
+begin
+  AssertEquals(0, BytesCompare( TBytes.Create(0, 255, 254), Hex2Bytes('00FFFE')));
+end;
+
+procedure TMiscTests.Hex2Bytes_4;
+begin
+  AssertEquals(0, BytesCompare( Hex2Bytes('0x00FFFE'), Hex2Bytes('00FFFE')));
 end;
 
 initialization

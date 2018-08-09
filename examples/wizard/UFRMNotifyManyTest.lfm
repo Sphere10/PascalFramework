@@ -1,13 +1,13 @@
 object FRMNotifyManyTest: TFRMNotifyManyTest
   Left = 424
-  Height = 350
+  Height = 340
   Top = 200
-  Width = 498
+  Width = 617
   ActiveControl = cbListener1
   Caption = 'TNotifyManyTest'
-  ClientHeight = 350
-  ClientWidth = 498
-  OnMouseMove = FormMouseMove
+  ClientHeight = 340
+  ClientWidth = 617
+  OnCreate = FormCreate
   Visible = False
   object cbListener1: TCheckBox
     Left = 16
@@ -19,21 +19,19 @@ object FRMNotifyManyTest: TFRMNotifyManyTest
     TabOrder = 0
   end
   object cbListener2: TCheckBox
-    Left = 200
+    Left = 104
     Height = 19
     Top = 16
     Width = 70
-    Anchors = [akTop]
     Caption = 'Listener 2'
     OnChange = cbListener2Change
     TabOrder = 1
   end
   object cbListener3: TCheckBox
-    Left = 400
+    Left = 192
     Height = 19
     Top = 16
     Width = 70
-    Anchors = [akTop, akRight]
     Caption = 'Listener 3'
     OnChange = cbListener3Change
     TabOrder = 2
@@ -41,7 +39,7 @@ object FRMNotifyManyTest: TFRMNotifyManyTest
   object Button1: TButton
     Left = 11
     Height = 25
-    Top = 320
+    Top = 310
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = 'Clear'
@@ -49,12 +47,52 @@ object FRMNotifyManyTest: TFRMNotifyManyTest
     TabOrder = 3
   end
   object txtLog: TMemo
-    Left = 8
-    Height = 264
+    Left = 16
+    Height = 254
     Top = 48
-    Width = 480
+    Width = 300
     Anchors = [akTop, akLeft, akRight, akBottom]
     ReadOnly = True
     TabOrder = 4
+  end
+  object cmbThrottle: TComboBox
+    Left = 387
+    Height = 23
+    Top = 12
+    Width = 220
+    Anchors = [akTop, akRight]
+    ItemHeight = 15
+    ItemIndex = 0
+    Items.Strings = (
+      'Notify Immediately (no throttle)'
+      'Notify Intermittently (throttled)'
+      'Notify When Finished (throttled)'
+    )
+    OnChange = cmbThrottleChange
+    TabOrder = 5
+    Text = 'Notify Immediately (no throttle)'
+  end
+  object pnlEvent: TPanel
+    Left = 360
+    Height = 200
+    Top = 72
+    Width = 220
+    Anchors = [akTop, akRight]
+    BevelOuter = bvNone
+    Caption = 'MOVE MOUSE HERE'
+    Color = clRed
+    ParentColor = False
+    TabOrder = 6
+    OnMouseMove = pnlEventMouseMove
+  end
+  object btnFire: TButton
+    Left = 360
+    Height = 25
+    Top = 280
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Caption = 'Fire'
+    OnClick = btnFireClick
+    TabOrder = 7
   end
 end

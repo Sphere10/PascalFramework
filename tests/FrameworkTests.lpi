@@ -82,9 +82,8 @@
         <IsPartOfProject Value="True"/>
       </Unit10>
       <Unit11>
-        <Filename Value="uvarianttooltests.pas"/>
+        <Filename Value="UVariantToolTests.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="UVariantToolTests"/>
       </Unit11>
       <Unit12>
         <Filename Value="UCacheTests.pas"/>
@@ -134,6 +133,9 @@
         </Win32>
       </Options>
     </Linking>
+    <Other>
+      <CustomOptions Value="-dUNITTEST"/>
+    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">

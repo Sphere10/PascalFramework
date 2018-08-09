@@ -34,7 +34,6 @@ type
     function Validate(out message : AnsiString) : boolean; override;
   end;
 
-
 implementation
 
 {$R *.lfm}
@@ -48,13 +47,10 @@ begin
   self.Model['Name'] := Variant(FNameEdit.Text);
 end;
 
-
-
 procedure TWIZName_Step1.UpdateDimensionLabel(Sender: TObject);
 begin
   FDimensionLabel.Caption := Width.ToString + ' x ' + Height.ToString;
 end;
-
 
 procedure TWIZName_Step1.Initialize;
 begin
@@ -95,4 +91,3 @@ end;
 {%endregion}
 
 end.
-

@@ -8,31 +8,35 @@ unit UFRMNotifyManyTest;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls, UCommon;
+  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
+  ExtCtrls, UCommon, UCommon.UI;
 
 type
 
   { TFRMNotifyManyTest }
 
-  TFRMNotifyManyTest = class(TForm)
+  TFRMNotifyManyTest = class(TApplicationForm)
     Button1: TButton;
+    btnFire: TButton;
     cbListener1: TCheckBox;
     cbListener2: TCheckBox;
     cbListener3: TCheckBox;
+    cmbThrottle: TComboBox;
+    pnlEvent: TPanel;
     txtLog: TMemo;
+    procedure btnFireClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure cbListener1Change(Sender: TObject);
     procedure cbListener2Change(Sender: TObject);
     procedure cbListener3Change(Sender: TObject);
-    procedure FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+    procedure cmbThrottleChange(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure pnlEventMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
   private
-    { private declarations }
-    FMouseMoveMulticastEvent : TNotifyManyEvent;
+    FMouseMoveEvent : TThrottledEvent;
     procedure Listener1Handler(Sender : TObject);
     procedure Listener2Handler(Sender : TObject);
     procedure Listener3Handler(Sender : TObject);
-  public
-    { public declarations }
   end;
 
 var
@@ -40,55 +44,79 @@ var
 
 implementation
 
+var
+  GHandledCount : Integer;
+
 {$R *.lfm}
+
+procedure TFRMNotifyManyTest.FormCreate(Sender: TObject);
+begin
+  FMouseMoveEvent := TThrottledEvent.Create(Self);
+  FMouseMoveEvent.Mode:= temNone;
+end;
 
 { TFRMNotifyManyTest }
 
-procedure TFRMNotifyManyTest.FormMouseMove(Sender: TObject; Shift: TShiftState;
-  X, Y: Integer);
+procedure TFRMNotifyManyTest.pnlEventMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 begin
-  // Invoke the multi-cast event, no need to initialise it!
-  FMouseMoveMulticastEvent.Invoke(Sender);
+  FMouseMoveEvent.Notify;
 end;
 
 procedure TFRMNotifyManyTest.Listener1Handler(Sender : TObject);
 begin
-  txtLog.Lines.Add(TimeStamp + 'Listener 1 called');
+  Inc(GHandledCount);
+  txtLog.Lines.Add(Format('[%d] %s Listener 1 called', [GHandledCount, TimeStamp]));
 end;
 
 procedure TFRMNotifyManyTest.Listener2Handler(Sender : TObject);
 begin
-   txtLog.Lines.Add(TimeStamp + 'Listener 2 called');
+  Inc(GHandledCount);
+  txtLog.Lines.Add(Format('[%d] %s Listener 2 called', [GHandledCount, TimeStamp]));
 end;
 
 procedure TFRMNotifyManyTest.Listener3Handler(Sender : TObject);
 begin
-   txtLog.Lines.Add(TimeStamp + 'Listener 3 called');
+  Inc(GHandledCount);
+  txtLog.Lines.Add(Format('[%d] %s Listener 3 called', [GHandledCount, TimeStamp]));
 end;
-
 
 procedure TFRMNotifyManyTest.cbListener1Change(Sender: TObject);
 begin
    if cbListener1.Checked then
-     FMouseMoveMulticastEvent.Add(Listener1Handler)
+     FMouseMoveEvent.Add(Listener1Handler)
    else
-     FMouseMoveMulticastEvent.Remove(Listener1Handler);
+     FMouseMoveEvent.Remove(Listener1Handler);
 end;
 
 procedure TFRMNotifyManyTest.cbListener2Change(Sender: TObject);
 begin
    if cbListener2.Checked then
-     FMouseMoveMulticastEvent.Add(Listener2Handler)
+     FMouseMoveEvent.Add(Listener2Handler)
    else
-     FMouseMoveMulticastEvent.Remove(Listener2Handler);
+     FMouseMoveEvent.Remove(Listener2Handler);
 end;
 
 procedure TFRMNotifyManyTest.cbListener3Change(Sender: TObject);
 begin
    if cbListener3.Checked then
-     FMouseMoveMulticastEvent.Add(Listener3Handler)
+     FMouseMoveEvent.Add(Listener3Handler)
    else
-     FMouseMoveMulticastEvent.Remove(Listener3Handler);
+     FMouseMoveEvent.Remove(Listener3Handler);
+end;
+
+procedure TFRMNotifyManyTest.btnFireClick(Sender: TObject);
+begin
+  FMouseMoveEvent.Notify;
+end;
+
+
+procedure TFRMNotifyManyTest.cmbThrottleChange(Sender: TObject);
+begin
+  case cmbThrottle.ItemIndex of
+    0: FMouseMoveEvent.Mode := temNone;
+    1: FMouseMoveEvent.Mode := temNotifyEveryInterval;
+    2: FMouseMoveEvent.Mode := temNotifyOnEventBurstFinished;
+  end;
 end;
 
 procedure TFRMNotifyManyTest.Button1Click(Sender: TObject);
@@ -96,5 +124,7 @@ begin
   txtLog.Lines.Clear;
 end;
 
-end.
+initialization
+  GHandledCount := 0;
 
+end.

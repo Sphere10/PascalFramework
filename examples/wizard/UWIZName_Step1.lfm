@@ -8,7 +8,7 @@ object WIZName_Step1: TWIZName_Step1
   ClientWidth = 295
   OnResize = UpdateDimensionLabel
   OnShow = UpdateDimensionLabel
-  LCLVersion = '1.8.2.0'
+  LCLVersion = '1.8.4.0'
   Visible = False
   object FMustBeCheckedCheckBox: TCheckBox
     Left = 16

@@ -20,7 +20,7 @@ interface
 
 uses
   Classes, SysUtils, Generics.Collections, Generics.Defaults,
-  Variants, LazUTF8, math, typinfo, UMemory;
+  Variants, LazUTF8, math, typinfo, UMemory, ExtCtrls;
 
 { CONSTANTS }
 
@@ -34,14 +34,17 @@ const
   MaxSeconds = MaxMilliseconds div 60;
   MinSeconds = MinMilliseconds div 60;
 
-
 { GLOBAL FUNCTIONS }
 
 { Converts a string to hexidecimal format }
 function String2Hex(const Buffer: AnsiString): AnsiString;
+function Hex2Bytes(const AHexString: AnsiString): TBytes; overload;
+function TryHex2Bytes(const AHexString: AnsiString; out ABytes : TBytes): boolean; overload;
+function Bytes2Hex(const ABytes: TBytes; AUsePrefix : boolean = false) : AnsiString;
 
 { Binary-safe StrComp replacement. StrComp will return 0 for when str1 and str2 both start with NUL character. }
 function BinStrComp(const Str1, Str2 : AnsiString): Integer;
+function BytesCompare(const ABytes1, ABytes2: TBytes): integer;
 
 { Ternary operator equivalent of predicate ? (true-val) : (false-value) }
 function IIF(const ACondition: Boolean; const ATrueResult, AFalseResult: Cardinal): Cardinal; overload;
@@ -252,6 +255,38 @@ type
     procedure Invoke(sender : TObject; const args: array of Pointer);
   end;
 
+  { TThrottledEvent }
+
+  TThrottledEvent = class(TComponent)
+    public const
+      CT_DEFAULT_DELAYEDREFRESH_MS = 1000;
+    public type
+      TThrottledEventMode = (temNone, temNotifyEveryInterval, temNotifyOnEventBurstFinished);
+    private
+      FHandler : TNotifyManyEvent;
+   //   FInterval : TTimeSpan;
+      FTimer: TTimer;
+      FMode : TThrottledEventMode;
+      FLastClientNotify : TDateTime;
+      FLastActualNotify : TDateTime;
+      FSuppressedInvocations : Integer;
+      procedure SetInterval(const ATimeSpan : TTimeSpan);
+      function GetInterval : TTimeSpan;
+      procedure OnTimer(Sender: TObject);
+      procedure NotifyNow;
+      procedure NotifyLater;
+    public
+      property Interval : TTimeSpan read GetInterval write SetInterval;
+      property Mode : TThrottledEventMode read FMode write FMode;
+      property LastClientNotify : TDateTime read FLastClientNotify;
+      property LastActualNotify : TDateTime read FLastActualNotify;
+      property SuppressedInvocations : Integer read FSuppressedInvocations write FSuppressedInvocations;
+      constructor Create(Owner:TComponent); override;
+      procedure Add(AListener : TNotifyEvent);
+      procedure Remove(AListener : TNotifyEvent);
+      procedure Notify;
+  end;
+
   { TArrayTool }
 
   TArrayTool<T> = class
@@ -356,6 +391,68 @@ begin
     Result := LowerCase(Result + IntToHex(Ord(Buffer[n]), 2));
 end;
 
+function Hex2Bytes(const AHexString: AnsiString): TBytes;
+begin
+  if NOT TryHex2Bytes(AHexString, Result) then
+    raise EArgumentOutOfRangeException.Create('Invalidly formatted hexadecimal string.');
+end;
+
+function TryHex2Bytes(const AHexString: AnsiString; out ABytes : TBytes): boolean; overload;
+var
+  P : PAnsiChar;
+  LHexString : AnsiString;
+  LHexIndex, LHexLength, LHexStart : Integer;
+begin
+  SetLength(ABytes, 0);
+  LHexLength := System.Length(AHexString);
+  LHexStart := 1;
+  if AHexString.StartsWith('0x') then begin
+    dec(LHexLength, 2);
+    inc(LHexStart, 2);
+  end;
+
+  if (LHexLength MOD 2) <> 0 then
+    Exit(false);
+
+  if LHexLength = 0 then
+    Exit(true);
+
+  SetLength(ABytes, LHexLength DIV 2);
+  P := @ABytes[Low(ABytes)];
+  LHexString := LowerCase(AHexString);
+  LHexIndex := HexToBin(PAnsiChar(@LHexString[LHexStart]), P, System.Length(ABytes));
+  Result := (LHexIndex = (LHexLength DIV 2));
+end;
+
+function Bytes2Hex(const ABytes: TBytes; AUsePrefix : boolean = false) : AnsiString;
+var
+  i, LStart, LLen : Integer;
+  s : AnsiString;
+  b : Byte;
+begin
+  LLen := System.Length(ABytes)*2;
+  if AUsePrefix then
+    inc(LLen, 2);
+
+  System.SetLength(Result, LLen);
+  i := 0;
+  LStart := 1;
+  if AUsePrefix then
+    inc(LStart, 2);
+
+  if AUsePrefix then begin
+    Result[1] := '0';
+    Result[2] := 'x';
+  end;
+
+  for b in ABytes do begin
+    s := IntToHex(b,2);
+    Result[(i*2)+ LStart] := s[1];
+    Result[(i*2)+ LStart + 1] := s[2];
+    Inc(i);
+  end;
+end;
+
 function BinStrComp(const Str1, Str2: AnsiString): integer;
 var Str1Len, Str2Len, i : Integer;
 begin
@@ -379,9 +476,33 @@ begin
    end;
 End;
 
+function BytesCompare(const ABytes1, ABytes2: TBytes): integer;
+var ABytes1Len, ABytes2Len, i : Integer;
+begin
+   ABytes1Len := Length(ABytes1);
+   ABytes2Len := Length(ABytes2);
+   if (ABytes1Len < ABytes2Len) then
+     Result := -1
+   else if (ABytes1Len > ABytes2Len) then
+     Result := 1
+   else begin
+     Result := 0;
+     for i:= Low(ABytes1) to High(ABytes1) do begin
+       if ABytes1[i] < ABytes2[i] then begin
+         Result := -1;
+         break;
+       end else if ABytes1[i] > ABytes2[i] then begin
+         Result := 1;
+         break;
+       end
+     end;
+   end;
+end;
+
 {%endregion}
 
 {$IFDEF FPC}
+
 {%region TTimeSpan }
 
 class constructor TTimeSpan.Create;
@@ -1124,6 +1245,90 @@ var i : Integer;
 begin
   for i := Low(Self) to high(Self) do
     self[i](sender, args);
+end;
+
+{%endregion}
+
+{%region TThrottledEvent }
+
+constructor TThrottledEvent.Create(Owner:TComponent);
+begin
+  Inherited Create(Owner);
+  FTimer := TTimer.Create(Self);
+  FTimer.Interval := CT_DEFAULT_DELAYEDREFRESH_MS;
+  FTimer.OnTimer := OnTimer;
+  FTimer.Enabled := false;
+  FSuppressedInvocations:=0;
+  FLastClientNotify := MinDateTime;
+  FLastActualNotify := MinDateTime;
+  FMode:=temNone;
+end;
+
+procedure TThrottledEvent.Add(AListener : TNotifyEvent);
+begin
+  FHandler.Add(AListener);
+end;
+
+procedure TThrottledEvent.Remove(AListener : TNotifyEvent);
+begin
+  FHandler.Remove(AListener);
+end;
+
+procedure TThrottledEvent.Notify;
+var LIdleDuration : TTimeSpan;
+begin
+  FLastClientNotify:=Now;
+  LIdleDuration := TTimeSpan.Subtract(Now, FLastActualNotify);
+  if (FMode = temNone) OR ((NOT FTimer.Enabled) AND (LIdleDuration > Interval)) then
+    NotifyNow
+  else
+    NotifyLater;
+end;
+
+procedure TThrottledEvent.NotifyNow;
+begin
+  FTimer.Enabled := false;
+  FLastActualNotify:=Now;
+  FHandler.Invoke(nil);
+  FSuppressedInvocations:=0;
+end;
+
+procedure TThrottledEvent.NotifyLater;
+begin
+  inc(FSuppressedInvocations);
+  if NOT FTimer.Enabled then
+    FTimer.Enabled:=true;
+end;
+
+procedure TThrottledEvent.OnTimer(Sender: TObject);
+var LDuration : TTimeSpan;
+begin
+  case FMode of
+    temNone: NotifyNow;
+    temNotifyEveryInterval: begin
+      LDuration := TTimeSpan.Subtract(Now, FLastActualNotify);
+      if LDuration > Interval then
+        NotifyNow;
+    end;
+    temNotifyOnEventBurstFinished: begin
+      LDuration := TTimeSpan.Subtract(Now, FLastClientNotify);
+      if LDuration > Interval then
+        NotifyNow;
+    end;
+  end;
+end;
+
+procedure TThrottledEvent.SetInterval(const ATimeSpan : TTimeSpan);
+begin
+  if ATimeSpan.TotalMilliseconds = 0 then
+    raise EArgumentOutOfRangeException.Create('ATimeSpan was 0');
+
+  FTimer.Interval := round( abs( ATimeSpan.TotalMilliseconds ) );
+end;
+
+function TThrottledEvent.GetInterval : TTimeSpan;
+begin
+ Result := TTimeSpan.FromMilliseconds( FTimer.Interval );
 end;
 
 {%endregion}
