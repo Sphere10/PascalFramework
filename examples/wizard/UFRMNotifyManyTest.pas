@@ -109,7 +109,6 @@ begin
   FMouseMoveEvent.Notify;
 end;
 
-
 procedure TFRMNotifyManyTest.cmbThrottleChange(Sender: TObject);
 begin
   case cmbThrottle.ItemIndex of

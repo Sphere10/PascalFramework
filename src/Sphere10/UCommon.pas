@@ -264,7 +264,6 @@ type
       TThrottledEventMode = (temNone, temNotifyEveryInterval, temNotifyOnEventBurstFinished);
     private
       FHandler : TNotifyManyEvent;
-   //   FInterval : TTimeSpan;
       FTimer: TTimer;
       FMode : TThrottledEventMode;
       FLastClientNotify : TDateTime;
