@@ -65,19 +65,19 @@ end;
 procedure TFRMNotifyManyTest.Listener1Handler(Sender : TObject);
 begin
   Inc(GHandledCount);
-  txtLog.Lines.Add(Format('[%d] %s Listener 1 called', [GHandledCount, TimeStamp]));
+  txtLog.Lines.Add(Format('[%d] %s Listener 1 - Suppressed Notifications = %d', [GHandledCount, TimeStamp, FMouseMoveEvent.SuppressedInvocations]));
 end;
 
 procedure TFRMNotifyManyTest.Listener2Handler(Sender : TObject);
 begin
   Inc(GHandledCount);
-  txtLog.Lines.Add(Format('[%d] %s Listener 2 called', [GHandledCount, TimeStamp]));
+  txtLog.Lines.Add(Format('[%d] %s Listener 2 - Suppressed Notifications = %d', [GHandledCount, TimeStamp, FMouseMoveEvent.SuppressedInvocations]));
 end;
 
 procedure TFRMNotifyManyTest.Listener3Handler(Sender : TObject);
 begin
   Inc(GHandledCount);
-  txtLog.Lines.Add(Format('[%d] %s Listener 3 called', [GHandledCount, TimeStamp]));
+  txtLog.Lines.Add(Format('[%d] %s Listener 3 - Suppressed Notifications = %d', [GHandledCount, TimeStamp, FMouseMoveEvent.SuppressedInvocations]));
 end;
 
 procedure TFRMNotifyManyTest.cbListener1Change(Sender: TObject);

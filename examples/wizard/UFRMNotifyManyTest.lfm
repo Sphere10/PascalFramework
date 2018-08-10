@@ -1,12 +1,12 @@
 object FRMNotifyManyTest: TFRMNotifyManyTest
   Left = 424
-  Height = 340
+  Height = 333
   Top = 200
-  Width = 617
+  Width = 718
   ActiveControl = cbListener1
   Caption = 'TNotifyManyTest'
-  ClientHeight = 340
-  ClientWidth = 617
+  ClientHeight = 333
+  ClientWidth = 718
   OnCreate = FormCreate
   Visible = False
   object cbListener1: TCheckBox
@@ -39,7 +39,7 @@ object FRMNotifyManyTest: TFRMNotifyManyTest
   object Button1: TButton
     Left = 11
     Height = 25
-    Top = 310
+    Top = 303
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = 'Clear'
@@ -48,15 +48,15 @@ object FRMNotifyManyTest: TFRMNotifyManyTest
   end
   object txtLog: TMemo
     Left = 16
-    Height = 254
+    Height = 247
     Top = 48
-    Width = 300
+    Width = 401
     Anchors = [akTop, akLeft, akRight, akBottom]
     ReadOnly = True
     TabOrder = 4
   end
   object cmbThrottle: TComboBox
-    Left = 387
+    Left = 488
     Height = 23
     Top = 12
     Width = 220
@@ -73,7 +73,7 @@ object FRMNotifyManyTest: TFRMNotifyManyTest
     Text = 'Notify Immediately (no throttle)'
   end
   object pnlEvent: TPanel
-    Left = 360
+    Left = 461
     Height = 200
     Top = 72
     Width = 220
@@ -86,11 +86,11 @@ object FRMNotifyManyTest: TFRMNotifyManyTest
     OnMouseMove = pnlEventMouseMove
   end
   object btnFire: TButton
-    Left = 360
+    Left = 461
     Height = 25
     Top = 280
     Width = 75
-    Anchors = [akLeft, akBottom]
+    Anchors = [akTop, akRight]
     Caption = 'Fire'
     OnClick = btnFireClick
     TabOrder = 7
