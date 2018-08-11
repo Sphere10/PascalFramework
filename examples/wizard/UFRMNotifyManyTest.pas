@@ -22,6 +22,7 @@ type
     cbListener2: TCheckBox;
     cbListener3: TCheckBox;
     cmbThrottle: TComboBox;
+    Label1: TLabel;
     pnlEvent: TPanel;
     txtLog: TMemo;
     procedure btnFireClick(Sender: TObject);
@@ -115,6 +116,7 @@ begin
     0: FMouseMoveEvent.Mode := temNone;
     1: FMouseMoveEvent.Mode := temNotifyEveryInterval;
     2: FMouseMoveEvent.Mode := temNotifyOnEventBurstFinished;
+    3: FMouseMoveEvent.Mode := temNotifyOnEventBurstStartAndFinished;
   end;
 end;
 

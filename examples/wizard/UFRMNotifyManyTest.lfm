@@ -56,7 +56,7 @@ object FRMNotifyManyTest: TFRMNotifyManyTest
     TabOrder = 4
   end
   object cmbThrottle: TComboBox
-    Left = 488
+    Left = 480
     Height = 23
     Top = 12
     Width = 220
@@ -64,13 +64,14 @@ object FRMNotifyManyTest: TFRMNotifyManyTest
     ItemHeight = 15
     ItemIndex = 0
     Items.Strings = (
-      'Notify Immediately (no throttle)'
-      'Notify Intermittently (throttled)'
-      'Notify When Finished (throttled)'
+      'temNone'
+      'temNotifyEveryInterval'
+      'temNotifyOnEventBurstFinished'
+      'temNotifyOnEventBurstStartAndFinished'
     )
     OnChange = cmbThrottleChange
     TabOrder = 5
-    Text = 'Notify Immediately (no throttle)'
+    Text = 'temNone'
   end
   object pnlEvent: TPanel
     Left = 461
@@ -94,5 +95,14 @@ object FRMNotifyManyTest: TFRMNotifyManyTest
     Caption = 'Fire'
     OnClick = btnFireClick
     TabOrder = 7
+  end
+  object Label1: TLabel
+    Left = 336
+    Height = 15
+    Top = 16
+    Width = 111
+    Anchors = [akTop, akRight]
+    Caption = 'Event Throttle Mode:'
+    ParentColor = False
   end
 end
