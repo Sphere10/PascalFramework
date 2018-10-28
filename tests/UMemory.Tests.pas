@@ -1,4 +1,4 @@
-unit UDisposablesTest;
+unit UMemory.Tests;
 
 {$mode delphi}
 {$H+}

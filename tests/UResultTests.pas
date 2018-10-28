@@ -1,4 +1,4 @@
-unit UVariantToolTests;
+unit UResultTests;
 
 {$mode delphi}
 {$H+}
@@ -13,12 +13,14 @@ type
 
 implementation
 
-uses Generics.Defaults, Generics.Collections, UCommon, UCommon.Collections, UMemory, LazLogger;
+uses
+  variants, Generics.Defaults, Generics.Collections, UCommon, UMemory,
+  UCommon.Collections;
 
 
 
 initialization
-  RegisterTest(TVariantToolTests);
+  RegisterTest(TResultTests);
 end.
 
 

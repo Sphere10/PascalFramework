@@ -5,8 +5,7 @@ program FrameworkTests;
 uses
   Interfaces, Forms, GuiTestRunner, Generics.Collections, generics.defaults,
   generics.hashes, generics.helpers, generics.memoryexpanders, generics.strings,
-  UCommon.Collections, UCompareTests, UFilterTests, UDisposablesTest,
-  UAutoPtrTests, UBoxTests, UVariantToolTests, UMiscTests;
+  UCommon.Collections, UCommon.Tests, UCommon.Collections.Tests, UMemory.Tests;
 
 {$R *.res}
 

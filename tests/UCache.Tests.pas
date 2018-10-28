@@ -1,4 +1,4 @@
-unit UCacheTests;
+unit UCache.Tests;
 
 {$mode delphi}
 {$H+}
