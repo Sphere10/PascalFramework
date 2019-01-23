@@ -60,8 +60,8 @@ begin
       FinishCallback
     );
   finally
-    propertyBag['Name'].Destroy;
-    propertyBag.Destroy;
+   // propertyBag['Name'].Destroy;
+   propertyBag.Destroy;
   end;
 end;
 

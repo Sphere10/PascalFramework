@@ -8,6 +8,7 @@ object FRMNotifyManyTest: TFRMNotifyManyTest
   ClientHeight = 333
   ClientWidth = 718
   OnCreate = FormCreate
+  LCLVersion = '1.8.4.0'
   Visible = False
   object cbListener1: TCheckBox
     Left = 16
