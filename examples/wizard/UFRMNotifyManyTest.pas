@@ -25,6 +25,7 @@ type
     Label1: TLabel;
     pnlEvent: TPanel;
     txtLog: TMemo;
+    procedure btnFireAsyncClick(Sender: TObject);
     procedure btnFireClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure cbListener1Change(Sender: TObject);
@@ -33,8 +34,10 @@ type
     procedure cmbThrottleChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure pnlEventMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+
   private
     FMouseMoveEvent : TThrottledEvent;
+    procedure FireEvents(Data : PtrInt);
     procedure Listener1Handler(Sender : TObject);
     procedure Listener2Handler(Sender : TObject);
     procedure Listener3Handler(Sender : TObject);
@@ -100,7 +103,7 @@ end;
 procedure TFRMNotifyManyTest.cbListener3Change(Sender: TObject);
 begin
    if cbListener3.Checked then
-     FMouseMoveEvent.Add(Listener3Handler)
+     FMouseMoveEvent.Add(Listener3Handler, True)
    else
      FMouseMoveEvent.Remove(Listener3Handler);
 end;
@@ -108,6 +111,11 @@ end;
 procedure TFRMNotifyManyTest.btnFireClick(Sender: TObject);
 begin
   FMouseMoveEvent.Notify;
+end;
+
+procedure TFRMNotifyManyTest.btnFireAsyncClick(Sender: TObject);
+begin
+    Application.QueueAsyncCall(FireEvents, 0);
 end;
 
 procedure TFRMNotifyManyTest.cmbThrottleChange(Sender: TObject);
@@ -125,6 +133,12 @@ begin
   txtLog.Lines.Clear;
 end;
 
+procedure TFRMNotifyManyTest.FireEvents(Data : PtrInt);
+var i : integer;
+begin
+  for i := 1 to 1000 do
+    FMouseMoveEvent.Notify;
+end;
 initialization
   GHandledCount := 0;
 

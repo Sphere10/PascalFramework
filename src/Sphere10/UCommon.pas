@@ -7,6 +7,7 @@
 
   Acknowledgements:
   - Herman Schoenfeld: main author
+  - Ugochukwu Mmaduekwe: Add "TLogicalCPUCount" Class
 
   THIS LICENSE HEADER MUST NOT BE REMOVED.
 }
@@ -21,8 +22,11 @@ interface
 
 uses
   Classes, SysUtils, Generics.Collections, Generics.Defaults,
-  {$IFNDEF FPC}System.Types, System.TimeSpan,{$ENDIF} Variants,
-  math, typinfo, UMemory;
+  {$IFNDEF FPC}System.Types, System.TimeSpan,
+  {$ELSE}{$IFDEF LINUX} {$linklib c} ctypes, {$ENDIF LINUX}
+  {$IFDEF WINDOWS} Windows, {$ENDIF WINDOWS}
+  {$IF DEFINED(DARWIN) OR DEFINED(FREEBSD)} ctypes, sysctl, {$ENDIF}
+  {$ENDIF} Variants, math, typinfo, UMemory, syncobjs;
 
 { CONSTANTS }
 
@@ -38,10 +42,13 @@ const
 
 { GLOBAL HELPER FUNCTIONS }
 
-function String2Hex(const Buffer: AnsiString): AnsiString;
-function Hex2Bytes(const AHexString: AnsiString): TBytes; overload;
-function TryHex2Bytes(const AHexString: AnsiString; out ABytes : TBytes): boolean; overload;
-function Bytes2Hex(const ABytes: TBytes; AUsePrefix : boolean = false) : AnsiString;
+
+function String2Hex(const Buffer: String): String;
+{$IFDEF UNITTESTS}
+function Hex2Bytes(const AHexString: String): TBytes; overload;
+function TryHex2Bytes(const AHexString: String; out ABytes : TBytes): boolean; overload;
+function Bytes2Hex(const ABytes: TBytes; AUsePrefix : boolean = false) : String;
+{$ENDIF}
 function BinStrComp(const Str1, Str2 : String): Integer; // Binary-safe StrComp replacement. StrComp will return 0 for when str1 and str2 both start with NUL character.
 function BytesCompare(const ABytes1, ABytes2: TBytes): integer;
 function BytesEqual(const ABytes1, ABytes2 : TBytes) : boolean; inline;
@@ -170,8 +177,8 @@ type
     property TimeStamp : TDateTime read FTimestamp;
     property Severity : TLogSeverity read FSeverity;
     property Text : String read FText;
-    class function From(const AText : String; ASeverity : TLogSeverity; ATimeStamp : TDateTime) : TLogMessage; static; overload;
-    class function From(const AText : String; ASeverity : TLogSeverity = lsError) : TLogMessage; static; overload;
+    class function From(const AText : String; ASeverity : TLogSeverity; ATimeStamp : TDateTime) : TLogMessage; overload; static;
+    class function From(const AText : String; ASeverity : TLogSeverity = lsError) : TLogMessage; overload; static;
   end;
 
   { TResult }
@@ -195,10 +202,10 @@ type
     procedure AddError(const AString : String);
     function ToString(AIncludeTimeStamp : boolean = false) : String; overload;
     function ToString(AIncludeTimeStamp, AIncludeSeverity : boolean) : String; overload;
-    class function Success : TResult; static;
-    class function Success(const AText : String) : TResult; static; overload;
-    class function Failure : TResult; static; overload;
-    class function Failure(const AText : String) : TResult; static; overload;
+    class function Success : TResult; overload; static;
+    class function Success(const AText : String) : TResult; overload; static;
+    class function Failure : TResult; overload; static;
+    class function Failure(const AText : String) : TResult; overload; static;
   end;
 
   { TDateTimeHelper }
@@ -295,18 +302,37 @@ type
 
   { Event Support}
 
-  TNotifyEventEx = procedure (sender : TObject; const args: array of Pointer) of object;
-  TNotifyManyEvent = TArray<TNotifyEvent>;
-  TNotifyManyEventEx = TArray<TNotifyEventEx>;
+  TNotifyManyEvent = record
+    Handlers: TArray<TNotifyEvent>;
+    MainThreadHandlers : TArray<TNotifyEvent>;
+  end;
+
   TNotifyManyEventHelper = record helper for TNotifyManyEvent
-    procedure Add(listener : TNotifyEvent);
-    procedure Remove(listener : TNotifyEvent);
+    procedure Add(AHandler : TNotifyEvent; ExecuteMainThread : Boolean = False);
+    procedure Remove(AHandler : TNotifyEvent);
     procedure Invoke(sender : TObject);
   end;
-  TNotifyManyEventExHelper = record helper for TNotifyManyEventEx
-    procedure Add(listener : TNotifyEventEx);
-    procedure Remove(listener : TNotifyEventEx);
-    procedure Invoke(sender : TObject; const args: array of Pointer);
+
+  { TThreadNotify }
+
+  TThreadNotify = class
+  type
+    TPendingNotifyManyEvent = record
+      Sender : TObject;
+      Handlers : TArray<TNotifyEvent>;
+    end;
+  private
+    FTargetThread : TThread;
+    FLock : TCriticalSection;
+    FPendingNotifications : TList<TPendingNotifyManyEvent>;
+    procedure InvokePendingOnTargetThread;
+  public
+    constructor Create(ATargetThread : TThread);
+    destructor Destroy; override;
+    procedure Invoke(Sender: TObject; Handler : TNotifyEvent); overload;
+    procedure Invoke(Sender: TObject; const Handlers: TArray<TNotifyEvent>); overload;
+    class procedure InvokeMainThread(Sender: TObject; Handler : TNotifyEvent); overload;
+    class procedure InvokeMainThread(Sender: TObject; const Handlers: TArray<TNotifyEvent>); overload;
   end;
 
   { TArrayTool }
@@ -367,7 +393,7 @@ type
 
   TFileStreamHelper = class helper for TFileStream
     {$IFNDEF FPC}
-    procedure WriteAnsiString(const AString : String);
+    procedure WriteString(const AString : String);
     {$ENDIF}
   end;
 
@@ -375,6 +401,13 @@ type
 
   TFileTool = class
     class procedure AppendText(const AFileName: string; const AText: string);
+  end;
+
+  { TCPUTool }
+
+  TCPUTool = class
+    //returns number of cores: a computer with two hyperthreaded cores will report 4
+    class function GetLogicalCPUCount(): Int32; static;
   end;
 
 resourcestring
@@ -387,7 +420,7 @@ resourcestring
 
 implementation
 
-uses dateutils, {$IFDEF FPC}StrUtils{$ELSE}System.AnsiStrings{$ENDIF};
+uses dateutils, StrUtils;
 
 const
   IntlDateTimeFormat : TFormatSettings = (
@@ -403,17 +436,24 @@ const
   MinTimeSpan : TTimeSpan = (FMillis: Low(Int64));
   MaxTimeSpan: TTimeSpan = (FMillis: High(Int64));
   ZeroTimeSpan: TTimeSpan = (FMillis: 0);
+
+  {$IF DEFINED(LINUX)}
+  _SC_NPROCESSORS_ONLN = 83;
+
+  function sysconf(i: cint): clong; cdecl; external Name 'sysconf';
+  {$ENDIF LINUX}
   {$ENDIF}
+
 
 var
   MinTimeStampDateTime : TDateTime = 0;
   VarTrue : Variant;
   VarFalse : Variant;
-
+  GMainThreadNotify : TThreadNotify;
 
 { Global helper functions }
 
-function String2Hex(const Buffer: AnsiString): AnsiString;
+function String2Hex(const Buffer: String): String;
 var
   n: Integer;
 begin
@@ -422,22 +462,23 @@ begin
     Result := AnsiLowerCase(Result + IntToHex(Ord(Buffer[n]), 2));
 end;
 
-function Hex2Bytes(const AHexString: AnsiString): TBytes;
+{$IFDEF UNITTESTS}
+function Hex2Bytes(const AHexString: String): TBytes;
 begin
   if NOT TryHex2Bytes(AHexString, Result) then
     raise EArgumentOutOfRangeException.Create('Invalidly formatted hexadecimal string.');
 end;
 
-function TryHex2Bytes(const AHexString: AnsiString; out ABytes : TBytes): boolean; overload;
+function TryHex2Bytes(const AHexString: String; out ABytes : TBytes): boolean; overload;
 var
   P : PAnsiChar;
-  LHexString : AnsiString;
+  LHexString : String;
   LHexIndex, LHexLength, LHexStart : Integer;
 begin
   SetLength(ABytes, 0);
   LHexLength := System.Length(AHexString);
   LHexStart := 1;
-  if AnsiStartsText('0x', AHexString) then begin
+  if {$IFDEF FPC}AnsiStartsText{$ELSE}StartsText{$ENDIF}('0x', AHexString) then begin
 
     // Special case: 0x0 = empty byte array
     if (LHexLength = 3) AND (AHexString[3] = '0') then
@@ -458,11 +499,12 @@ begin
   LHexIndex := HexToBin(PAnsiChar(@LHexString[LHexStart]), P, System.Length(ABytes));
   Result := (LHexIndex = (LHexLength DIV 2));
 end;
+{$ENDIF}
 
-function Bytes2Hex(const ABytes: TBytes; AUsePrefix : boolean = false) : AnsiString;
+function Bytes2Hex(const ABytes: TBytes; AUsePrefix : boolean = false) : String;
 var
   i, LStart, LLen : Integer;
-  s : AnsiString;
+  s : String;
   b : Byte;
 begin
   LLen := System.Length(ABytes)*2;
@@ -965,14 +1007,14 @@ begin
   Result := NOT FHasError;
 end;
 
-procedure TResult.Add(const ALogMessage : TLogMessage); overload;
+procedure TResult.Add(const ALogMessage : TLogMessage);
 begin
   TArrayTool<TLogMessage>.Add(FMessages, ALogMessage);
   if ALogMessage.Severity = lsError then
     Self.FHasError := true;
 end;
 
-procedure TResult.Add(ASeverity : TLogSeverity; const AString : String); overload;
+procedure TResult.Add(ASeverity : TLogSeverity; const AString : String);
 begin
   Add(TLogMessage.From(AString, ASeverity));
 end;
@@ -1026,27 +1068,27 @@ begin
   end;
 end;
 
-class function TResult.Success : TResult; static;
+class function TResult.Success : TResult;
 begin
   SetLength(Result.FMessages, 0);
   Result.FValue := Variants.Null;
   Result.FHasError := false;
 end;
 
-class function TResult.Success(const AText : String) : TResult; static; overload;
+class function TResult.Success(const AText : String) : TResult;
 begin
   Result := Success;
   Result.AddInfo(AText);
 end;
 
-class function TResult.Failure : TResult; static; overload;
+class function TResult.Failure : TResult;
 begin
   SetLength(Result.FMessages, 0);
   Result.FValue := Variants.Null;
   Result.FHasError := true;
 end;
 
-class function TResult.Failure(const AText : String) : TResult; static; overload;
+class function TResult.Failure(const AText : String) : TResult;
 begin
   Result := Failure;
   Result.AddError(AText);
@@ -1183,7 +1225,11 @@ end;
 
 class function TDateTimeHelper.GetNowUtc: TDateTime;
 begin
+{$IFDEF FPC}
   Result := LocalTimeToUniversal(SysUtils.Now);
+{$ELSE}
+  Result := TTimeZone.Local.ToUniversalTime(SysUtils.Now);
+{$ENDIF}
 end;
 
 function TDateTimeHelper.GetSecond: Word;
@@ -1367,44 +1413,105 @@ end;
 
 { TNotifyManyEventHelper }
 
-procedure TNotifyManyEventHelper.Add(listener : TNotifyEvent);
+procedure TNotifyManyEventHelper.Add(AHandler : TNotifyEvent; ExecuteMainThread : Boolean = False);
 begin
-  if TArrayTool<TNotifyEvent>.IndexOf(self, listener) = -1 then begin
-    TArrayTool<TNotifyEvent>.Add(self, listener);
+  if NOT ExecuteMainThread then begin
+    if TArrayTool<TNotifyEvent>.IndexOf(self.Handlers, AHandler) = -1 then
+      TArrayTool<TNotifyEvent>.Add(self.Handlers, AHandler)
+  end else begin
+    if TArrayTool<TNotifyEvent>.IndexOf(self.MainThreadHandlers, AHandler) = -1 then
+      TArrayTool<TNotifyEvent>.Add(self.MainThreadHandlers, AHandler);
   end;
 end;
 
-procedure TNotifyManyEventHelper.Remove(listener : TNotifyEvent);
+procedure TNotifyManyEventHelper.Remove(AHandler : TNotifyEvent);
 begin
-  TArrayTool<TNotifyEvent>.Remove(self, listener);
+  TArrayTool<TNotifyEvent>.Remove(self.Handlers, AHandler);
+  TArrayTool<TNotifyEvent>.Remove(self.MainThreadHandlers, AHandler);
 end;
 
 procedure TNotifyManyEventHelper.Invoke(sender : TObject);
 var i : Integer;
 begin
-  for i := low(self) to high(self) do
-    self[i](sender);
+  for i := low(self.Handlers) to high(self.Handlers) do
+    self.Handlers[i](sender);
+
+  if Length(self.MainThreadHandlers) > 0 then
+    TThreadNotify.InvokeMainThread(sender, self.MainThreadHandlers);
 end;
 
-{ TNotifyManyEventHelperEx }
+{ TThreadNotify }
 
-procedure TNotifyManyEventExHelper.Add(listener : TNotifyEventEx);
+constructor TThreadNotify.Create(ATargetThread : TThread);
 begin
-  if TArrayTool<TNotifyEventEx>.IndexOf(self, listener) = -1 then begin
-    TArrayTool<TNotifyEventEx>.Add(self, listener);
+  FTargetThread := ATargetThread;
+  FLock := TCriticalSection.Create;
+  FPendingNotifications := TList<TPendingNotifyManyEvent>.Create;
+end;
+
+destructor TThreadNotify.Destroy;
+begin
+  FTargetThread := nil;
+  FLock.Acquire;
+  try
+    FPendingNotifications.Destroy;
+  finally
+    FLock.Release;
+    FLock.Destroy;
   end;
 end;
 
-procedure TNotifyManyEventExHelper.Remove(listener : TNotifyEventEx);
+procedure TThreadNotify.InvokePendingOnTargetThread;
+var
+  LPendings : TArray<TPendingNotifyManyEvent>;
+  LPending : TPendingNotifyManyEvent;
+  LNotify : TNotifyEvent;
 begin
-  TArrayTool<TNotifyEventEx>.Remove(self, listener);
+  if (NOT Assigned(FTargetThread)) OR (NOT Assigned(FLock)) OR (NOT Assigned(FPendingNotifications)) then
+    exit;
+
+  if TThread.CurrentThread.ThreadID = FTargetThread.ThreadID then begin
+    FLock.Acquire;
+    try
+      LPendings := FPendingNotifications.ToArray;
+      FPendingNotifications.Clear;
+    finally
+      FLock.Release;
+    end;
+    for LPending in LPendings do
+      for LNotify in LPending.Handlers do
+        LNotify(LPending.Sender);
+  end else TThread.Queue(FTargetThread, InvokePendingOnTargetThread);
 end;
 
-procedure TNotifyManyEventExHelper.Invoke(sender : TObject; const args: array of Pointer);
-var i : Integer;
+procedure TThreadNotify.Invoke(Sender: TObject; Handler : TNotifyEvent);
 begin
-  for i := Low(Self) to high(Self) do
-    self[i](sender, args);
+  Invoke(Sender, TArrayTool<TNotifyEvent>.Create(Handler));
+end;
+
+procedure TThreadNotify.Invoke(Sender: TObject; const Handlers: TArray<TNotifyEvent>);
+var
+  LPending : TPendingNotifyManyEvent;
+begin
+  FLock.Acquire;
+  try
+    LPending.Sender := Sender;
+    LPending.Handlers := Handlers;
+    FPendingNotifications.Add(LPending);
+  finally
+    FLock.Release;
+  end;
+  InvokePendingOnTargetThread;
+end;
+
+class procedure TThreadNotify.InvokeMainThread(Sender: TObject; Handler : TNotifyEvent);
+begin
+  InvokeMainThread(Sender, TArrayTool<TNotifyEvent>.Create(Handler));
+end;
+
+class procedure TThreadNotify.InvokeMainThread(Sender: TObject; const Handlers: TArray<TNotifyEvent>);
+begin
+  GMainThreadNotify.Invoke(Sender, Handlers);
 end;
 
 { TArrayTool }
@@ -1806,7 +1913,7 @@ end;
 
 { TFileStreamHelper }
 {$IFNDEF FPC}
-procedure TFileStreamHelper.WriteAnsiString(const AString : String);
+procedure TFileStreamHelper.WriteString(const AString : String);
 begin
    Self.WriteBuffer(Pointer(AString)^, Length(AString));
 end;
@@ -1826,17 +1933,84 @@ begin
     fstream.Seek(0, soFromEnd);
   end;
   try
-    fstream.WriteAnsiString(AText+#13#10);
+    fstream.{$IFDEF FPC}WriteAnsiString{$ELSE}WriteString{$ENDIF}(AText+#13#10);
   finally
     fstream.Free;
   end;
+end;
+
+{ TCPUTool }
+
+class function TCPUTool.GetLogicalCPUCount(): Int32;
+{$IFDEF FPC}
+{$IFDEF WINDOWS}
+var
+  LIdx: Int32;
+  LProcessAffinityMask, LSystemAffinityMask: DWORD_PTR;
+  LMask: DWORD;
+  LSystemInfo: SYSTEM_INFO;
+{$ENDIF WINDOWS}
+{$IF DEFINED(DARWIN) OR DEFINED(FREEBSD)}
+var
+  LMib: array[0..1] of cint;
+  Llen, Lt: cint;
+{$ENDIF}
+{$ENDIF FPC}
+
+begin
+{$IFNDEF FPC}
+  // For Delphi
+  Result := System.CPUCount;
+{$ELSE}
+{$IF DEFINED(WINDOWS)}
+  //returns total number of processors available to system including logical hyperthreaded processors
+  if GetProcessAffinityMask(GetCurrentProcess, LProcessAffinityMask,
+    LSystemAffinityMask) then
+  begin
+    Result := 0;
+    for LIdx := 0 to 31 do
+    begin
+      LMask := DWORD(1) shl LIdx;
+      if (LProcessAffinityMask and LMask) <> 0 then
+      begin
+        System.Inc(Result);
+      end;
+    end;
+  end
+  else
+  begin
+    // can't get the affinity mask so we just report the total number of processors
+    GetSystemInfo(LSystemInfo);
+    Result := LSystemInfo.dwNumberOfProcessors;
+  end;
+  {$ELSEIF DEFINED(DARWIN) OR DEFINED(FREEBSD)}
+
+  LMib[0] := CTL_HW;
+  LMib[1] := HW_NCPU;
+  Llen := System.SizeOf(Lt);
+  {$IF DEFINED(VER3_0_0) OR DEFINED(VER3_0_2)}
+  fpsysctl(PChar(@LMib), 2, @Lt, @Llen, nil, 0);
+  {$ELSE}
+  fpsysctl(@LMib, 2, @Lt, @Llen, nil, 0);
+  {$ENDIF}
+  Result := Lt;
+
+  {$ELSEIF DEFINED(LINUX)}
+  Result := sysconf(_SC_NPROCESSORS_ONLN);
+  {$ELSE}
+  // Fallback for other platforms
+  Result := 1;
+{$ENDIF WINDOWS}
+{$ENDIF FPC}
 end;
 
 initialization
   MinTimeStampDateTime:= StrToDateTime('1980-01-01 00:00:000', IntlDateTimeFormat);
   VarTrue := True;
   VarFalse := False;
+  GMainThreadNotify := TThreadNotify.Create ( TThread.CurrentThread ); // unit initialization runs in main thread
 
 finalization
+  FreeAndNil(GMainThreadNotify);
 
 end.
